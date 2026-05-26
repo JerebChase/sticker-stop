@@ -1,4 +1,8 @@
 node_modules/
 .env
+data.json
 orders.db
 *.db-journal
+.svelte-kit/
+build/
+.vercel/

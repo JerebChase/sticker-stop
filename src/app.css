@@ -1,0 +1,68 @@
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --paper:   #fff7e3;
+  --paper-2: #fff1cf;
+  --ink:     #2a2238;
+  --pink:    #ff4d8d;
+  --yellow:  #ffd23f;
+  --blue:    #4ec3ff;
+  --mint:    #6ddc8a;
+  --orange:  #ff8a3d;
+  --purple:  #8b5cf6;
+  --line:    #f0c97a;
+}
+
+/* ── Reset & base ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background-color: var(--paper);
+  background-image: radial-gradient(circle at 1px 1px, rgba(42,34,56,0.08) 1px, transparent 1px);
+  background-size: 22px 22px;
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+a { color: inherit; text-decoration: none; }
+
+img { display: block; max-width: 100%; }
+
+button { cursor: pointer; font-family: inherit; }
+
+input, textarea, select { font-family: inherit; }
+
+/* ── Keyframes ─────────────────────────────────────────────────────────────── */
+@keyframes bob {
+  0%, 100% { transform: rotate(var(--rot, 0deg)) translateY(0); }
+  50%       { transform: rotate(var(--rot, 0deg)) translateY(-6px); }
+}
+
+@keyframes pop {
+  0%   { transform: scale(0.7); }
+  70%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@keyframes confetti-fall {
+  0%   { transform: translateY(-40px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes spin-in {
+  0%   { transform: rotate(-10deg) scale(0.92); opacity: 0; }
+  100% { transform: rotate(0deg) scale(1); opacity: 1; }
+}
+
+/* ── Utility ───────────────────────────────────────────────────────────────── */
+.max-w {
+  max-width: 1180px;
+  margin-inline: auto;
+  padding-inline: 32px;
+}
+
+@media (max-width: 600px) {
+  .max-w { padding-inline: 16px; }
+}

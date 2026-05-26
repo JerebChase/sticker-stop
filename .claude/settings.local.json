@@ -6,7 +6,15 @@
       "mcp__Claude_Preview__preview_start",
       "Bash(pkill -f \"node server.js\")",
       "Bash(curl -s http://localhost:3000/api/admin/orders -H \"x-admin-password: stickerstop2024\")",
-      "Bash(python3 -m json.tool)"
+      "Bash(python3 -m json.tool)",
+      "Bash(mkdir -p /Users/jeremybrown/Documents/sticker-stop/src/lib/stores /Users/jeremybrown/Documents/sticker-stop/src/routes/stickers/\\\\[id\\\\] /Users/jeremybrown/Documents/sticker-stop/src/routes/cart /Users/jeremybrown/Documents/sticker-stop/src/routes/admin /Users/jeremybrown/Documents/sticker-stop/src/routes/api/orders /Users/jeremybrown/Documents/sticker-stop/src/routes/api/admin/orders/\\\\[id\\\\] /Users/jeremybrown/Documents/sticker-stop/src/routes/api/admin/settings /Users/jeremybrown/Documents/sticker-stop/src/routes/api/admin/auth /Users/jeremybrown/Documents/sticker-stop/static/images && echo \"dirs created\")",
+      "Bash(npm install *)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:3001/)",
+      "Bash(node -e \"import\\('/Users/jeremybrown/Documents/sticker-stop/node_modules/@sveltejs/vite-plugin-svelte/src/index.js'\\).then\\(m => console.log\\(Object.keys\\(m\\)\\)\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(git -C /Users/jeremybrown/Documents/sticker-stop rev-parse --show-toplevel)"
     ]
   }
 }
