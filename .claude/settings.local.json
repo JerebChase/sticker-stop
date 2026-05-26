@@ -14,7 +14,9 @@
       "Bash(curl -s http://localhost:3001/)",
       "Bash(node -e \"import\\('/Users/jeremybrown/Documents/sticker-stop/node_modules/@sveltejs/vite-plugin-svelte/src/index.js'\\).then\\(m => console.log\\(Object.keys\\(m\\)\\)\\)\")",
       "Bash(python3 -c ' *)",
-      "Bash(git -C /Users/jeremybrown/Documents/sticker-stop rev-parse --show-toplevel)"
+      "Bash(git -C /Users/jeremybrown/Documents/sticker-stop rev-parse --show-toplevel)",
+      "Bash(npm ls *)",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }

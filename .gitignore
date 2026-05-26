@@ -6,3 +6,4 @@ orders.db
 .svelte-kit/
 build/
 .vercel/
+.DS_Store

@@ -27,13 +27,14 @@
   let setsError = $state('');
   let editingId = $state(null); // id of set being edited, or 'new'
   let editForm = $state(null);  // the working copy of the form
+  let uploadingImage = $state(false);
 
   function blankSet() {
     return {
       id: '', name: '', tagline: '', color: '#6ddc8a', image: '',
       sortOrder: 0, active: true,
-      sheetA: { id: '', name: '', blurb: '' },
-      sheetB: { id: '', name: '', blurb: '' },
+      sheetA: { id: '', name: '', blurb: '', image: '' },
+      sheetB: { id: '', name: '', blurb: '', image: '' },
     };
   }
 
@@ -81,6 +82,30 @@
     } else {
       const d = await res.json();
       alert(d.error ?? 'Save failed.');
+    }
+  }
+
+  // target: the object whose .image property should be updated (f, f.sheetA, or f.sheetB)
+  // prefix: filename prefix for storage (e.g. 'critters', 'critters-a', 'critters-b')
+  async function handleImageUpload(event, target, prefix) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    uploadingImage = true;
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('setId', prefix || 'new');
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        headers: { 'x-admin-password': password },
+        body: fd,
+      });
+      const data = await res.json();
+      if (res.ok) target.image = data.url;
+      else alert(data.error ?? 'Upload failed.');
+    } finally {
+      uploadingImage = false;
+      event.target.value = '';
     }
   }
 
@@ -438,10 +463,32 @@
       <span class="field-label">Tagline</span>
       <input type="text" bind:value={f.tagline} placeholder="Tiny clay friends from forest & shore." />
     </label>
-    <label class="field">
-      <span class="field-label">Image path</span>
-      <input type="text" bind:value={f.image} placeholder="/images/set-critters.png" />
-    </label>
+    <div class="field">
+      <span class="field-label">Image</span>
+      <div class="img-upload-wrap">
+        {#if f.image}
+          <img src={f.image} alt="preview" class="img-preview" />
+        {/if}
+        <div class="img-controls">
+          <label class="upload-btn" class:uploading={uploadingImage}>
+            {#if uploadingImage}Uploading…{:else if f.image}Change image{:else}Upload image{/if}
+            <input
+              type="file"
+              accept="image/*"
+              style="display:none"
+              disabled={uploadingImage}
+              onchange={(e) => handleImageUpload(e, f, f.id || 'new')}
+            />
+          </label>
+          <input
+            type="text"
+            bind:value={f.image}
+            placeholder="or paste a URL"
+            class="url-fallback"
+          />
+        </div>
+      </div>
+    </div>
 
     <div class="sheet-cols">
       <div class="sheet-col">
@@ -454,6 +501,22 @@
           <span class="field-label">Name</span>
           <input type="text" bind:value={f.sheetA.name} placeholder="Forest Friends" />
         </label>
+        <div class="field">
+          <span class="field-label">Image</span>
+          <div class="img-upload-wrap">
+            {#if f.sheetA.image}
+              <img src={f.sheetA.image} alt="Sheet A preview" class="img-preview" />
+            {/if}
+            <div class="img-controls">
+              <label class="upload-btn" class:uploading={uploadingImage}>
+                {#if uploadingImage}Uploading…{:else if f.sheetA.image}Change{:else}Upload{/if}
+                <input type="file" accept="image/*" style="display:none" disabled={uploadingImage}
+                  onchange={(e) => handleImageUpload(e, f.sheetA, `${f.id}-a`)} />
+              </label>
+              <input type="text" bind:value={f.sheetA.image} placeholder="or paste URL" class="url-fallback" />
+            </div>
+          </div>
+        </div>
         <label class="field">
           <span class="field-label">Blurb</span>
           <textarea bind:value={f.sheetA.blurb} rows="3" placeholder="Short description…"></textarea>
@@ -469,6 +532,22 @@
           <span class="field-label">Name</span>
           <input type="text" bind:value={f.sheetB.name} placeholder="Beach Buddies" />
         </label>
+        <div class="field">
+          <span class="field-label">Image</span>
+          <div class="img-upload-wrap">
+            {#if f.sheetB.image}
+              <img src={f.sheetB.image} alt="Sheet B preview" class="img-preview" />
+            {/if}
+            <div class="img-controls">
+              <label class="upload-btn" class:uploading={uploadingImage}>
+                {#if uploadingImage}Uploading…{:else if f.sheetB.image}Change{:else}Upload{/if}
+                <input type="file" accept="image/*" style="display:none" disabled={uploadingImage}
+                  onchange={(e) => handleImageUpload(e, f.sheetB, `${f.id}-b`)} />
+              </label>
+              <input type="text" bind:value={f.sheetB.image} placeholder="or paste URL" class="url-fallback" />
+            </div>
+          </div>
+        </div>
         <label class="field">
           <span class="field-label">Blurb</span>
           <textarea bind:value={f.sheetB.blurb} rows="3" placeholder="Short description…"></textarea>
@@ -962,4 +1041,57 @@
     transition: transform 0.1s;
   }
   .delete-btn:hover { transform: translateY(-1px); }
+
+  /* ── Image upload ── */
+  .img-upload-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .img-preview {
+    width: 100%;
+    max-height: 180px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 2px solid var(--ink);
+  }
+
+  .img-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .upload-btn {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 8px 18px;
+    border: 2.5px solid var(--ink);
+    border-radius: 999px;
+    background: var(--yellow);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.1s, opacity 0.15s;
+    box-shadow: 0 3px 0 var(--ink);
+  }
+  .upload-btn:hover { transform: translateY(-1px); }
+  .upload-btn.uploading { opacity: 0.6; cursor: wait; }
+
+  .url-fallback {
+    flex: 1;
+    min-width: 0;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    background: var(--paper);
+    outline: none;
+    font-family: 'Nunito', sans-serif;
+    color: var(--ink);
+    opacity: 0.7;
+  }
+  .url-fallback:focus { opacity: 1; border-color: var(--blue); }
 </style>

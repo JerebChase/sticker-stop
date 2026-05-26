@@ -96,12 +96,16 @@
             </div>
           {/if}
           <div class="sc-img-wrap">
-            <img
-              src={set.image}
-              alt={sc.sheet.name}
-              class="sc-img"
-              style="left:{sc.side === 'left' ? '0' : '-100%'}"
-            />
+            {#if sc.sheet.image}
+              <img src={sc.sheet.image} alt={sc.sheet.name} class="sc-img-direct" />
+            {:else}
+              <img
+                src={set.image}
+                alt={sc.sheet.name}
+                class="sc-img"
+                style="left:{sc.side === 'left' ? '0' : '-100%'}"
+              />
+            {/if}
           </div>
           <div class="sc-body">
             <div class="sc-name">{sc.sheet.name}</div>
@@ -127,7 +131,12 @@
       {/if}
       <div class="ribbon">BEST DEAL!</div>
       <div class="pair-img-wrap">
-        <img src={set.image} alt="{set.name} pair" class="pair-img" />
+        {#if set.sheetA.image && set.sheetB.image}
+          <img src={set.sheetA.image} alt="{set.sheetA.name}" class="pair-half" />
+          <img src={set.sheetB.image} alt="{set.sheetB.name}" class="pair-half" />
+        {:else}
+          <img src={set.image} alt="{set.name} pair" class="pair-img" />
+        {/if}
       </div>
       <div class="pair-body">
         <div class="pair-title">Get the pair · both sheets</div>
@@ -346,12 +355,21 @@
     /* Height is set by the subgrid image row — no aspect-ratio needed */
   }
 
+  /* Half-crop fallback (when only a combined image exists) */
   .sc-img {
     position: absolute;
     top: 0;
     height: 100%;
     width: 200%;
     max-width: none;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Direct image (when each sheet has its own image) */
+  .sc-img-direct {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
     display: block;
   }
@@ -426,7 +444,18 @@
     aspect-ratio: 1197 / 884; /* Drives the image row height for the whole grid */
   }
 
+  /* Fallback: single combined image */
   .pair-img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* Side-by-side when individual sheet images exist */
+  .pair-img-wrap { display: flex; }
+  .pair-half {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
 
   .pair-body { padding: 12px 4px 4px; }
 

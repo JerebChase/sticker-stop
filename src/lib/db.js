@@ -48,6 +48,10 @@ export async function ensureSchema() {
       created_at    TIMESTAMPTZ DEFAULT NOW()
     )
   `;
+  // Add per-sheet image columns if they don't exist yet (migration)
+  await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS sheet_a_image TEXT DEFAULT ''`;
+  await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS sheet_b_image TEXT DEFAULT ''`;
+
   // Seed with static data if the table is empty
   const [{ count }] = await db`SELECT COUNT(*) FROM sticker_sets`;
   if (parseInt(count) === 0) {
@@ -128,8 +132,8 @@ function rowToSet(row) {
     image:     row.image     ?? '',
     sortOrder: row.sort_order,
     active:    row.active,
-    sheetA: { id: row.sheet_a_id ?? '', name: row.sheet_a_name ?? '', blurb: row.sheet_a_blurb ?? '' },
-    sheetB: { id: row.sheet_b_id ?? '', name: row.sheet_b_name ?? '', blurb: row.sheet_b_blurb ?? '' },
+    sheetA: { id: row.sheet_a_id ?? '', name: row.sheet_a_name ?? '', blurb: row.sheet_a_blurb ?? '', image: row.sheet_a_image ?? '' },
+    sheetB: { id: row.sheet_b_id ?? '', name: row.sheet_b_name ?? '', blurb: row.sheet_b_blurb ?? '', image: row.sheet_b_image ?? '' },
   };
 }
 
@@ -158,27 +162,29 @@ export async function upsertStickerSet(set) {
   await db`
     INSERT INTO sticker_sets
       (id, name, tagline, color, image,
-       sheet_a_id, sheet_a_name, sheet_a_blurb,
-       sheet_b_id, sheet_b_name, sheet_b_blurb,
+       sheet_a_id, sheet_a_name, sheet_a_blurb, sheet_a_image,
+       sheet_b_id, sheet_b_name, sheet_b_blurb, sheet_b_image,
        sort_order, active)
     VALUES
       (${set.id}, ${set.name}, ${set.tagline ?? ''}, ${set.color ?? '#6ddc8a'}, ${set.image ?? ''},
-       ${set.sheetA?.id ?? ''}, ${set.sheetA?.name ?? ''}, ${set.sheetA?.blurb ?? ''},
-       ${set.sheetB?.id ?? ''}, ${set.sheetB?.name ?? ''}, ${set.sheetB?.blurb ?? ''},
+       ${set.sheetA?.id ?? ''}, ${set.sheetA?.name ?? ''}, ${set.sheetA?.blurb ?? ''}, ${set.sheetA?.image ?? ''},
+       ${set.sheetB?.id ?? ''}, ${set.sheetB?.name ?? ''}, ${set.sheetB?.blurb ?? ''}, ${set.sheetB?.image ?? ''},
        ${set.sortOrder ?? 0}, ${set.active ?? true})
     ON CONFLICT (id) DO UPDATE SET
-      name          = EXCLUDED.name,
-      tagline       = EXCLUDED.tagline,
-      color         = EXCLUDED.color,
-      image         = EXCLUDED.image,
-      sheet_a_id    = EXCLUDED.sheet_a_id,
-      sheet_a_name  = EXCLUDED.sheet_a_name,
-      sheet_a_blurb = EXCLUDED.sheet_a_blurb,
-      sheet_b_id    = EXCLUDED.sheet_b_id,
-      sheet_b_name  = EXCLUDED.sheet_b_name,
-      sheet_b_blurb = EXCLUDED.sheet_b_blurb,
-      sort_order    = EXCLUDED.sort_order,
-      active        = EXCLUDED.active
+      name           = EXCLUDED.name,
+      tagline        = EXCLUDED.tagline,
+      color          = EXCLUDED.color,
+      image          = EXCLUDED.image,
+      sheet_a_id     = EXCLUDED.sheet_a_id,
+      sheet_a_name   = EXCLUDED.sheet_a_name,
+      sheet_a_blurb  = EXCLUDED.sheet_a_blurb,
+      sheet_a_image  = EXCLUDED.sheet_a_image,
+      sheet_b_id     = EXCLUDED.sheet_b_id,
+      sheet_b_name   = EXCLUDED.sheet_b_name,
+      sheet_b_blurb  = EXCLUDED.sheet_b_blurb,
+      sheet_b_image  = EXCLUDED.sheet_b_image,
+      sort_order     = EXCLUDED.sort_order,
+      active         = EXCLUDED.active
   `;
 }
 
