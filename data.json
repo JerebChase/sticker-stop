@@ -1,0 +1,39 @@
+{
+  "orders": [
+    {
+      "id": 1,
+      "customer_name": "Sam Sticker",
+      "customer_email": "",
+      "customer_address": "123 Sticker Lane, Springfield, OR 97401",
+      "customer_notes": "",
+      "items": [
+        {
+          "kind": "pair",
+          "setId": "critters",
+          "sheetId": "critters-pair",
+          "name": "Cuddly Critters — Both sheets",
+          "image": "/images/set-critters.png",
+          "side": "full",
+          "price": 3,
+          "qty": 1
+        }
+      ],
+      "subtotal": 3,
+      "shipping": 1,
+      "total": 4,
+      "status": "new",
+      "notes": "",
+      "created_at": "2026-05-26T15:52:52.619Z"
+    }
+  ],
+  "nextOrderId": 2,
+  "settings": {
+    "notification_emails": "chase208@4jlt.com",
+    "admin_password": "stickerstop2024",
+    "smtp_host": "",
+    "smtp_port": "587",
+    "smtp_user": "",
+    "smtp_pass": "",
+    "smtp_from": ""
+  }
+}
