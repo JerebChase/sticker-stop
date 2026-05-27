@@ -68,6 +68,13 @@
   }
 
   async function saveSet() {
+    // For existing sets, keep sheet IDs in sync with set ID
+    if (editingId !== 'new') {
+      editForm.sheetA.id = `${editForm.id}-a`;
+      editForm.sheetB.id = `${editForm.id}-b`;
+    }
+    // New sets: ID and sheet IDs are generated server-side
+
     const isNew = editingId === 'new';
     const url = isNew ? '/api/admin/sticker-sets' : `/api/admin/sticker-sets/${editingId}`;
     const method = isNew ? 'POST' : 'PUT';
@@ -368,7 +375,7 @@
                   <div class="set-swatch" style="background:{set.color}"></div>
                   <div class="set-info">
                     <span class="set-name">{set.name}</span>
-                    <span class="set-meta">/{set.id} · {set.active ? 'Active' : 'Hidden'} · order {set.sortOrder}</span>
+                    <span class="set-meta">{set.active ? 'Active' : 'Hidden'} · order {set.sortOrder}</span>
                   </div>
                   <div class="set-row-actions">
                     <button class="row-edit-btn" onclick={() => startEdit(set)}>Edit</button>
@@ -435,18 +442,29 @@
   <div class="set-form">
     <div class="set-form-row">
       <label class="field">
-        <span class="field-label">ID (used in URL)</span>
-        <input type="text" bind:value={f.id} placeholder="e.g. critters" />
-      </label>
-      <label class="field">
         <span class="field-label">Sort order</span>
         <input type="number" bind:value={f.sortOrder} min="0" />
       </label>
-      <label class="field field-color">
+      <label class="field">
         <span class="field-label">Accent color</span>
-        <div class="color-row">
-          <input type="color" bind:value={f.color} class="color-pick" />
-          <input type="text"  bind:value={f.color} placeholder="#6ddc8a" />
+        <div class="color-select-row">
+          {#each [
+            { label: 'Mint',   value: '#6ddc8a' },
+            { label: 'Yellow', value: '#ffd23f' },
+            { label: 'Blue',   value: '#4ec3ff' },
+            { label: 'Pink',   value: '#ff4d8d' },
+            { label: 'Purple', value: '#8b5cf6' },
+            { label: 'Orange', value: '#ff8a3d' },
+          ] as c}
+            <button
+              type="button"
+              class="color-swatch-btn"
+              class:selected={f.color === c.value}
+              style="background:{c.value}"
+              title={c.label}
+              onclick={() => f.color = c.value}
+            ></button>
+          {/each}
         </div>
       </label>
       <label class="field field-check">
@@ -494,10 +512,6 @@
       <div class="sheet-col">
         <h4 class="sheet-col-title">Sheet A</h4>
         <label class="field">
-          <span class="field-label">ID</span>
-          <input type="text" bind:value={f.sheetA.id} placeholder="critters-a" />
-        </label>
-        <label class="field">
           <span class="field-label">Name</span>
           <input type="text" bind:value={f.sheetA.name} placeholder="Forest Friends" />
         </label>
@@ -524,10 +538,6 @@
       </div>
       <div class="sheet-col">
         <h4 class="sheet-col-title">Sheet B</h4>
-        <label class="field">
-          <span class="field-label">ID</span>
-          <input type="text" bind:value={f.sheetB.id} placeholder="critters-b" />
-        </label>
         <label class="field">
           <span class="field-label">Name</span>
           <input type="text" bind:value={f.sheetB.name} placeholder="Beach Buddies" />
@@ -961,7 +971,7 @@
 
   .set-form-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1.5fr auto;
+    grid-template-columns: auto 1fr auto;
     gap: 12px;
     align-items: end;
   }
@@ -970,8 +980,24 @@
     .set-form-row { grid-template-columns: 1fr 1fr; }
   }
 
-  .color-row { display: flex; gap: 8px; align-items: center; }
-  .color-pick { width: 38px; height: 38px; padding: 2px; border: 2px solid var(--ink); border-radius: 8px; cursor: pointer; flex-shrink: 0; }
+  .color-select-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .color-swatch-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: transform 0.12s, border-color 0.12s;
+    box-shadow: 0 2px 0 rgba(42,34,56,0.3);
+    padding: 0;
+  }
+  .color-swatch-btn:hover { transform: scale(1.15); }
+  .color-swatch-btn.selected {
+    border-color: var(--ink);
+    transform: scale(1.15);
+    box-shadow: 0 0 0 2px white, 0 0 0 4px var(--ink);
+  }
 
   .field-check { justify-content: flex-start; gap: 8px; }
   .field-check input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: var(--mint); }

@@ -21,9 +21,11 @@ export async function POST({ request }) {
   if (!auth(request)) return json({ error: 'Unauthorized.' }, { status: 401 });
   try {
     const set = await request.json();
-    if (!set.id || !set.name) return json({ error: 'id and name are required.' }, { status: 400 });
-    await upsertStickerSet(set);
-    return json({ ok: true });
+    if (!set.name) return json({ error: 'name is required.' }, { status: 400 });
+    // Generate a UUID as the ID — never entered by the admin
+    const id = crypto.randomUUID();
+    await upsertStickerSet({ ...set, id, sheetA: { ...set.sheetA, id: `${id}-a` }, sheetB: { ...set.sheetB, id: `${id}-b` } });
+    return json({ ok: true, id });
   } catch (err) {
     return json({ error: err.message ?? 'Failed to save.' }, { status: 500 });
   }
