@@ -1,6 +1,5 @@
 import { Resend } from 'resend';
-import nodemailer from 'nodemailer';
-import { RESEND_API_KEY, EMAIL_FROM, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } from '$env/static/private';
+import { RESEND_API_KEY, EMAIL_FROM } from '$env/static/private';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -728,39 +727,17 @@ function buildCustomerHtml(order, settings, origin) {
 </html>`;
 }
 
-// ── Send via Resend SDK ───────────────────────────────────────────────────────
-
-async function sendViaResend(apiKey, { from, to, subject, text, html }) {
-  const resend = new Resend(apiKey);
-  const result = await resend.emails.send({ from, to, subject, text, html });
-  if (result.error) throw new Error(result.error.message);
-  return result;
-}
-
-// ── Send via SMTP (nodemailer fallback) ───────────────────────────────────────
-
-async function sendViaSmtp({ from, to, subject, text, html }) {
-  const transporter = nodemailer.createTransport({
-    host:   SMTP_HOST,
-    port:   parseInt(SMTP_PORT || '587', 10),
-    secure: parseInt(SMTP_PORT || '587', 10) === 465,
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-  });
-  await transporter.sendMail({ from, to, subject, text, html });
-}
-
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export async function sendOrderEmail(order, settings, origin = '') {
-  const useResend = !!RESEND_API_KEY;
-  const useSmtp   = !useResend && !!SMTP_HOST;
-  if (!useResend && !useSmtp) return;
+  if (!RESEND_API_KEY) return;
 
-  const from = EMAIL_FROM || (useResend ? 'Sticker Stop <orders@stickerstop.com>' : SMTP_USER);
+  const resend = new Resend(RESEND_API_KEY);
+  const from = EMAIL_FROM || 'Sticker Stop <orders@stickerstop.com>';
 
-  async function send(msg) {
-    if (useResend) return sendViaResend(RESEND_API_KEY, msg);
-    return sendViaSmtp(msg);
+  async function send({ to, subject, text, html }) {
+    const result = await resend.emails.send({ from, to, subject, text, html });
+    if (result.error) throw new Error(result.error.message);
   }
 
   // Admin plain-text notification
