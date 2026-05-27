@@ -77,7 +77,7 @@
     });
 
     const canMake = await pr.canMakePayment();
-    if (canMake?.applePay && prButtonEl) {
+    if (canMake && prButtonEl) {
       const elements = stripe.elements();
       const prButton = elements.create('paymentRequestButton', {
         paymentRequest: pr,
