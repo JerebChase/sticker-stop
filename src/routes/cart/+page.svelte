@@ -245,6 +245,10 @@
 <style>
   .page { padding: 32px 0 64px; position: relative; z-index: 1; }
 
+  @media (max-width: 600px) {
+    .page { padding-inline: 20px; }
+  }
+
   .back-link {
     font-family: 'Fredoka', sans-serif;
     font-size: 15px;
@@ -538,6 +542,10 @@
     align-items: center;
     position: relative;
     z-index: 1;
+  }
+
+  @media (max-width: 600px) {
+    .success-page { padding-inline: 20px; }
   }
 
   .confetti-layer {

@@ -605,6 +605,10 @@
     z-index: 1;
   }
 
+  @media (max-width: 600px) {
+    .admin-page { padding-inline: 20px; }
+  }
+
   /* ── Login ── */
   .login-card {
     max-width: 400px;

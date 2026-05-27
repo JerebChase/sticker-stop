@@ -64,5 +64,5 @@ input, textarea, select { font-family: inherit; }
 }
 
 @media (max-width: 600px) {
-  .max-w { padding-inline: 16px; }
+  .max-w { padding-inline: 20px; }
 }
