@@ -1,10 +1,11 @@
 import { getSettings } from '$lib/db';
+import { STRIPE_PUBLIC_KEY } from '$env/static/private';
 
 export async function load() {
+  let applePayContact = '';
   try {
     const settings = await getSettings();
-    return { applePayContact: settings.apple_pay_contact || '' };
-  } catch {
-    return { applePayContact: '' };
-  }
+    applePayContact = settings.apple_pay_contact || '';
+  } catch { /* DB not configured */ }
+  return { applePayContact, stripePublicKey: STRIPE_PUBLIC_KEY || '' };
 }

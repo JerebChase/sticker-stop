@@ -4,7 +4,7 @@ import { sendOrderEmail } from '$lib/email';
 
 export async function POST({ request, url }) {
   const body = await request.json();
-  const { customerName, customerEmail, customerAddress, customerNotes, deliveryMethod, items, subtotal, shipping, total } = body;
+  const { customerName, customerEmail, customerAddress, customerNotes, deliveryMethod, stripePaymentIntentId, items, subtotal, shipping, total } = body;
 
   const method = deliveryMethod === 'pickup' ? 'pickup' : 'mail';
   if (!customerName || !customerEmail || (!customerAddress && method !== 'pickup') || !items?.length || total == null) {
@@ -16,7 +16,8 @@ export async function POST({ request, url }) {
     customer_email:   customerEmail ? customerEmail.trim() : '',
     customer_address: method === 'mail' ? (customerAddress ?? '').trim() : '',
     customer_notes:   customerNotes ? customerNotes.trim() : '',
-    delivery_method:  method,
+    delivery_method:             method,
+    stripe_payment_intent_id:    stripePaymentIntentId ?? '',
     items,
     subtotal: subtotal ?? total,
     shipping: shipping ?? 0,

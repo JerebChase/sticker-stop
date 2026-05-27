@@ -53,6 +53,7 @@ export async function ensureSchema() {
   await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS sheet_b_image TEXT DEFAULT ''`;
   // Add delivery method column if it doesn't exist yet (migration)
   await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_method TEXT DEFAULT 'mail'`;
+  await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_payment_intent_id TEXT DEFAULT ''`;
   // Add flexible sheets + per-set pricing columns (migration)
   await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS sheets JSONB DEFAULT '[]'`;
   await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS price_sheet NUMERIC(10,2) DEFAULT 2.00`;
@@ -108,12 +109,12 @@ export async function createOrder(order) {
   const [row] = await db`
     INSERT INTO orders
       (customer_name, customer_email, customer_address, customer_notes,
-       items, subtotal, shipping, total, delivery_method)
+       items, subtotal, shipping, total, delivery_method, stripe_payment_intent_id)
     VALUES
       (${order.customer_name}, ${order.customer_email}, ${order.customer_address},
        ${order.customer_notes}, ${JSON.stringify(order.items)},
        ${order.subtotal}, ${order.shipping}, ${order.total},
-       ${order.delivery_method ?? 'mail'})
+       ${order.delivery_method ?? 'mail'}, ${order.stripe_payment_intent_id ?? ''})
     RETURNING id, created_at
   `;
   return row;

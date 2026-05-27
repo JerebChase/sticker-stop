@@ -1,8 +1,10 @@
 <script>
+  import { onMount } from 'svelte';
   import { cart } from '$lib/stores/cart';
 
   let { data } = $props();
   const applePayContact = data.applePayContact || '';
+  const stripePublicKey = data.stripePublicKey || '';
 
   let name = $state('');
   let email = $state('');
@@ -11,6 +13,89 @@
   let deliveryMethod = $state('mail'); // 'mail' | 'pickup'
   let submitting = $state(false);
   let success = $state(null);
+
+  // Stripe / Apple Pay
+  let prButtonEl = $state(null);
+  let applePayAvailable = $state(false);
+  let paymentRequest = $state(null);
+
+  onMount(async () => {
+    if (!stripePublicKey) return;
+    const { loadStripe } = await import('@stripe/stripe-js');
+    const stripe = await loadStripe(stripePublicKey);
+    if (!stripe) return;
+
+    const pr = stripe.paymentRequest({
+      country: 'US',
+      currency: 'usd',
+      total: { label: 'Sticker Stop', amount: Math.round(total * 100) },
+      requestPayerName: true,
+      requestPayerEmail: true,
+    });
+
+    pr.on('paymentmethod', async (ev) => {
+      submitting = true;
+      try {
+        const res = await fetch('/api/checkout/payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: Math.round(total * 100) }),
+        });
+        const { clientSecret, error: piError } = await res.json();
+        if (piError) { ev.complete('fail'); submitting = false; return; }
+
+        const { paymentIntent, error } = await stripe.confirmCardPayment(
+          clientSecret,
+          { payment_method: ev.paymentMethod.id },
+          { handleActions: false },
+        );
+
+        if (error) {
+          ev.complete('fail');
+          alert('Payment failed: ' + error.message);
+          submitting = false;
+          return;
+        }
+
+        ev.complete('success');
+
+        if (paymentIntent.status === 'requires_action') {
+          const { error: actionErr } = await stripe.confirmCardPayment(clientSecret);
+          if (actionErr) {
+            alert('Payment authentication failed: ' + actionErr.message);
+            submitting = false;
+            return;
+          }
+        }
+
+        await placeOrder({ stripePaymentIntentId: paymentIntent.id });
+      } catch (err) {
+        ev.complete('fail');
+        alert('Payment failed: ' + err.message);
+        submitting = false;
+      }
+    });
+
+    const canMake = await pr.canMakePayment();
+    if (canMake?.applePay && prButtonEl) {
+      const elements = stripe.elements();
+      const prButton = elements.create('paymentRequestButton', {
+        paymentRequest: pr,
+        style: { paymentRequestButton: { theme: 'dark', height: '52px' } },
+      });
+      prButton.mount(prButtonEl);
+      paymentRequest = pr;
+      applePayAvailable = true;
+    }
+  });
+
+  $effect(() => {
+    if (paymentRequest) {
+      paymentRequest.update({
+        total: { label: 'Sticker Stop', amount: Math.round(total * 100) },
+      });
+    }
+  });
 
   let items = $derived($cart);
   let subtotal = $derived(items.reduce((s, i) => s + i.price * i.qty, 0));
@@ -36,7 +121,7 @@
       : []
   );
 
-  async function placeOrder() {
+  async function placeOrder(paymentInfo = {}) {
     if (!canSubmit) return;
     submitting = true;
     try {
@@ -53,6 +138,7 @@
           subtotal,
           shipping,
           total,
+          ...paymentInfo,
         }),
       });
       const resData = await res.json();
@@ -66,6 +152,7 @@
         subtotal,
         shipping,
         total,
+        paid: !!paymentInfo.stripePaymentIntentId,
       };
       cart.clear();
     } catch (err) {
@@ -108,10 +195,12 @@
       </div>
       <h1 class="success-title">Yay! Order placed!</h1>
       <p class="success-sub">
-        {#if success.deliveryMethod === 'pickup'}
+        {#if success.paid}
+          Payment confirmed! {success.deliveryMethod === 'pickup' ? "We'll be in touch to arrange pickup." : "Stickers are on their way to you soon!"}
+        {:else if success.deliveryMethod === 'pickup'}
           We've saved your order. We'll be in touch to arrange pickup!
         {:else}
-          We've saved your order. Stickers are on their way to you soon!
+          We've saved your order. We'll follow up to arrange payment and shipping!
         {/if}
       </p>
 
@@ -293,7 +382,17 @@
               </div>
             </div>
 
-            {#if applePayContact}
+            <!-- Stripe Apple Pay button — visible only when Apple Pay is available -->
+            <div
+              bind:this={prButtonEl}
+              class="stripe-apple-pay-wrap"
+              style:display={applePayAvailable ? 'block' : 'none'}
+            ></div>
+            {#if applePayAvailable}
+              <div class="pay-divider"><span>or pay manually</span></div>
+            {/if}
+
+            {#if applePayContact && !applePayAvailable}
               <div class="apple-pay-panel">
                 <div class="apple-pay-amount">${total.toFixed(2)} total</div>
                 <p class="apple-pay-instruction">
@@ -307,14 +406,12 @@
             <button
               class="big-btn pink-btn place-btn"
               disabled={!canSubmit || submitting}
-              onclick={placeOrder}
+              onclick={() => placeOrder()}
             >
               {submitting ? 'Placing order…' : 'Place order →'}
             </button>
-            {#if applePayContact}
-              <p class="no-payment">No payment collected now — you'll send via Apple Pay after!</p>
-            {:else}
-              <p class="no-payment">No payment now! We'll get back to you to arrange it.</p>
+            {#if !applePayAvailable}
+              <p class="no-payment">No payment collected now — we'll follow up to arrange it.</p>
             {/if}
           </div>
         </div>
@@ -726,6 +823,28 @@
   .blue-btn { background: var(--blue); color: var(--ink); }
 
   .place-btn { font-size: 20px; padding: 14px 28px; }
+
+  .stripe-apple-pay-wrap { border-radius: 10px; overflow: hidden; }
+
+  .pay-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 0;
+  }
+  .pay-divider::before,
+  .pay-divider::after {
+    content: '';
+    flex: 1;
+    height: 1.5px;
+    background: var(--line);
+  }
+  .pay-divider span {
+    font-family: 'Caveat', cursive;
+    font-size: 14px;
+    opacity: 0.6;
+    white-space: nowrap;
+  }
 
   .no-payment {
     font-family: 'Caveat', cursive;
