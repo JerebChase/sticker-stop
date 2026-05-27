@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <style><![CDATA[
+      @import url('https://fonts.googleapis.com/css2?family=Bagel+Fat+One&display=swap');
+    ]]></style>
+  </defs>
+  <!-- Shadow (screen-space, not rotated) -->
+  <circle cx="50" cy="53" r="42" fill="#2a2238"/>
+  <!-- Rotated badge -->
+  <g transform="rotate(-8 50 50)">
+    <circle cx="50" cy="50" r="42" fill="#4ec3ff" stroke="#2a2238" stroke-width="4"/>
+    <text x="50" y="65"
+      text-anchor="middle"
+      font-family="'Bagel Fat One', sans-serif"
+      font-size="42"
+      fill="#2a2238">S!</text>
+  </g>
+</svg>
