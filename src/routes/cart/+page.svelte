@@ -3,7 +3,6 @@
   import { cart } from '$lib/stores/cart';
 
   let { data } = $props();
-  const applePayContact = data.applePayContact || '';
   const stripePublicKey = data.stripePublicKey || '';
 
   let name = $state('');
@@ -14,16 +13,24 @@
   let submitting = $state(false);
   let success = $state(null);
 
-  // Stripe / Apple Pay
+  // Stripe / Apple Pay (Safari only)
   let prButtonEl = $state(null);
   let applePayAvailable = $state(false);
+  let stripeChecked = $state(false);
   let paymentRequest = $state(null);
 
+  // QR cross-device flow
+  let qrMode = $state(false);       // user clicked "Pay on iPhone"
+  let qrDataUrl = $state('');       // base64 PNG of the QR code
+  let qrSessionId = $state('');     // token for polling
+  let qrPolling = $state(false);
+  let qrDone = $state(false);
+
   onMount(async () => {
-    if (!stripePublicKey) return;
+    if (!stripePublicKey) { stripeChecked = true; return; }
     const { loadStripe } = await import('@stripe/stripe-js');
     const stripe = await loadStripe(stripePublicKey);
-    if (!stripe) return;
+    if (!stripe) { stripeChecked = true; return; }
 
     const pr = stripe.paymentRequest({
       country: 'US',
@@ -77,7 +84,7 @@
     });
 
     const canMake = await pr.canMakePayment();
-    if (canMake && prButtonEl) {
+    if (canMake?.applePay && prButtonEl) {
       const elements = stripe.elements();
       const prButton = elements.create('paymentRequestButton', {
         paymentRequest: pr,
@@ -87,6 +94,7 @@
       paymentRequest = pr;
       applePayAvailable = true;
     }
+    stripeChecked = true;
   });
 
   $effect(() => {
@@ -96,6 +104,75 @@
       });
     }
   });
+
+  async function startQrFlow() {
+    if (!canSubmit) return;
+    qrMode = true;
+    qrDataUrl = '';
+    qrSessionId = '';
+    qrPolling = false;
+    qrDone = false;
+
+    // Save form data + cart in a server-side session
+    const res = await fetch('/api/checkout/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cart: items,
+        formData: {
+          name: name.trim(),
+          email: email.trim(),
+          address: address.trim(),
+          notes: notes.trim(),
+          deliveryMethod,
+        },
+      }),
+    });
+    const { id, error } = await res.json();
+    if (error || !id) { alert('Could not create session. Please try again.'); qrMode = false; return; }
+
+    qrSessionId = id;
+    const checkoutUrl = `${window.location.origin}/checkout/${id}`;
+
+    // Generate QR code
+    const QRCode = (await import('qrcode')).default;
+    qrDataUrl = await QRCode.toDataURL(checkoutUrl, { width: 256, margin: 2 });
+
+    // Poll for completion every 3 seconds
+    qrPolling = true;
+    const poll = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/checkout/session/${id}`);
+        if (!r.ok) { clearInterval(poll); return; }
+        const data = await r.json();
+        if (data.status === 'complete') {
+          clearInterval(poll);
+          qrPolling = false;
+          qrDone = true;
+          // Show receipt with order data from the session
+          success = {
+            orderId: data.orderId,
+            name: name.trim(),
+            address: deliveryMethod === 'mail' ? address.trim() : '',
+            deliveryMethod,
+            items: [...items],
+            subtotal,
+            shipping,
+            total,
+            paid: true,
+          };
+          cart.clear();
+        }
+      } catch { /* network blip, keep polling */ }
+    }, 3000);
+  }
+
+  function cancelQr() {
+    qrMode = false;
+    qrDataUrl = '';
+    qrSessionId = '';
+    qrPolling = false;
+  }
 
   let items = $derived($cart);
   let subtotal = $derived(items.reduce((s, i) => s + i.price * i.qty, 0));
@@ -382,36 +459,68 @@
               </div>
             </div>
 
-            <!-- Stripe Apple Pay button — visible only when Apple Pay is available -->
-            <div
-              bind:this={prButtonEl}
-              class="stripe-apple-pay-wrap"
-              style:display={applePayAvailable ? 'block' : 'none'}
-            ></div>
-            {#if applePayAvailable}
-              <div class="pay-divider"><span>or pay manually</span></div>
-            {/if}
-
-            {#if applePayContact && !applePayAvailable}
-              <div class="apple-pay-panel">
-                <div class="apple-pay-amount">${total.toFixed(2)} total</div>
-                <p class="apple-pay-instruction">
-                  Send payment via <strong>Apple Pay</strong> after placing your order
-                </p>
-                <div class="apple-pay-btn"> Send ${total.toFixed(2)} → {applePayContact}</div>
-                <p class="apple-pay-note">Include your order # in the payment note</p>
+            <!-- QR cross-device Apple Pay flow -->
+            {#if qrMode}
+              <div class="qr-panel">
+                {#if qrDone}
+                  <div class="qr-done">
+                    <span class="qr-done-icon">✓</span>
+                    <span>Payment received!</span>
+                  </div>
+                {:else if qrDataUrl}
+                  <p class="qr-heading">Scan with your iPhone</p>
+                  <img src={qrDataUrl} alt="Apple Pay checkout QR code" class="qr-img" />
+                  <p class="qr-hint">Open Camera app → tap the link → pay with Apple Pay</p>
+                  <div class="qr-waiting">
+                    <span class="qr-spinner"></span>
+                    <span>Waiting for payment…</span>
+                  </div>
+                  <button class="cancel-link" onclick={cancelQr} type="button">Cancel</button>
+                {:else}
+                  <div class="qr-loading">
+                    <span class="qr-spinner"></span>
+                    <span>Generating link…</span>
+                  </div>
+                {/if}
               </div>
-            {/if}
 
-            <button
-              class="big-btn pink-btn place-btn"
-              disabled={!canSubmit || submitting}
-              onclick={() => placeOrder()}
-            >
-              {submitting ? 'Placing order…' : 'Place order →'}
-            </button>
-            {#if !applePayAvailable}
-              <p class="no-payment">No payment collected now — we'll follow up to arrange it.</p>
+            {:else}
+              <!-- Stripe Apple Pay button — visible only in Safari -->
+              <div
+                bind:this={prButtonEl}
+                class="stripe-apple-pay-wrap"
+                style:display={applePayAvailable ? 'block' : 'none'}
+              ></div>
+
+              {#if stripeChecked && !applePayAvailable && stripePublicKey}
+                <!-- Not in Safari — offer the QR flow -->
+                <button
+                  class="qr-trigger-btn"
+                  disabled={!canSubmit}
+                  onclick={startQrFlow}
+                  type="button"
+                >
+                  <span class="qr-trigger-icon"> </span>
+                  <span class="qr-trigger-text">
+                    <strong>Pay with Apple Pay on iPhone</strong>
+                    <small>Scan a QR code to pay from Safari</small>
+                  </span>
+                </button>
+                <div class="pay-divider"><span>or place order without paying now</span></div>
+              {:else if applePayAvailable}
+                <div class="pay-divider"><span>or pay manually</span></div>
+              {/if}
+
+              <button
+                class="big-btn pink-btn place-btn"
+                disabled={!canSubmit || submitting}
+                onclick={() => placeOrder()}
+              >
+                {submitting ? 'Placing order…' : 'Place order →'}
+              </button>
+              {#if !applePayAvailable}
+                <p class="no-payment">No payment collected now — we'll follow up to arrange it.</p>
+              {/if}
             {/if}
           </div>
         </div>
@@ -733,60 +842,6 @@
     font-size: 22px;
   }
 
-  /* ── Apple Pay panel ── */
-  .apple-pay-panel {
-    background: var(--ink);
-    color: white;
-    border-radius: 18px;
-    padding: 20px 18px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    text-align: center;
-    border: 2.5px solid var(--ink);
-    box-shadow: 0 6px 0 rgba(42,34,56,0.4);
-  }
-
-  .apple-pay-amount {
-    font-family: 'Bagel Fat One', sans-serif;
-    font-size: 26px;
-    background: var(--yellow);
-    color: var(--ink);
-    border: 2.5px solid white;
-    border-radius: 999px;
-    padding: 3px 16px;
-    line-height: 1.3;
-  }
-
-  .apple-pay-instruction {
-    font-family: 'Fredoka', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.85);
-    margin: 0;
-  }
-
-  .apple-pay-btn {
-    background: white;
-    color: var(--ink);
-    font-family: 'Fredoka', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    padding: 10px 22px;
-    border-radius: 999px;
-    border: 2.5px solid white;
-    box-shadow: 0 4px 0 var(--pink);
-    letter-spacing: -0.1px;
-  }
-
-  .apple-pay-note {
-    font-family: 'Caveat', cursive;
-    font-size: 13px;
-    color: rgba(255,255,255,0.6);
-    margin: 0;
-  }
-
   /* ── Shared big buttons ── */
   .big-btn {
     display: inline-flex;
@@ -853,6 +908,156 @@
     text-align: center;
     margin-top: -8px;
   }
+
+  /* ── QR trigger button ── */
+  .qr-trigger-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 14px 18px;
+    background: #1a1a1a;
+    color: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    box-shadow: 0 4px 0 var(--ink);
+    cursor: pointer;
+    text-align: left;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+
+  .qr-trigger-btn:hover { transform: translateY(-2px); }
+  .qr-trigger-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+  .qr-trigger-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+  .qr-trigger-icon {
+    font-size: 28px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .qr-trigger-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .qr-trigger-text strong {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.1px;
+  }
+
+  .qr-trigger-text small {
+    font-family: 'Caveat', cursive;
+    font-size: 14px;
+    opacity: 0.7;
+  }
+
+  /* ── QR panel ── */
+  .qr-panel {
+    background: #1a1a1a;
+    color: white;
+    border-radius: 18px;
+    border: 2.5px solid var(--ink);
+    box-shadow: 0 6px 0 var(--ink);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    text-align: center;
+  }
+
+  .qr-heading {
+    font-family: 'Bagel Fat One', sans-serif;
+    font-size: 22px;
+    margin: 0;
+  }
+
+  .qr-img {
+    width: 200px;
+    height: 200px;
+    border-radius: 12px;
+    border: 4px solid white;
+  }
+
+  .qr-hint {
+    font-family: 'Caveat', cursive;
+    font-size: 16px;
+    opacity: 0.75;
+    margin: 0;
+    max-width: 240px;
+  }
+
+  .qr-waiting {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+
+  .qr-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 15px;
+    opacity: 0.8;
+    padding: 12px 0;
+  }
+
+  .qr-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2.5px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .qr-done {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 0;
+  }
+
+  .qr-done-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--mint);
+    color: var(--ink);
+    font-size: 28px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid white;
+  }
+
+  .cancel-link {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    font-family: 'Caveat', cursive;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+  }
+
+  .cancel-link:hover { color: rgba(255,255,255,0.8); }
 
   /* ── Success ── */
   .success-page {
