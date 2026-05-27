@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import { createOrder, getSettings } from '$lib/db';
 import { sendOrderEmail } from '$lib/email';
 
-export async function POST({ request }) {
+export async function POST({ request, url }) {
   const body = await request.json();
   const { customerName, customerEmail, customerAddress, customerNotes, items, subtotal, shipping, total } = body;
 
@@ -31,7 +31,7 @@ export async function POST({ request }) {
 
   try {
     const settings = await getSettings();
-    await sendOrderEmail({ ...order, id: row.id }, settings);
+    await sendOrderEmail({ ...order, id: row.id }, settings, url.origin);
   } catch (err) {
     console.warn('Email send failed (order still saved):', err.message);
   }

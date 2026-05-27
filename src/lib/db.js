@@ -85,12 +85,13 @@ export async function getSettings() {
     smtp_user:           map.smtp_user           ?? '',
     smtp_pass:           map.smtp_pass           ?? '',
     smtp_from:           map.smtp_from           ?? '',
+    apple_pay_contact:   map.apple_pay_contact   ?? '',
   };
 }
 
 export async function updateSettings(updates) {
   const db = sql();
-  const allowed = ['notification_emails', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from'];
+  const allowed = ['notification_emails', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from', 'apple_pay_contact'];
   for (const key of allowed) {
     if (updates[key] !== undefined && updates[key] !== '') {
       await db`

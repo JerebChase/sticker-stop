@@ -15,6 +15,7 @@
     smtp_port: '587',
     smtp_user: '',
     smtp_from: '',
+    apple_pay_contact: '',
   });
   let smtpPass = $state('');
   let newPassword = $state('');
@@ -423,6 +424,12 @@
             <input type="text" bind:value={settings.smtp_from} placeholder="Sticker Stop <you@gmail.com>" />
           </label>
         </div>
+
+        <h2 class="settings-heading">Payment</h2>
+        <label class="field">
+          <span class="field-label">Apple Pay contact (phone number or Cashtag shown in confirmation email)</span>
+          <input type="text" bind:value={settings.apple_pay_contact} placeholder="$stickerstop or +1 (555) 000-0000" />
+        </label>
 
         <h2 class="settings-heading">Security</h2>
         <label class="field">
