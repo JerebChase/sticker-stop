@@ -33,7 +33,7 @@ export async function POST({ request, url }) {
     const settings = await getSettings();
     await sendOrderEmail({ ...order, id: row.id }, settings, url.origin);
   } catch (err) {
-    console.warn('Email send failed (order still saved):', err.message);
+    console.error('Email send failed (order still saved):', err.message, err.stack);
   }
 
   return json({ success: true, orderId: row.id });

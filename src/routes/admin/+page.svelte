@@ -21,6 +21,8 @@
   let newPassword = $state('');
   let settingsSaved = $state(false);
   let settingsLoading = $state(false);
+  let testEmailStatus = $state(null); // null | { ok, message }
+  let testEmailLoading = $state(false);
 
   // Sticker Sets
   let sets = $state([]);
@@ -185,6 +187,27 @@
       body: JSON.stringify({ status }),
     });
     orders = orders.map(o => o.id === id ? { ...o, status } : o);
+  }
+
+  async function testEmail() {
+    testEmailLoading = true;
+    testEmailStatus = null;
+    try {
+      const res = await fetch('/api/admin/test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        testEmailStatus = { ok: true, message: `Test email sent to ${data.to}` };
+      } else {
+        testEmailStatus = { ok: false, message: data.error + (data.hint ? `\n\n💡 ${data.hint}` : '') };
+      }
+    } catch (err) {
+      testEmailStatus = { ok: false, message: err.message };
+    }
+    testEmailLoading = false;
   }
 
   async function saveSettings() {
@@ -437,9 +460,20 @@
           <input type="password" bind:value={newPassword} placeholder="Leave blank to keep current" />
         </label>
 
-        <button class="save-btn" onclick={saveSettings} disabled={settingsLoading}>
-          {settingsSaved ? 'Saved! ✓' : settingsLoading ? 'Saving…' : 'Save settings'}
-        </button>
+        <div class="settings-actions">
+          <button class="save-btn" onclick={saveSettings} disabled={settingsLoading}>
+            {settingsSaved ? 'Saved! ✓' : settingsLoading ? 'Saving…' : 'Save settings'}
+          </button>
+          <button class="test-email-btn" onclick={testEmail} disabled={testEmailLoading}>
+            {testEmailLoading ? 'Sending…' : 'Send test email'}
+          </button>
+        </div>
+
+        {#if testEmailStatus}
+          <div class="test-email-result" class:ok={testEmailStatus.ok} class:fail={!testEmailStatus.ok}>
+            {testEmailStatus.ok ? '✓ ' : '✗ '}{testEmailStatus.message}
+          </div>
+        {/if}
       </div>
     {/if}
   {/if}
@@ -868,6 +902,35 @@
   .save-btn:hover { transform: translateY(-2px); }
   .save-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
   .save-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .settings-actions {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+  }
+  .test-email-btn {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 15px; font-weight: 600;
+    background: white; color: var(--ink);
+    border: 2.5px solid var(--ink); border-radius: 999px;
+    padding: 10px 22px;
+    box-shadow: 0 4px 0 var(--ink);
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .test-email-btn:hover { transform: translateY(-2px); }
+  .test-email-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+  .test-email-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .test-email-result {
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px; font-weight: 600;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+  .test-email-result.ok   { background: #d1fae5; border: 2px solid #059669; color: #065f46; }
+  .test-email-result.fail { background: #fee2e2; border: 2px solid #dc2626; color: #991b1b; }
 
   /* ── Sticker Sets ── */
   .sets-panel { display: flex; flex-direction: column; gap: 12px; }
