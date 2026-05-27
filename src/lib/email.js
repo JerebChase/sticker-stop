@@ -33,6 +33,250 @@ ${order.customer_notes ? `\nNotes: ${order.customer_notes}` : ''}
   `.trim();
 }
 
+// ── Admin HTML notification ───────────────────────────────────────────────────
+
+function buildAdminHtml(order, origin) {
+  const itemRows  = order.items.map(i => buildItemRow(i, origin)).join('');
+  const subtotal  = Number(order.subtotal ?? order.total).toFixed(2);
+  const shipping  = Number(order.shipping ?? 0).toFixed(2);
+  const total     = Number(order.total).toFixed(2);
+  const orderDate = new Date().toLocaleString('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit',
+  });
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>New Order #${order.id} — Sticker Stop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=Caveat:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  body { margin:0; padding:0; background:#efe7d0; }
+  a    { color:#2a2238; }
+  img  { border:0; outline:0; }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#efe7d0;font-family:'Nunito',Arial,sans-serif;">
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%"
+  style="background:#efe7d0;padding:36px 16px 60px;">
+<tr><td align="center">
+
+<table cellpadding="0" cellspacing="0" border="0" width="600"
+  style="max-width:600px;background:#fff7e3;
+    border:3px solid #2a2238;border-radius:26px;overflow:hidden;
+    box-shadow:0 10px 0 rgba(42,34,56,0.85);">
+
+  <!-- Banner -->
+  <tr>
+    <td style="background:#4ec3ff;border-bottom:3px solid #2a2238;padding:20px 28px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+          <td valign="middle">
+            <table cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td valign="middle" style="padding-right:12px;">
+                  <div style="width:52px;height:52px;border-radius:50%;
+                    background:#ff4d8d;border:3.5px solid white;
+                    text-align:center;line-height:48px;display:inline-block;
+                    box-shadow:0 3px 0 rgba(0,0,0,0.18);">
+                    <span style="font-family:'Bagel Fat One',cursive;
+                      color:white;font-size:26px;line-height:1;vertical-align:middle;">S!</span>
+                  </div>
+                </td>
+                <td valign="middle">
+                  <div style="font-family:'Bagel Fat One',cursive;color:white;font-size:26px;
+                    line-height:1;text-shadow:0 2px 0 rgba(42,34,56,0.35);letter-spacing:-0.4px;">
+                    Sticker Stop</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+          <td align="right" valign="middle">
+            <div style="display:inline-block;background:white;color:#2a2238;
+              border:3px solid #2a2238;border-radius:999px;padding:6px 14px;
+              font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:13px;
+              box-shadow:0 3px 0 rgba(42,34,56,0.85);">Order #${order.id}</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Hero -->
+  <tr>
+    <td style="padding:36px 28px 8px;text-align:center;">
+      <div style="width:80px;height:80px;border-radius:50%;
+        background:#ffd23f;border:4px solid #2a2238;margin:0 auto 14px;
+        box-shadow:0 5px 0 rgba(42,34,56,0.85);">
+        <table cellpadding="0" cellspacing="0" border="0" width="80" height="80">
+          <tr><td align="center" valign="middle">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+              stroke="#2a2238" stroke-width="2.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 01-8 0"/>
+            </svg>
+          </td></tr>
+        </table>
+      </div>
+      <div style="display:inline-block;background:#2a2238;color:white;
+        font-family:'Fredoka',Arial,sans-serif;font-weight:600;font-size:11px;
+        letter-spacing:1.5px;padding:5px 12px;border-radius:999px;
+        text-transform:uppercase;margin-bottom:14px;">
+        New order &middot; ${orderDate}
+      </div>
+      <h1 style="font-family:'Bagel Fat One',cursive;font-size:44px;
+        margin:0 0 8px;line-height:1.05;letter-spacing:-1px;color:#2a2238;">
+        New order from <span style="color:#ff4d8d;">${order.customer_name}</span>!
+      </h1>
+      <p style="font-family:'Caveat',cursive;font-size:22px;color:#2a2238;opacity:0.85;margin:0;">
+        Order #${order.id} &middot; $${total} total
+      </p>
+    </td>
+  </tr>
+
+  <!-- Customer details -->
+  <tr>
+    <td style="padding:28px 28px 4px;">
+      <div style="display:inline-block;background:#ff4d8d;color:white;
+        border:2.5px solid #2a2238;padding:4px 14px;border-radius:999px;
+        font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:13px;
+        text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;
+        box-shadow:0 3px 0 rgba(42,34,56,0.85);">Customer</div>
+      <table cellpadding="0" cellspacing="0" border="0" width="100%"
+        style="background:white;border:3px solid #2a2238;border-radius:18px;
+          box-shadow:0 6px 0 rgba(42,34,56,0.85);">
+        <tr>
+          <td style="padding:18px 22px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="padding-bottom:12px;border-bottom:2px dashed rgba(42,34,56,0.18);">
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:12px;
+                    text-transform:uppercase;letter-spacing:1px;color:#2a2238;opacity:0.5;margin-bottom:3px;">Name</div>
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;font-size:17px;color:#2a2238;">
+                    ${order.customer_name}</div>
+                </td>
+              </tr>
+              ${order.customer_email ? `
+              <tr>
+                <td style="padding:12px 0;border-bottom:2px dashed rgba(42,34,56,0.18);">
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:12px;
+                    text-transform:uppercase;letter-spacing:1px;color:#2a2238;opacity:0.5;margin-bottom:3px;">Email</div>
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;font-size:17px;color:#2a2238;">
+                    <a href="mailto:${order.customer_email}" style="color:#2a2238;">${order.customer_email}</a></div>
+                </td>
+              </tr>` : ''}
+              <tr>
+                <td style="padding-top:12px;">
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:12px;
+                    text-transform:uppercase;letter-spacing:1px;color:#2a2238;opacity:0.5;margin-bottom:3px;">Ship to</div>
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;font-size:16px;
+                    line-height:1.5;color:#2a2238;">${order.customer_address.replace(/\n/g, '<br/>')}</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  ${order.customer_notes ? `
+  <!-- Customer note -->
+  <tr>
+    <td style="padding:6px 28px 4px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%"
+        style="background:white;border:3px solid #2a2238;border-radius:18px;
+          box-shadow:0 6px 0 rgba(42,34,56,0.85);">
+        <tr>
+          <td style="padding:18px 22px;">
+            <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:12px;
+              text-transform:uppercase;letter-spacing:1px;color:#2a2238;opacity:0.6;margin-bottom:6px;">
+              Customer note</div>
+            <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;font-size:15px;
+              color:#2a2238;">${order.customer_notes}</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>` : ''}
+
+  <!-- Order items -->
+  <tr>
+    <td style="padding:6px 28px 4px;">
+      <div style="display:inline-block;background:#ffd23f;
+        border:2.5px solid #2a2238;padding:4px 14px;border-radius:999px;
+        font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:13px;
+        text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;
+        box-shadow:0 3px 0 rgba(42,34,56,0.85);">Order items</div>
+      <table cellpadding="0" cellspacing="0" border="0" width="100%"
+        style="background:white;border:3px solid #2a2238;border-radius:18px;
+          box-shadow:0 6px 0 rgba(42,34,56,0.85);">
+        <tr>
+          <td style="padding:0 22px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              ${itemRows}
+              <tr>
+                <td style="padding-top:14px;border-top:3px solid #2a2238;">
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
+                        font-size:15px;color:#2a2238;padding:3px 0;">Subtotal</td>
+                      <td align="right" style="font-family:'Fredoka',Arial,sans-serif;
+                        font-weight:600;font-size:15px;color:#2a2238;padding:3px 0;">$${subtotal}</td>
+                    </tr>
+                    <tr>
+                      <td style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
+                        font-size:15px;color:#2a2238;padding:3px 0;">Shipping</td>
+                      <td align="right" style="font-family:'Fredoka',Arial,sans-serif;
+                        font-weight:600;font-size:15px;color:#2a2238;padding:3px 0;">$${shipping}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding-top:10px;border-top:2px dashed rgba(42,34,56,0.25);">
+                        <span style="font-family:'Bagel Fat One',cursive;font-size:28px;color:#2a2238;">Total</span>
+                      </td>
+                      <td align="right" style="padding-top:10px;border-top:2px dashed rgba(42,34,56,0.25);">
+                        <span style="font-family:'Bagel Fat One',cursive;font-size:28px;color:#2a2238;">$${total}</span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Footer -->
+  <tr>
+    <td style="background:#fff1cf;border-top:3px dashed #2a2238;
+      padding:22px 28px 24px;text-align:center;margin-top:22px;">
+      <p style="font-family:'Caveat',cursive;font-size:22px;color:#2a2238;margin:0 0 4px;">
+        go pack some stickers! &#127881;
+      </p>
+      <p style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
+        font-size:11px;color:#2a2238;opacity:0.6;
+        text-transform:uppercase;letter-spacing:1.2px;margin:10px 0 0;">
+        Sticker Stop &middot; Admin Notification
+      </p>
+    </td>
+  </tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
 // ── Item row builder ──────────────────────────────────────────────────────────
 
 function buildItemRow(item, origin) {
@@ -498,6 +742,7 @@ export async function sendOrderEmail(order, settings, origin = '') {
       to:      recipients,
       subject: `New Sticker Stop Order #${order.id} — ${order.customer_name}`,
       text:    buildAdminText(order),
+      html:    buildAdminHtml(order, origin),
     });
   }
 
