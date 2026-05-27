@@ -15,13 +15,14 @@ function buildAdminText(order) {
   const itemList = order.items
     .map(i => `  • ${i.name}  ×${i.qty}  $${(i.price * i.qty).toFixed(2)}`)
     .join('\n');
+  const isPickup = order.delivery_method === 'pickup';
   return `
 New Order at Sticker Stop! (#${order.id})
 ────────────────────────────
 Customer: ${order.customer_name}
 Email:    ${order.customer_email || '(not provided)'}
-Address:  ${order.customer_address}
-Date:     ${new Date().toLocaleString()}
+Delivery: ${isPickup ? 'Pickup' : 'Mail'}
+${isPickup ? '' : `Address:  ${order.customer_address}\n`}Date:     ${new Date().toLocaleString()}
 
 Items:
 ${itemList}
@@ -40,6 +41,7 @@ function buildAdminHtml(order, origin) {
   const subtotal  = Number(order.subtotal ?? order.total).toFixed(2);
   const shipping  = Number(order.shipping ?? 0).toFixed(2);
   const total     = Number(order.total).toFixed(2);
+  const isPickup  = order.delivery_method === 'pickup';
   const orderDate = new Date().toLocaleString('en-US', {
     month: 'long', day: 'numeric', year: 'numeric',
     hour: 'numeric', minute: '2-digit',
@@ -175,9 +177,11 @@ function buildAdminHtml(order, origin) {
               <tr>
                 <td style="padding-top:12px;">
                   <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:12px;
-                    text-transform:uppercase;letter-spacing:1px;color:#2a2238;opacity:0.5;margin-bottom:3px;">Ship to</div>
+                    text-transform:uppercase;letter-spacing:1px;color:#2a2238;opacity:0.5;margin-bottom:3px;">
+                    ${isPickup ? 'Delivery' : 'Ship to'}</div>
                   <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;font-size:16px;
-                    line-height:1.5;color:#2a2238;">${order.customer_address.replace(/\n/g, '<br/>')}</div>
+                    line-height:1.5;color:#2a2238;">
+                    ${isPickup ? 'Pickup &mdash; customer will collect in person' : order.customer_address.replace(/\n/g, '<br/>')}</div>
                 </td>
               </tr>
             </table>
@@ -352,6 +356,7 @@ function buildCustomerHtml(order, settings, origin) {
   const orderDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   const contact   = settings.apple_pay_contact || '';
   const firstName = order.customer_name.split(' ')[0];
+  const isPickup  = order.delivery_method === 'pickup';
 
   const payBlock = contact ? `
   <tr>
@@ -372,7 +377,7 @@ function buildCustomerHtml(order, settings, origin) {
             <p style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;
               font-size:15px;color:rgba(255,255,255,0.85);margin:0 auto 18px;
               max-width:380px;line-height:1.5;">
-              Send payment via Apple Pay to finish your order. As soon as it&rsquo;s paid, your stickers go in the mail. Pinky promise.
+              Send payment via Apple Pay to finish your order. As soon as it&rsquo;s paid, ${isPickup ? 'your order will be ready for pickup' : 'your stickers go in the mail'}. Pinky promise.
             </p>
             <div style="display:inline-block;background:white;color:#2a2238;
               font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:19px;
@@ -487,7 +492,7 @@ function buildCustomerHtml(order, settings, origin) {
       </h1>
       <p style="font-family:'Caveat',cursive;font-size:24px;
         color:#2a2238;opacity:0.85;margin:0 0 8px;">
-        Your stickers are picked, packed, and waiting on payment &#10024;
+        ${isPickup ? 'Your order is ready for pickup whenever you are! &#127881;' : 'Your stickers are picked, packed, and waiting on payment &#10024;'}
       </p>
     </td>
   </tr>
@@ -510,6 +515,19 @@ function buildCustomerHtml(order, settings, origin) {
           <td style="padding:0 22px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               ${itemRows}
+              ${!isPickup ? `
+              <tr>
+                <td style="padding:8px 0 4px;border-bottom:2px dashed rgba(42,34,56,0.18);">
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
+                        font-size:14px;color:#6ddc8a;padding:3px 0;">&#127775; Bonus sticker</td>
+                      <td align="right" style="font-family:'Fredoka',Arial,sans-serif;
+                        font-weight:600;font-size:14px;color:#6ddc8a;padding:3px 0;">Free!</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>` : ''}
               <tr>
                 <td style="padding-top:14px;border-top:3px solid #2a2238;">
                   <table cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -546,14 +564,14 @@ function buildCustomerHtml(order, settings, origin) {
     </td>
   </tr>
 
-  <!-- Shipping -->
+  <!-- Shipping / Pickup -->
   <tr>
     <td style="padding:6px 28px 4px;">
       <div style="display:inline-block;background:#4ec3ff;
         border:2.5px solid #2a2238;padding:4px 14px;border-radius:999px;
         font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:13px;
         text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;
-        box-shadow:0 3px 0 rgba(42,34,56,0.85);">Shipping to</div>
+        box-shadow:0 3px 0 rgba(42,34,56,0.85);">${isPickup ? 'Pickup' : 'Shipping to'}</div>
       <table cellpadding="0" cellspacing="0" border="0" width="100%"
         style="background:white;border:3px solid #2a2238;border-radius:18px;
           box-shadow:0 6px 0 rgba(42,34,56,0.85);">
@@ -564,6 +582,16 @@ function buildCustomerHtml(order, settings, origin) {
               box-shadow:0 3px 0 rgba(42,34,56,0.85);">
               <table cellpadding="0" cellspacing="0" border="0" width="56" height="56">
                 <tr><td align="center" valign="middle">
+                  ${isPickup ? `
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                    stroke="#2a2238" stroke-width="2.4"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 12V22H4V12"/>
+                    <path d="M22 7H2v5h20V7z"/>
+                    <path d="M12 22V7"/>
+                    <path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/>
+                    <path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/>
+                  </svg>` : `
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
                     stroke="#2a2238" stroke-width="2.4"
                     stroke-linecap="round" stroke-linejoin="round">
@@ -571,7 +599,7 @@ function buildCustomerHtml(order, settings, origin) {
                     <circle cx="7.5" cy="18" r="2"/>
                     <circle cx="16.5" cy="18" r="2"/>
                     <path d="M3 9v9h2.5"/>
-                  </svg>
+                  </svg>`}
                 </td></tr>
               </table>
             </div>
@@ -579,10 +607,10 @@ function buildCustomerHtml(order, settings, origin) {
           <td valign="middle" style="padding:18px 20px 18px 16px;">
             <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;
               font-size:13px;text-transform:uppercase;letter-spacing:1px;
-              color:#2a2238;opacity:0.6;margin-bottom:4px;">Mailing to</div>
+              color:#2a2238;opacity:0.6;margin-bottom:4px;">${isPickup ? 'Pickup' : 'Mailing to'}</div>
             <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
               font-size:16px;line-height:1.4;color:#2a2238;">
-              ${order.customer_address.replace(/\n/g, '<br/>')}
+              ${isPickup ? "We'll be in touch to arrange a pickup time!" : order.customer_address.replace(/\n/g, '<br/>')}
             </div>
           </td>
         </tr>
@@ -654,7 +682,9 @@ function buildCustomerHtml(order, settings, origin) {
                     font-family:'Bagel Fat One',cursive;font-size:20px;color:#2a2238;">3</div>
                 </td>
                 <td valign="top">
-                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:16px;color:#2a2238;">USPS shows up &middot; you stick them on everything</div>
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:16px;color:#2a2238;">
+                    ${isPickup ? 'You come pick them up &middot; then stick them everywhere' : 'USPS shows up &middot; you stick them on everything'}
+                  </div>
                   <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">Laptops, lunchboxes, foreheads &mdash; we don&rsquo;t judge.</div>
                 </td>
               </tr>

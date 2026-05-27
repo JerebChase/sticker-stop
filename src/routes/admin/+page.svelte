@@ -330,6 +330,9 @@
                     {#if o.customer_email}
                       <a href="mailto:{o.customer_email}" class="customer-email">{o.customer_email}</a>
                     {/if}
+                    <span class="delivery-badge" class:pickup-badge={o.delivery_method === 'pickup'} class:ship-badge={o.delivery_method !== 'pickup'}>
+                      {o.delivery_method === 'pickup' ? 'Pickup' : 'Ship'}
+                    </span>
                   </td>
                   <td class="order-items">
                     {#each o.items as item}
@@ -805,8 +808,20 @@
   .order-date { white-space: nowrap; opacity: 0.7; }
 
   .customer-name { font-weight: 700; display: block; }
-  .customer-email { font-size: 12px; opacity: 0.6; }
+  .customer-email { font-size: 12px; opacity: 0.6; display: block; }
   .customer-email:hover { opacity: 1; text-decoration: underline; }
+  .delivery-badge {
+    display: inline-block;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1.5px solid var(--ink);
+    margin-top: 4px;
+  }
+  .ship-badge { background: var(--blue); }
+  .pickup-badge { background: var(--yellow); }
 
   .item-line { font-size: 13px; opacity: 0.8; }
 

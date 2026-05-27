@@ -1,18 +1,27 @@
 <script>
   import { cart } from '$lib/stores/cart';
 
+  let { data } = $props();
+  const applePayContact = data.applePayContact || '';
+
   let name = $state('');
   let email = $state('');
   let address = $state('');
   let notes = $state('');
+  let deliveryMethod = $state('mail'); // 'mail' | 'pickup'
   let submitting = $state(false);
-  let success = $state(null); // order receipt on success
+  let success = $state(null);
 
   let items = $derived($cart);
   let subtotal = $derived(items.reduce((s, i) => s + i.price * i.qty, 0));
-  let shipping = $derived(items.length > 0 ? 1 : 0);
+  let shipping = $derived(items.length > 0 && deliveryMethod === 'mail' ? 1 : 0);
   let total = $derived(subtotal + shipping);
-  let canSubmit = $derived(items.length > 0 && name.trim() && address.trim());
+  let canSubmit = $derived(
+    items.length > 0 &&
+    name.trim() &&
+    email.trim() &&
+    (deliveryMethod === 'pickup' || address.trim())
+  );
 
   let confettiPieces = $derived(
     success
@@ -37,20 +46,22 @@
         body: JSON.stringify({
           customerName:    name.trim(),
           customerEmail:   email.trim(),
-          customerAddress: address.trim(),
+          customerAddress: deliveryMethod === 'mail' ? address.trim() : '',
           customerNotes:   notes.trim(),
+          deliveryMethod,
           items,
           subtotal,
           shipping,
           total,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Order failed');
+      const resData = await res.json();
+      if (!res.ok) throw new Error(resData.error || 'Order failed');
       success = {
-        orderId: data.orderId,
+        orderId: resData.orderId,
         name: name.trim(),
-        address: address.trim(),
+        address: deliveryMethod === 'mail' ? address.trim() : '',
+        deliveryMethod,
         items: [...items],
         subtotal,
         shipping,
@@ -96,7 +107,13 @@
         </svg>
       </div>
       <h1 class="success-title">Yay! Order placed!</h1>
-      <p class="success-sub">We've saved your order. Stickers are on their way to you soon!</p>
+      <p class="success-sub">
+        {#if success.deliveryMethod === 'pickup'}
+          We've saved your order. We'll be in touch to arrange pickup!
+        {:else}
+          We've saved your order. Stickers are on their way to you soon!
+        {/if}
+      </p>
 
       <div class="receipt">
         <div class="receipt-header">
@@ -110,15 +127,26 @@
               <span>${(item.qty * item.price).toFixed(2)}</span>
             </div>
           {/each}
+          {#if success.deliveryMethod !== 'pickup'}
+            <div class="receipt-row bonus-row">
+              <span>✨ Bonus sticker</span>
+              <span>Free!</span>
+            </div>
+          {/if}
           <div class="receipt-row muted">
-            <span>Shipping</span>
-            <span>${success.shipping.toFixed(2)}</span>
+            <span>{success.deliveryMethod === 'pickup' ? 'Pickup' : 'Shipping'}</span>
+            <span>{success.shipping === 0 ? 'Free!' : `$${success.shipping.toFixed(2)}`}</span>
           </div>
         </div>
         <div class="receipt-address">
-          <span class="receipt-address-label">Ships to</span>
-          <span>{success.name}</span>
-          <span>{success.address}</span>
+          {#if success.deliveryMethod === 'pickup'}
+            <span class="receipt-address-label">Pickup</span>
+            <span>We'll reach out to arrange a time!</span>
+          {:else}
+            <span class="receipt-address-label">Ships to</span>
+            <span>{success.name}</span>
+            <span>{success.address}</span>
+          {/if}
         </div>
       </div>
 
@@ -193,19 +221,51 @@
           <div class="checkout-panel">
             <h2 class="checkout-heading">Place your order</h2>
 
+            <!-- Delivery method -->
+            <div class="delivery-section">
+              <span class="field-label">How do you want it?</span>
+              <div class="delivery-choice">
+                <button
+                  class="delivery-btn"
+                  class:active={deliveryMethod === 'mail'}
+                  onclick={() => deliveryMethod = 'mail'}
+                  type="button"
+                >
+                  <span class="delivery-icon">📬</span>
+                  <span class="delivery-name">Ship it to me</span>
+                  <span class="delivery-sub">+bonus sticker!</span>
+                </button>
+                <button
+                  class="delivery-btn"
+                  class:active={deliveryMethod === 'pickup'}
+                  onclick={() => deliveryMethod = 'pickup'}
+                  type="button"
+                >
+                  <span class="delivery-icon">🏃</span>
+                  <span class="delivery-name">I'll pick it up</span>
+                  <span class="delivery-sub">No shipping fee</span>
+                </button>
+              </div>
+              {#if deliveryMethod === 'mail'}
+                <div class="bonus-notice">✨ A free bonus sticker ships with every mail order!</div>
+              {/if}
+            </div>
+
             <div class="form-fields">
               <label class="field">
                 <span class="field-label">Your name <span class="req">*</span></span>
                 <input type="text" bind:value={name} placeholder="Jane Doe" required />
               </label>
               <label class="field">
-                <span class="field-label">Email <span class="opt">(optional)</span></span>
-                <input type="email" bind:value={email} placeholder="jane@example.com" />
+                <span class="field-label">Email <span class="req">*</span></span>
+                <input type="email" bind:value={email} placeholder="jane@example.com" required />
               </label>
-              <label class="field">
-                <span class="field-label">Mailing address <span class="req">*</span></span>
-                <textarea bind:value={address} placeholder="123 Sticker Lane, Springfield…" rows="3" required></textarea>
-              </label>
+              {#if deliveryMethod === 'mail'}
+                <label class="field">
+                  <span class="field-label">Mailing address <span class="req">*</span></span>
+                  <textarea bind:value={address} placeholder="123 Sticker Lane, Springfield…" rows="3" required></textarea>
+                </label>
+              {/if}
               <label class="field">
                 <span class="field-label">Anything else? <span class="opt">(optional)</span></span>
                 <textarea bind:value={notes} placeholder="Gift wrap? A drawing? Let us know!" rows="2"></textarea>
@@ -217,15 +277,32 @@
                 <span>Stickers</span>
                 <span>${subtotal.toFixed(2)}</span>
               </div>
+              {#if deliveryMethod !== 'pickup'}
+                <div class="summary-row bonus-summary-row">
+                  <span>✨ Bonus sticker</span>
+                  <span>Free!</span>
+                </div>
+              {/if}
               <div class="summary-row">
-                <span>Shipping</span>
-                <span>${shipping.toFixed(2)}</span>
+                <span>{deliveryMethod === 'pickup' ? 'Pickup' : 'Shipping'}</span>
+                <span>{shipping === 0 ? 'Free!' : `$${shipping.toFixed(2)}`}</span>
               </div>
               <div class="summary-row total-row">
                 <span>Total</span>
                 <span class="total-amt">${total.toFixed(2)}</span>
               </div>
             </div>
+
+            {#if applePayContact}
+              <div class="apple-pay-panel">
+                <div class="apple-pay-amount">${total.toFixed(2)} total</div>
+                <p class="apple-pay-instruction">
+                  Send payment via <strong>Apple Pay</strong> after placing your order
+                </p>
+                <div class="apple-pay-btn"> Send ${total.toFixed(2)} → {applePayContact}</div>
+                <p class="apple-pay-note">Include your order # in the payment note</p>
+              </div>
+            {/if}
 
             <button
               class="big-btn pink-btn place-btn"
@@ -234,7 +311,11 @@
             >
               {submitting ? 'Placing order…' : 'Place order →'}
             </button>
-            <p class="no-payment">No payment now! We'll get back to you to arrange it.</p>
+            {#if applePayContact}
+              <p class="no-payment">No payment collected now — you'll send via Apple Pay after!</p>
+            {:else}
+              <p class="no-payment">No payment now! We'll get back to you to arrange it.</p>
+            {/if}
           </div>
         </div>
       </div>
@@ -433,6 +514,66 @@
     letter-spacing: -0.5px;
   }
 
+  /* ── Delivery method ── */
+  .delivery-section { display: flex; flex-direction: column; gap: 10px; }
+
+  .delivery-choice {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .delivery-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 14px 10px;
+    border-radius: 14px;
+    border: 2px solid var(--line);
+    background: var(--paper);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    text-align: center;
+  }
+
+  .delivery-btn:hover { border-color: var(--ink); }
+
+  .delivery-btn.active {
+    border-color: var(--blue);
+    background: #e8f7ff;
+    box-shadow: 0 3px 0 var(--blue);
+  }
+
+  .delivery-icon { font-size: 28px; line-height: 1; }
+
+  .delivery-name {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .delivery-sub {
+    font-family: 'Caveat', cursive;
+    font-size: 13px;
+    color: var(--ink);
+    opacity: 0.65;
+  }
+
+  .bonus-notice {
+    font-family: 'Caveat', cursive;
+    font-size: 15px;
+    font-weight: 700;
+    background: var(--mint);
+    border: 1.5px solid var(--ink);
+    border-radius: 999px;
+    padding: 5px 14px;
+    text-align: center;
+    color: var(--ink);
+  }
+
+  /* ── Form fields ── */
   .form-fields { display: flex; flex-direction: column; gap: 14px; }
 
   .field { display: flex; flex-direction: column; gap: 5px; }
@@ -459,10 +600,9 @@
   }
 
   .field input:focus,
-  .field textarea:focus {
-    border-color: var(--blue);
-  }
+  .field textarea:focus { border-color: var(--blue); }
 
+  /* ── Order summary ── */
   .order-summary {
     border-top: 2px dashed var(--line);
     padding-top: 16px;
@@ -477,6 +617,13 @@
     font-size: 15px;
   }
 
+  .bonus-summary-row {
+    color: #2a9d5c;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
   .total-row {
     border-top: 1.5px solid var(--line);
     padding-top: 8px;
@@ -489,12 +636,58 @@
     font-size: 22px;
   }
 
-  .no-payment {
-    font-family: 'Caveat', cursive;
-    font-size: 15px;
-    opacity: 0.6;
+  /* ── Apple Pay panel ── */
+  .apple-pay-panel {
+    background: var(--ink);
+    color: white;
+    border-radius: 18px;
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
     text-align: center;
-    margin-top: -8px;
+    border: 2.5px solid var(--ink);
+    box-shadow: 0 6px 0 rgba(42,34,56,0.4);
+  }
+
+  .apple-pay-amount {
+    font-family: 'Bagel Fat One', sans-serif;
+    font-size: 26px;
+    background: var(--yellow);
+    color: var(--ink);
+    border: 2.5px solid white;
+    border-radius: 999px;
+    padding: 3px 16px;
+    line-height: 1.3;
+  }
+
+  .apple-pay-instruction {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.85);
+    margin: 0;
+  }
+
+  .apple-pay-btn {
+    background: white;
+    color: var(--ink);
+    font-family: 'Fredoka', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 10px 22px;
+    border-radius: 999px;
+    border: 2.5px solid white;
+    box-shadow: 0 4px 0 var(--pink);
+    letter-spacing: -0.1px;
+  }
+
+  .apple-pay-note {
+    font-family: 'Caveat', cursive;
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    margin: 0;
   }
 
   /* ── Shared big buttons ── */
@@ -533,6 +726,14 @@
   .blue-btn { background: var(--blue); color: var(--ink); }
 
   .place-btn { font-size: 20px; padding: 14px 28px; }
+
+  .no-payment {
+    font-family: 'Caveat', cursive;
+    font-size: 15px;
+    opacity: 0.6;
+    text-align: center;
+    margin-top: -8px;
+  }
 
   /* ── Success ── */
   .success-page {
@@ -643,6 +844,12 @@
   }
 
   .receipt-row.muted { opacity: 0.6; }
+
+  .receipt-row.bonus-row {
+    color: #2a9d5c;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+  }
 
   .receipt-address {
     border-top: 1px dashed var(--line);

@@ -51,6 +51,8 @@ export async function ensureSchema() {
   // Add per-sheet image columns if they don't exist yet (migration)
   await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS sheet_a_image TEXT DEFAULT ''`;
   await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS sheet_b_image TEXT DEFAULT ''`;
+  // Add delivery method column if it doesn't exist yet (migration)
+  await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_method TEXT DEFAULT 'mail'`;
 
   // Seed with static data if the table is empty
   const [{ count }] = await db`SELECT COUNT(*) FROM sticker_sets`;
@@ -108,11 +110,12 @@ export async function createOrder(order) {
   const [row] = await db`
     INSERT INTO orders
       (customer_name, customer_email, customer_address, customer_notes,
-       items, subtotal, shipping, total)
+       items, subtotal, shipping, total, delivery_method)
     VALUES
       (${order.customer_name}, ${order.customer_email}, ${order.customer_address},
        ${order.customer_notes}, ${JSON.stringify(order.items)},
-       ${order.subtotal}, ${order.shipping}, ${order.total})
+       ${order.subtotal}, ${order.shipping}, ${order.total},
+       ${order.delivery_method ?? 'mail'})
     RETURNING id, created_at
   `;
   return row;
