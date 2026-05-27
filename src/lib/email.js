@@ -38,9 +38,9 @@ ${order.customer_notes ? `\nNotes: ${order.customer_notes}` : ''}
 function buildItemRow(item, origin) {
   const imageUrl = absoluteUrl(item.image, origin);
   const lineTotal = (item.price * item.qty).toFixed(2);
-  const subLabel = item.kind === 'pair'
-    ? `Pair &middot; 2 sheets &middot; $${item.price.toFixed(2)} each`
-    : `Single sheet &middot; $${item.price.toFixed(2)} each`;
+  const subLabel = (item.kind === 'set' || item.kind === 'pair')
+    ? `Full set &middot; $${item.price.toFixed(2)}`
+    : `Single sheet &middot; $${item.price.toFixed(2)}`;
 
   let thumbContent = '';
   if (imageUrl) {

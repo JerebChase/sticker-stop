@@ -36,8 +36,9 @@
     return {
       id: '', name: '', tagline: '', color: '#6ddc8a', image: '',
       sortOrder: 0, active: true,
-      sheetA: { id: '', name: '', blurb: '', image: '' },
-      sheetB: { id: '', name: '', blurb: '', image: '' },
+      sheets: [{ id: '', name: '', blurb: '', image: '' }],
+      priceSheet: 2,
+      priceSet: 2,
     };
   }
 
@@ -58,6 +59,9 @@
   function startEdit(set) {
     editingId = set.id;
     editForm = JSON.parse(JSON.stringify(set)); // deep clone
+    if (!Array.isArray(editForm.sheets)) editForm.sheets = [];
+    if (editForm.priceSheet === undefined) editForm.priceSheet = 2;
+    if (editForm.priceSet === undefined) editForm.priceSet = 2;
   }
 
   function startNew() {
@@ -71,12 +75,14 @@
   }
 
   async function saveSet() {
-    // For existing sets, keep sheet IDs in sync with set ID
+    // For existing sets, ensure every sheet has an ID
     if (editingId !== 'new') {
-      editForm.sheetA.id = `${editForm.id}-a`;
-      editForm.sheetB.id = `${editForm.id}-b`;
+      editForm.sheets = editForm.sheets.map((s, i) => ({
+        ...s,
+        id: s.id || `${editForm.id}-${i + 1}`,
+      }));
     }
-    // New sets: ID and sheet IDs are generated server-side
+    // New sets: sheet IDs are generated server-side
 
     const isNew = editingId === 'new';
     const url = isNew ? '/api/admin/sticker-sets' : `/api/admin/sticker-sets/${editingId}`;
@@ -95,8 +101,18 @@
     }
   }
 
-  // target: the object whose .image property should be updated (f, f.sheetA, or f.sheetB)
-  // prefix: filename prefix for storage (e.g. 'critters', 'critters-a', 'critters-b')
+  function addSheet() {
+    editForm.sheets = [...editForm.sheets, { id: '', name: '', blurb: '', image: '' }];
+    const n = editForm.sheets.length;
+    editForm.priceSet = parseFloat((editForm.priceSheet + (n - 1)).toFixed(2));
+  }
+
+  function removeSheet(i) {
+    editForm.sheets = editForm.sheets.filter((_, idx) => idx !== i);
+    const n = editForm.sheets.length;
+    editForm.priceSet = parseFloat((editForm.priceSheet + (n - 1)).toFixed(2));
+  }
+
   async function handleImageUpload(event, target, prefix) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -539,61 +555,65 @@
       </div>
     </div>
 
-    <div class="sheet-cols">
-      <div class="sheet-col">
-        <h4 class="sheet-col-title">Sheet A</h4>
-        <label class="field">
-          <span class="field-label">Name</span>
-          <input type="text" bind:value={f.sheetA.name} placeholder="Forest Friends" />
-        </label>
-        <div class="field">
-          <span class="field-label">Image</span>
-          <div class="img-upload-wrap">
-            {#if f.sheetA.image}
-              <img src={f.sheetA.image} alt="Sheet A preview" class="img-preview" />
+    <div class="sheets-section">
+      <div class="sheets-header">
+        <span class="field-label">Sheets</span>
+        <button type="button" class="add-sheet-btn" onclick={addSheet}>+ Add sheet</button>
+      </div>
+
+      {#each f.sheets as sheet, i}
+        <div class="sheet-card">
+          <div class="sheet-card-header">
+            <h4 class="sheet-col-title">Sheet {i + 1}</h4>
+            {#if f.sheets.length > 1}
+              <button type="button" class="remove-sheet-btn" onclick={() => removeSheet(i)}>Remove</button>
             {/if}
-            <div class="img-controls">
-              <label class="upload-btn" class:uploading={uploadingImage}>
-                {#if uploadingImage}Uploading…{:else if f.sheetA.image}Change{:else}Upload{/if}
-                <input type="file" accept="image/*" style="display:none" disabled={uploadingImage}
-                  onchange={(e) => handleImageUpload(e, f.sheetA, `${f.id}-a`)} />
-              </label>
-              <input type="text" bind:value={f.sheetA.image} placeholder="or paste URL" class="url-fallback" />
+          </div>
+          <label class="field">
+            <span class="field-label">Name</span>
+            <input type="text" bind:value={sheet.name} placeholder="Forest Friends" />
+          </label>
+          <div class="field">
+            <span class="field-label">Image</span>
+            <div class="img-upload-wrap">
+              {#if sheet.image}
+                <img src={sheet.image} alt="Sheet {i + 1} preview" class="img-preview" />
+              {/if}
+              <div class="img-controls">
+                <label class="upload-btn" class:uploading={uploadingImage}>
+                  {#if uploadingImage}Uploading…{:else if sheet.image}Change{:else}Upload{/if}
+                  <input type="file" accept="image/*" style="display:none" disabled={uploadingImage}
+                    onchange={(e) => handleImageUpload(e, sheet, `${f.id || 'new'}-sheet-${i + 1}`)} />
+                </label>
+                <input type="text" bind:value={sheet.image} placeholder="or paste URL" class="url-fallback" />
+              </div>
             </div>
           </div>
+          <label class="field">
+            <span class="field-label">Blurb</span>
+            <textarea bind:value={sheet.blurb} rows="3" placeholder="Short description…"></textarea>
+          </label>
         </div>
+      {/each}
+    </div>
+
+    <div class="price-row">
+      <label class="field">
+        <span class="field-label">Price per sheet</span>
+        <div class="price-input-wrap">
+          <span class="price-prefix">$</span>
+          <input type="number" bind:value={f.priceSheet} min="0" step="0.01" />
+        </div>
+      </label>
+      {#if f.sheets.length > 1}
         <label class="field">
-          <span class="field-label">Blurb</span>
-          <textarea bind:value={f.sheetA.blurb} rows="3" placeholder="Short description…"></textarea>
-        </label>
-      </div>
-      <div class="sheet-col">
-        <h4 class="sheet-col-title">Sheet B</h4>
-        <label class="field">
-          <span class="field-label">Name</span>
-          <input type="text" bind:value={f.sheetB.name} placeholder="Beach Buddies" />
-        </label>
-        <div class="field">
-          <span class="field-label">Image</span>
-          <div class="img-upload-wrap">
-            {#if f.sheetB.image}
-              <img src={f.sheetB.image} alt="Sheet B preview" class="img-preview" />
-            {/if}
-            <div class="img-controls">
-              <label class="upload-btn" class:uploading={uploadingImage}>
-                {#if uploadingImage}Uploading…{:else if f.sheetB.image}Change{:else}Upload{/if}
-                <input type="file" accept="image/*" style="display:none" disabled={uploadingImage}
-                  onchange={(e) => handleImageUpload(e, f.sheetB, `${f.id}-b`)} />
-              </label>
-              <input type="text" bind:value={f.sheetB.image} placeholder="or paste URL" class="url-fallback" />
-            </div>
+          <span class="field-label">Full set price <span class="price-hint">(default: ${(f.priceSheet * 1 + (f.sheets.length - 1)).toFixed(2)})</span></span>
+          <div class="price-input-wrap">
+            <span class="price-prefix">$</span>
+            <input type="number" bind:value={f.priceSet} min="0" step="0.01" />
           </div>
-        </div>
-        <label class="field">
-          <span class="field-label">Blurb</span>
-          <textarea bind:value={f.sheetB.blurb} rows="3" placeholder="Short description…"></textarea>
         </label>
-      </div>
+      {/if}
     </div>
   </div>
 {/snippet}
@@ -1066,22 +1086,102 @@
   .field-check { justify-content: flex-start; gap: 8px; }
   .field-check input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: var(--mint); }
 
-  .sheet-cols {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+  .sheets-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
-  @media (max-width: 600px) { .sheet-cols { grid-template-columns: 1fr; } }
+  .sheets-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 
-  .sheet-col { display: flex; flex-direction: column; gap: 10px; }
+  .sheet-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    background: var(--paper-2);
+  }
+
+  .sheet-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 
   .sheet-col-title {
     font-family: 'Fredoka', sans-serif;
     font-weight: 700;
     font-size: 15px;
-    padding-bottom: 6px;
-    border-bottom: 2px solid var(--line);
+  }
+
+  .add-sheet-btn {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    background: var(--blue);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 5px 14px;
+    box-shadow: 0 3px 0 var(--ink);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .add-sheet-btn:hover { transform: translateY(-1px); }
+
+  .remove-sheet-btn {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    background: #ffe0e0;
+    color: #c0000a;
+    border: 1.5px solid var(--ink);
+    border-radius: 999px;
+    padding: 3px 12px;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .remove-sheet-btn:hover { transform: translateY(-1px); }
+
+  .price-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 600px) { .price-row { grid-template-columns: 1fr; } }
+
+  .price-input-wrap {
+    display: flex;
+    align-items: center;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    background: var(--paper);
+    overflow: hidden;
+  }
+  .price-input-wrap input {
+    border: none !important;
+    border-radius: 0 !important;
+    flex: 1;
+    padding: 9px 10px;
+  }
+  .price-prefix {
+    padding: 0 10px;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    opacity: 0.6;
+  }
+  .price-hint {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 400;
+    font-size: 11px;
+    opacity: 0.6;
   }
 
   .field textarea {

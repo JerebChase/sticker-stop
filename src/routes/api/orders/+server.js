@@ -4,17 +4,19 @@ import { sendOrderEmail } from '$lib/email';
 
 export async function POST({ request, url }) {
   const body = await request.json();
-  const { customerName, customerEmail, customerAddress, customerNotes, items, subtotal, shipping, total } = body;
+  const { customerName, customerEmail, customerAddress, customerNotes, deliveryMethod, items, subtotal, shipping, total } = body;
 
-  if (!customerName || !customerAddress || !items?.length || total == null) {
+  const method = deliveryMethod === 'pickup' ? 'pickup' : 'mail';
+  if (!customerName || !customerEmail || (!customerAddress && method !== 'pickup') || !items?.length || total == null) {
     return json({ error: 'Missing required fields.' }, { status: 400 });
   }
 
   const order = {
     customer_name:    customerName.trim(),
     customer_email:   customerEmail ? customerEmail.trim() : '',
-    customer_address: customerAddress.trim(),
+    customer_address: method === 'mail' ? (customerAddress ?? '').trim() : '',
     customer_notes:   customerNotes ? customerNotes.trim() : '',
+    delivery_method:  method,
     items,
     subtotal: subtotal ?? total,
     shipping: shipping ?? 0,

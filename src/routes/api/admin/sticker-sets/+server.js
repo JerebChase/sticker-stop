@@ -24,7 +24,8 @@ export async function POST({ request }) {
     if (!set.name) return json({ error: 'name is required.' }, { status: 400 });
     // Generate a UUID as the ID — never entered by the admin
     const id = crypto.randomUUID();
-    await upsertStickerSet({ ...set, id, sheetA: { ...set.sheetA, id: `${id}-a` }, sheetB: { ...set.sheetB, id: `${id}-b` } });
+    const sheets = (set.sheets ?? []).map((s, i) => ({ ...s, id: `${id}-${i + 1}` }));
+    await upsertStickerSet({ ...set, id, sheets });
     return json({ ok: true, id });
   } catch (err) {
     return json({ error: err.message ?? 'Failed to save.' }, { status: 500 });

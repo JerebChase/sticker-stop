@@ -51,6 +51,12 @@ export async function ensureSchema() {
   // Add per-sheet image columns if they don't exist yet (migration)
   await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS sheet_a_image TEXT DEFAULT ''`;
   await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS sheet_b_image TEXT DEFAULT ''`;
+  // Add delivery method column if it doesn't exist yet (migration)
+  await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_method TEXT DEFAULT 'mail'`;
+  // Add flexible sheets + per-set pricing columns (migration)
+  await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS sheets JSONB DEFAULT '[]'`;
+  await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS price_sheet NUMERIC(10,2) DEFAULT 2.00`;
+  await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS price_set   NUMERIC(10,2) DEFAULT 3.00`;
 
   // Seed with static data if the table is empty
   const [{ count }] = await db`SELECT COUNT(*) FROM sticker_sets`;
@@ -126,16 +132,27 @@ export async function listOrders() {
 // ── Sticker Sets ──────────────────────────────────────────────
 
 function rowToSet(row) {
+  // Use the flexible sheets array when populated, fall back to legacy sheet_a/b columns
+  let sheets;
+  if (Array.isArray(row.sheets) && row.sheets.length > 0) {
+    sheets = row.sheets;
+  } else {
+    sheets = [];
+    if (row.sheet_a_id) sheets.push({ id: row.sheet_a_id, name: row.sheet_a_name ?? '', blurb: row.sheet_a_blurb ?? '', image: row.sheet_a_image ?? '' });
+    if (row.sheet_b_id) sheets.push({ id: row.sheet_b_id, name: row.sheet_b_name ?? '', blurb: row.sheet_b_blurb ?? '', image: row.sheet_b_image ?? '' });
+  }
+  const defaultSetPrice = sheets.length > 1 ? 2 + (sheets.length - 1) : 2;
   return {
-    id:        row.id,
-    name:      row.name,
-    tagline:   row.tagline   ?? '',
-    color:     row.color     ?? '#6ddc8a',
-    image:     row.image     ?? '',
-    sortOrder: row.sort_order,
-    active:    row.active,
-    sheetA: { id: row.sheet_a_id ?? '', name: row.sheet_a_name ?? '', blurb: row.sheet_a_blurb ?? '', image: row.sheet_a_image ?? '' },
-    sheetB: { id: row.sheet_b_id ?? '', name: row.sheet_b_name ?? '', blurb: row.sheet_b_blurb ?? '', image: row.sheet_b_image ?? '' },
+    id:         row.id,
+    name:       row.name,
+    tagline:    row.tagline  ?? '',
+    color:      row.color    ?? '#6ddc8a',
+    image:      row.image    ?? '',
+    sortOrder:  row.sort_order,
+    active:     row.active,
+    priceSheet: Number(row.price_sheet ?? 2),
+    priceSet:   Number(row.price_set   ?? defaultSetPrice),
+    sheets,
   };
 }
 
@@ -161,16 +178,29 @@ export async function getStickerSet(id) {
 
 export async function upsertStickerSet(set) {
   const db = sql();
+  // Build the sheets array — accept explicit sheets or fall back to legacy sheetA/sheetB
+  let sheets = set.sheets;
+  if (!sheets || sheets.length === 0) {
+    sheets = [];
+    if (set.sheetA?.id) sheets.push({ id: set.sheetA.id, name: set.sheetA.name ?? '', blurb: set.sheetA.blurb ?? '', image: set.sheetA.image ?? '' });
+    if (set.sheetB?.id) sheets.push({ id: set.sheetB.id, name: set.sheetB.name ?? '', blurb: set.sheetB.blurb ?? '', image: set.sheetB.image ?? '' });
+  }
+  // Mirror first two sheets into legacy columns for backward compat
+  const s0 = sheets[0] ?? {};
+  const s1 = sheets[1] ?? {};
+  const defaultSetPrice = sheets.length > 1 ? 2 + (sheets.length - 1) : 2;
   await db`
     INSERT INTO sticker_sets
       (id, name, tagline, color, image,
        sheet_a_id, sheet_a_name, sheet_a_blurb, sheet_a_image,
        sheet_b_id, sheet_b_name, sheet_b_blurb, sheet_b_image,
+       sheets, price_sheet, price_set,
        sort_order, active)
     VALUES
       (${set.id}, ${set.name}, ${set.tagline ?? ''}, ${set.color ?? '#6ddc8a'}, ${set.image ?? ''},
-       ${set.sheetA?.id ?? ''}, ${set.sheetA?.name ?? ''}, ${set.sheetA?.blurb ?? ''}, ${set.sheetA?.image ?? ''},
-       ${set.sheetB?.id ?? ''}, ${set.sheetB?.name ?? ''}, ${set.sheetB?.blurb ?? ''}, ${set.sheetB?.image ?? ''},
+       ${s0.id ?? ''}, ${s0.name ?? ''}, ${s0.blurb ?? ''}, ${s0.image ?? ''},
+       ${s1.id ?? ''}, ${s1.name ?? ''}, ${s1.blurb ?? ''}, ${s1.image ?? ''},
+       ${JSON.stringify(sheets)}, ${set.priceSheet ?? 2}, ${set.priceSet ?? defaultSetPrice},
        ${set.sortOrder ?? 0}, ${set.active ?? true})
     ON CONFLICT (id) DO UPDATE SET
       name           = EXCLUDED.name,
@@ -185,6 +215,9 @@ export async function upsertStickerSet(set) {
       sheet_b_name   = EXCLUDED.sheet_b_name,
       sheet_b_blurb  = EXCLUDED.sheet_b_blurb,
       sheet_b_image  = EXCLUDED.sheet_b_image,
+      sheets         = EXCLUDED.sheets,
+      price_sheet    = EXCLUDED.price_sheet,
+      price_set      = EXCLUDED.price_set,
       sort_order     = EXCLUDED.sort_order,
       active         = EXCLUDED.active
   `;
