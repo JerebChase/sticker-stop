@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
+import { RESEND_API_KEY, EMAIL_FROM, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } from '$env/static/private';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -738,12 +739,12 @@ async function sendViaResend(apiKey, { from, to, subject, text, html }) {
 
 // ── Send via SMTP (nodemailer fallback) ───────────────────────────────────────
 
-async function sendViaSmtp(settings, { from, to, subject, text, html }) {
+async function sendViaSmtp({ from, to, subject, text, html }) {
   const transporter = nodemailer.createTransport({
-    host:   settings.smtp_host,
-    port:   parseInt(settings.smtp_port || '587', 10),
-    secure: parseInt(settings.smtp_port || '587', 10) === 465,
-    auth: { user: settings.smtp_user, pass: settings.smtp_pass },
+    host:   SMTP_HOST,
+    port:   parseInt(SMTP_PORT || '587', 10),
+    secure: parseInt(SMTP_PORT || '587', 10) === 465,
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
   });
   await transporter.sendMail({ from, to, subject, text, html });
 }
@@ -751,15 +752,15 @@ async function sendViaSmtp(settings, { from, to, subject, text, html }) {
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export async function sendOrderEmail(order, settings, origin = '') {
-  const useResend = !!settings.resend_api_key;
-  const useSmtp   = !useResend && !!settings.smtp_host;
-  if (!useResend && !useSmtp) return; // nothing configured
+  const useResend = !!RESEND_API_KEY;
+  const useSmtp   = !useResend && !!SMTP_HOST;
+  if (!useResend && !useSmtp) return;
 
-  const from = settings.smtp_from || (useResend ? 'Sticker Stop <orders@stickerstop.com>' : settings.smtp_user);
+  const from = EMAIL_FROM || (useResend ? 'Sticker Stop <orders@stickerstop.com>' : SMTP_USER);
 
   async function send(msg) {
-    if (useResend) return sendViaResend(settings.resend_api_key, msg);
-    return sendViaSmtp(settings, msg);
+    if (useResend) return sendViaResend(RESEND_API_KEY, msg);
+    return sendViaSmtp(msg);
   }
 
   // Admin plain-text notification

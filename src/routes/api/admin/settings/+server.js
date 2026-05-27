@@ -10,9 +10,7 @@ function auth(request) {
 export async function GET({ request }) {
   if (!auth(request)) return json({ error: 'Unauthorized.' }, { status: 401 });
   try {
-    const s = await getSettings();
-    const { smtp_pass: _sp, resend_api_key: _rk, ...safe } = s;
-    return json(safe);
+    return json(await getSettings());
   } catch {
     return json({ error: 'Database not configured.' }, { status: 503 });
   }

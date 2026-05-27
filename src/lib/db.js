@@ -86,19 +86,13 @@ export async function getSettings() {
   const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
   return {
     notification_emails: map.notification_emails ?? '',
-    resend_api_key:      map.resend_api_key      ?? '',
-    smtp_from:           map.smtp_from           ?? '',
-    smtp_host:           map.smtp_host           ?? '',
-    smtp_port:           map.smtp_port           ?? '587',
-    smtp_user:           map.smtp_user           ?? '',
-    smtp_pass:           map.smtp_pass           ?? '',
     apple_pay_contact:   map.apple_pay_contact   ?? '',
   };
 }
 
 export async function updateSettings(updates) {
   const db = sql();
-  const allowed = ['notification_emails', 'resend_api_key', 'smtp_from', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'apple_pay_contact'];
+  const allowed = ['notification_emails', 'apple_pay_contact'];
   for (const key of allowed) {
     if (updates[key] !== undefined && updates[key] !== '') {
       await db`

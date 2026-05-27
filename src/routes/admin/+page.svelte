@@ -11,18 +11,11 @@
   // Settings
   let settings = $state({
     notification_emails: '',
-    smtp_host: '',
-    smtp_port: '587',
-    smtp_user: '',
-    smtp_from: '',
     apple_pay_contact: '',
   });
-  let smtpPass = $state('');
   let newPassword = $state('');
   let settingsSaved = $state(false);
   let settingsLoading = $state(false);
-  let testEmailStatus = $state(null); // null | { ok, message }
-  let testEmailLoading = $state(false);
 
   // Sticker Sets
   let sets = $state([]);
@@ -205,34 +198,9 @@
     orders = orders.map(o => o.id === id ? { ...o, status } : o);
   }
 
-  async function testEmail() {
-    testEmailLoading = true;
-    testEmailStatus = null;
-    try {
-      const res = await fetch('/api/admin/test-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
-        body: JSON.stringify({}),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        testEmailStatus = { ok: true, message: `Test email sent to ${data.to}` };
-      } else {
-        testEmailStatus = { ok: false, message: data.error + (data.hint ? `\n\n💡 ${data.hint}` : '') };
-      }
-    } catch (err) {
-      testEmailStatus = { ok: false, message: err.message };
-    }
-    testEmailLoading = false;
-  }
-
   async function saveSettings() {
     settingsLoading = true;
-    // Strip secret fields — only send them if the user filled them in
-    const { resend_api_key, ...rest } = settings;
-    const payload = { ...rest };
-    if (resend_api_key) payload.resend_api_key = resend_api_key;
-    if (smtpPass) payload.smtp_pass = smtpPass;
+    const payload = { ...settings };
     if (newPassword) payload.admin_password = newPassword;
     await fetch('/api/admin/settings', {
       method: 'PUT',
@@ -244,8 +212,6 @@
     });
     if (newPassword) password = newPassword;
     newPassword = '';
-    smtpPass = '';
-    settings.resend_api_key = '';
     settingsSaved = true;
     setTimeout(() => { settingsSaved = false; }, 2500);
     settingsLoading = false;
@@ -441,16 +407,6 @@
     {:else}
       <!-- Settings -->
       <div class="settings-panel">
-        <h2 class="settings-heading">Email Provider</h2>
-        <label class="field">
-          <span class="field-label">Resend API key</span>
-          <input type="password" bind:value={settings.resend_api_key} placeholder="re_xxxxxxxxxxxxxxxxxxxx — leave blank to keep current" />
-        </label>
-        <label class="field">
-          <span class="field-label">From address</span>
-          <input type="text" bind:value={settings.smtp_from} placeholder="Sticker Stop <orders@yourdomain.com>" />
-        </label>
-
         <h2 class="settings-heading">Notification Emails</h2>
         <label class="field">
           <span class="field-label">Send new order alerts to (comma-separated)</span>
@@ -473,16 +429,7 @@
           <button class="save-btn" onclick={saveSettings} disabled={settingsLoading}>
             {settingsSaved ? 'Saved! ✓' : settingsLoading ? 'Saving…' : 'Save settings'}
           </button>
-          <button class="test-email-btn" onclick={testEmail} disabled={testEmailLoading}>
-            {testEmailLoading ? 'Sending…' : 'Send test email'}
-          </button>
         </div>
-
-        {#if testEmailStatus}
-          <div class="test-email-result" class:ok={testEmailStatus.ok} class:fail={!testEmailStatus.ok}>
-            {testEmailStatus.ok ? '✓ ' : '✗ '}{testEmailStatus.message}
-          </div>
-        {/if}
       </div>
     {/if}
   {/if}
@@ -909,31 +856,6 @@
   .settings-actions {
     display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
   }
-  .test-email-btn {
-    font-family: 'Fredoka', sans-serif;
-    font-size: 15px; font-weight: 600;
-    background: white; color: var(--ink);
-    border: 2.5px solid var(--ink); border-radius: 999px;
-    padding: 10px 22px;
-    box-shadow: 0 4px 0 var(--ink);
-    cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.1s;
-  }
-  .test-email-btn:hover { transform: translateY(-2px); }
-  .test-email-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
-  .test-email-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-  .test-email-result {
-    margin-top: 12px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    font-family: 'Fredoka', sans-serif;
-    font-size: 14px; font-weight: 600;
-    white-space: pre-wrap;
-    line-height: 1.5;
-  }
-  .test-email-result.ok   { background: #d1fae5; border: 2px solid #059669; color: #065f46; }
-  .test-email-result.fail { background: #fee2e2; border: 2px solid #dc2626; color: #991b1b; }
 
   /* ── Sticker Sets ── */
   .sets-panel { display: flex; flex-direction: column; gap: 12px; }
