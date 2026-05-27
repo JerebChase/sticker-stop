@@ -212,7 +212,10 @@
 
   async function saveSettings() {
     settingsLoading = true;
-    const payload = { ...settings };
+    // Strip secret fields — only send them if the user filled them in
+    const { resend_api_key, ...rest } = settings;
+    const payload = { ...rest };
+    if (resend_api_key) payload.resend_api_key = resend_api_key;
     if (smtpPass) payload.smtp_pass = smtpPass;
     if (newPassword) payload.admin_password = newPassword;
     await fetch('/api/admin/settings', {
@@ -226,6 +229,7 @@
     if (newPassword) password = newPassword;
     newPassword = '';
     smtpPass = '';
+    settings.resend_api_key = '';
     settingsSaved = true;
     setTimeout(() => { settingsSaved = false; }, 2500);
     settingsLoading = false;
@@ -418,35 +422,21 @@
     {:else}
       <!-- Settings -->
       <div class="settings-panel">
-        <h2 class="settings-heading">Email Notifications</h2>
+        <h2 class="settings-heading">Email Provider</h2>
         <label class="field">
-          <span class="field-label">Notification emails (comma-separated)</span>
-          <input type="text" bind:value={settings.notification_emails} placeholder="you@example.com" />
+          <span class="field-label">Resend API key</span>
+          <input type="password" bind:value={settings.resend_api_key} placeholder="re_xxxxxxxxxxxxxxxxxxxx — leave blank to keep current" />
+        </label>
+        <label class="field">
+          <span class="field-label">From address</span>
+          <input type="text" bind:value={settings.smtp_from} placeholder="Sticker Stop <orders@yourdomain.com>" />
         </label>
 
-        <h2 class="settings-heading">SMTP Settings</h2>
-        <div class="settings-grid">
-          <label class="field">
-            <span class="field-label">SMTP Host</span>
-            <input type="text" bind:value={settings.smtp_host} placeholder="smtp.gmail.com" />
-          </label>
-          <label class="field">
-            <span class="field-label">SMTP Port</span>
-            <input type="text" bind:value={settings.smtp_port} placeholder="587" />
-          </label>
-          <label class="field">
-            <span class="field-label">SMTP User</span>
-            <input type="text" bind:value={settings.smtp_user} placeholder="you@gmail.com" />
-          </label>
-          <label class="field">
-            <span class="field-label">SMTP Password</span>
-            <input type="password" bind:value={smtpPass} placeholder="Leave blank to keep current" />
-          </label>
-          <label class="field span-2">
-            <span class="field-label">From address</span>
-            <input type="text" bind:value={settings.smtp_from} placeholder="Sticker Stop <you@gmail.com>" />
-          </label>
-        </div>
+        <h2 class="settings-heading">Notification Emails</h2>
+        <label class="field">
+          <span class="field-label">Send new order alerts to (comma-separated)</span>
+          <input type="text" bind:value={settings.notification_emails} placeholder="you@example.com" />
+        </label>
 
         <h2 class="settings-heading">Payment</h2>
         <label class="field">

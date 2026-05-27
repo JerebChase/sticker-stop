@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { getSettings } from '$lib/db';
 import { ADMIN_PASSWORD } from '$env/static/private';
+import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 
 function auth(request) {
@@ -18,18 +19,39 @@ export async function POST({ request }) {
     return json({ error: `Database error: ${err.message}` }, { status: 503 });
   }
 
-  if (!settings.smtp_host) {
-    return json({ error: 'SMTP host is not configured. Fill in SMTP settings and save first.' }, { status: 400 });
-  }
-  if (!settings.smtp_user) {
-    return json({ error: 'SMTP user is not configured.' }, { status: 400 });
-  }
-  if (!settings.smtp_pass) {
-    return json({ error: 'SMTP password is not saved. Enter it in the password field and save settings first.' }, { status: 400 });
+  const to = (settings.notification_emails || '').split(',')[0]?.trim() || settings.smtp_user;
+  const from = settings.smtp_from || settings.smtp_user;
+
+  // ── Resend path ──
+  if (settings.resend_api_key) {
+    if (!from) {
+      return json({ error: 'Set a "From address" in settings (e.g. "Sticker Stop <hello@yourdomain.com>").' }, { status: 400 });
+    }
+    if (!to) {
+      return json({ error: 'Add at least one notification email so the test has somewhere to send.' }, { status: 400 });
+    }
+    try {
+      const resend = new Resend(settings.resend_api_key);
+      const result = await resend.emails.send({
+        from,
+        to,
+        subject: '✅ Sticker Stop — email test',
+        text: 'This is a test email from Sticker Stop. If you got this, Resend is configured correctly!',
+      });
+      if (result.error) throw new Error(result.error.message);
+      return json({ ok: true, to });
+    } catch (err) {
+      return json({ error: err.message }, { status: 400 });
+    }
   }
 
-  const body = await request.json().catch(() => ({}));
-  const to = body.to || settings.notification_emails?.split(',')[0]?.trim() || settings.smtp_user;
+  // ── SMTP fallback path ──
+  if (!settings.smtp_host) {
+    return json({ error: 'No Resend API key or SMTP host configured. Add your Resend API key in settings.' }, { status: 400 });
+  }
+  if (!settings.smtp_pass) {
+    return json({ error: 'SMTP password not saved yet. Enter it and save settings first.' }, { status: 400 });
+  }
 
   const transporter = nodemailer.createTransport({
     host:   settings.smtp_host,
@@ -41,38 +63,18 @@ export async function POST({ request }) {
   try {
     await transporter.verify();
   } catch (err) {
-    return json({
-      error: `SMTP connection failed: ${err.message}`,
-      hint: getHint(err.message, settings),
-    }, { status: 400 });
+    return json({ error: `SMTP connection failed: ${err.message}` }, { status: 400 });
   }
 
   try {
     await transporter.sendMail({
-      from:    settings.smtp_from || settings.smtp_user,
-      to,
+      from: from || settings.smtp_user,
+      to:   to   || settings.smtp_user,
       subject: '✅ Sticker Stop — email test',
-      text:    'This is a test email from Sticker Stop. If you got this, your SMTP settings are working!',
+      text: 'This is a test email from Sticker Stop. If you got this, your SMTP settings are working!',
     });
     return json({ ok: true, to });
   } catch (err) {
     return json({ error: `Send failed: ${err.message}` }, { status: 500 });
   }
-}
-
-function getHint(msg, settings) {
-  const m = msg.toLowerCase();
-  if (m.includes('invalid login') || m.includes('username and password') || m.includes('535')) {
-    if (settings.smtp_host?.includes('gmail')) {
-      return 'Gmail requires an App Password (not your regular password). Go to myaccount.google.com → Security → 2-Step Verification → App passwords.';
-    }
-    return 'Check your username and password. Many providers require an app-specific password.';
-  }
-  if (m.includes('self signed') || m.includes('certificate')) {
-    return 'TLS certificate error. Try port 587 instead of 465, or contact your email provider.';
-  }
-  if (m.includes('connect') || m.includes('econnrefused') || m.includes('timeout')) {
-    return `Can't reach ${settings.smtp_host}:${settings.smtp_port}. Check the host and port. Common ports: 587 (TLS), 465 (SSL), 25 (plain).`;
-  }
-  return null;
 }

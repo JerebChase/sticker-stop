@@ -1,3 +1,4 @@
+import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -100,16 +101,15 @@ function buildItemRow(item, origin) {
 // ── Customer HTML email ───────────────────────────────────────────────────────
 
 function buildCustomerHtml(order, settings, origin) {
-  const itemRows    = order.items.map(i => buildItemRow(i, origin)).join('');
-  const subtotal    = Number(order.subtotal ?? order.total).toFixed(2);
-  const shipping    = Number(order.shipping ?? 0).toFixed(2);
-  const total       = Number(order.total).toFixed(2);
-  const orderDate   = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  const contact     = settings.apple_pay_contact || '';
-  const firstName   = order.customer_name.split(' ')[0];
+  const itemRows  = order.items.map(i => buildItemRow(i, origin)).join('');
+  const subtotal  = Number(order.subtotal ?? order.total).toFixed(2);
+  const shipping  = Number(order.shipping ?? 0).toFixed(2);
+  const total     = Number(order.total).toFixed(2);
+  const orderDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const contact   = settings.apple_pay_contact || '';
+  const firstName = order.customer_name.split(' ')[0];
 
   const payBlock = contact ? `
-  <!-- Pay block -->
   <tr>
     <td style="padding:0 22px 22px;">
       <table cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -120,8 +120,7 @@ function buildCustomerHtml(order, settings, origin) {
             <div style="display:inline-block;background:#ffd23f;color:#2a2238;
               border:3px solid white;border-radius:999px;padding:4px 18px;
               margin-bottom:14px;
-              font-family:'Bagel Fat One',cursive;font-size:28px;line-height:1;
-              transform:rotate(-2deg);">$${total} total</div>
+              font-family:'Bagel Fat One',cursive;font-size:28px;line-height:1;">$${total} total</div>
             <h3 style="font-family:'Bagel Fat One',cursive;font-size:26px;
               margin:0 0 6px;color:white;letter-spacing:-0.3px;">
               One last thing &mdash; let&rsquo;s get paid!
@@ -164,18 +163,16 @@ function buildCustomerHtml(order, settings, origin) {
 </head>
 <body style="margin:0;padding:0;background:#efe7d0;font-family:'Nunito',Arial,sans-serif;">
 
-<!-- Outer wrapper -->
 <table cellpadding="0" cellspacing="0" border="0" width="100%"
   style="background:#efe7d0;padding:36px 16px 60px;">
 <tr><td align="center">
 
-<!-- Email card -->
 <table cellpadding="0" cellspacing="0" border="0" width="600"
   style="max-width:600px;background:#fff7e3;
     border:3px solid #2a2238;border-radius:26px;overflow:hidden;
     box-shadow:0 10px 0 rgba(42,34,56,0.85);">
 
-  <!-- ── Banner ── -->
+  <!-- Banner -->
   <tr>
     <td style="background:#4ec3ff;border-bottom:3px solid #2a2238;padding:20px 28px;">
       <table cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -187,7 +184,7 @@ function buildCustomerHtml(order, settings, origin) {
                   <div style="width:52px;height:52px;border-radius:50%;
                     background:#ff4d8d;border:3.5px solid white;
                     text-align:center;line-height:48px;
-                    transform:rotate(-8deg);display:inline-block;
+                    display:inline-block;
                     box-shadow:0 3px 0 rgba(0,0,0,0.18);">
                     <span style="font-family:'Bagel Fat One',cursive;
                       color:white;font-size:26px;line-height:1;
@@ -208,18 +205,16 @@ function buildCustomerHtml(order, settings, origin) {
               border:3px solid #2a2238;border-radius:999px;
               padding:6px 14px;
               font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:13px;
-              box-shadow:0 3px 0 rgba(42,34,56,0.85);
-              transform:rotate(2deg);">Order #${order.id}</div>
+              box-shadow:0 3px 0 rgba(42,34,56,0.85);">Order #${order.id}</div>
           </td>
         </tr>
       </table>
     </td>
   </tr>
 
-  <!-- ── Hero ── -->
+  <!-- Hero -->
   <tr>
     <td style="padding:36px 28px 8px;text-align:center;">
-      <!-- Check medal -->
       <div style="width:80px;height:80px;border-radius:50%;
         background:#6ddc8a;border:4px solid #2a2238;
         margin:0 auto 14px;
@@ -234,21 +229,18 @@ function buildCustomerHtml(order, settings, origin) {
           </td></tr>
         </table>
       </div>
-      <!-- Date stamp -->
       <div style="display:inline-block;background:#2a2238;color:white;
         font-family:'Fredoka',Arial,sans-serif;font-weight:600;font-size:11px;
         letter-spacing:1.5px;padding:5px 12px;border-radius:999px;
-        text-transform:uppercase;transform:rotate(-2deg);margin-bottom:14px;">
+        text-transform:uppercase;margin-bottom:14px;">
         Order received &middot; ${orderDate}
       </div>
-      <!-- Heading -->
       <h1 style="font-family:'Bagel Fat One',cursive;font-size:52px;
         margin:0 0 8px;line-height:0.95;letter-spacing:-1px;color:#2a2238;">
         <span style="display:inline-block;transform:rotate(-2deg);">Hooray,</span>
         <span style="display:inline-block;transform:rotate(2deg);color:#ff4d8d;">${firstName}</span>
         <span style="display:inline-block;transform:rotate(-1deg);">!</span>
       </h1>
-      <!-- Sub -->
       <p style="font-family:'Caveat',cursive;font-size:24px;
         color:#2a2238;opacity:0.85;margin:0 0 8px;">
         Your stickers are picked, packed, and waiting on payment &#10024;
@@ -256,29 +248,24 @@ function buildCustomerHtml(order, settings, origin) {
     </td>
   </tr>
 
-  <!-- ── Apple Pay block ── -->
+  <!-- Apple Pay block -->
   ${payBlock}
 
-  <!-- ── Receipt ── -->
+  <!-- Receipt -->
   <tr>
     <td style="padding:22px 28px 4px;">
       <div style="display:inline-block;background:#ffd23f;
         border:2.5px solid #2a2238;padding:4px 14px;border-radius:999px;
         font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:13px;
         text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;
-        transform:rotate(-1.5deg);
         box-shadow:0 3px 0 rgba(42,34,56,0.85);">Your sticker stash</div>
-
-      <!-- Receipt card -->
       <table cellpadding="0" cellspacing="0" border="0" width="100%"
         style="background:white;border:3px solid #2a2238;border-radius:18px;
-          box-shadow:0 6px 0 rgba(42,34,56,0.85);
-          padding:4px 0;">
+          box-shadow:0 6px 0 rgba(42,34,56,0.85);">
         <tr>
           <td style="padding:0 22px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               ${itemRows}
-              <!-- Totals -->
               <tr>
                 <td style="padding-top:14px;border-top:3px solid #2a2238;">
                   <table cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -315,24 +302,21 @@ function buildCustomerHtml(order, settings, origin) {
     </td>
   </tr>
 
-  <!-- ── Shipping ── -->
+  <!-- Shipping -->
   <tr>
     <td style="padding:6px 28px 4px;">
       <div style="display:inline-block;background:#4ec3ff;
         border:2.5px solid #2a2238;padding:4px 14px;border-radius:999px;
         font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:13px;
         text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;
-        transform:rotate(-1.5deg);
         box-shadow:0 3px 0 rgba(42,34,56,0.85);">Shipping to</div>
-
       <table cellpadding="0" cellspacing="0" border="0" width="100%"
         style="background:white;border:3px solid #2a2238;border-radius:18px;
           box-shadow:0 6px 0 rgba(42,34,56,0.85);">
         <tr>
           <td width="72" valign="middle" style="padding:18px 0 18px 20px;">
             <div style="width:56px;height:56px;border-radius:50%;
-              background:#ff8a3d;border:3px solid #2a2238;
-              text-align:center;
+              background:#ff8a3d;border:3px solid #2a2238;text-align:center;
               box-shadow:0 3px 0 rgba(42,34,56,0.85);">
               <table cellpadding="0" cellspacing="0" border="0" width="56" height="56">
                 <tr><td align="center" valign="middle">
@@ -363,7 +347,6 @@ function buildCustomerHtml(order, settings, origin) {
   </tr>
 
   ${order.customer_notes ? `
-  <!-- ── Notes ── -->
   <tr>
     <td style="padding:6px 28px 4px;">
       <table cellpadding="0" cellspacing="0" border="0" width="100%"
@@ -382,74 +365,53 @@ function buildCustomerHtml(order, settings, origin) {
     </td>
   </tr>` : ''}
 
-  <!-- ── What happens next ── -->
+  <!-- What happens next -->
   <tr>
     <td style="padding:6px 28px 4px;">
       <div style="display:inline-block;background:#6ddc8a;
         border:2.5px solid #2a2238;padding:4px 14px;border-radius:999px;
         font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:13px;
         text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;
-        transform:rotate(-1.5deg);
         box-shadow:0 3px 0 rgba(42,34,56,0.85);">What happens next</div>
-
       <table cellpadding="0" cellspacing="0" border="0" width="100%"
         style="background:white;border:3px solid #2a2238;border-radius:18px;
-          box-shadow:0 6px 0 rgba(42,34,56,0.85);padding:4px 0;">
+          box-shadow:0 6px 0 rgba(42,34,56,0.85);">
         <tr>
           <td style="padding:16px 18px 8px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
                 <td width="54" valign="top" style="padding-right:14px;padding-bottom:14px;">
                   <div style="width:40px;height:40px;border-radius:50%;
-                    background:#ff4d8d;border:3px solid #2a2238;
-                    text-align:center;line-height:36px;
+                    background:#ff4d8d;border:3px solid #2a2238;text-align:center;line-height:36px;
                     font-family:'Bagel Fat One',cursive;font-size:20px;color:white;">1</div>
                 </td>
                 <td valign="top" style="padding-bottom:14px;">
-                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;
-                    font-size:16px;color:#2a2238;">
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:16px;color:#2a2238;">
                     ${contact ? `You send payment via Apple Pay &#9757;&#65039;` : `We receive your order &#9757;&#65039;`}
                   </div>
-                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;
-                    font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">
-                    Takes 10 seconds, promise.
-                  </div>
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">Takes 10 seconds, promise.</div>
                 </td>
               </tr>
               <tr>
                 <td width="54" valign="top" style="padding-right:14px;padding-bottom:14px;">
                   <div style="width:40px;height:40px;border-radius:50%;
-                    background:#ffd23f;border:3px solid #2a2238;
-                    text-align:center;line-height:36px;
+                    background:#ffd23f;border:3px solid #2a2238;text-align:center;line-height:36px;
                     font-family:'Bagel Fat One',cursive;font-size:20px;color:#2a2238;">2</div>
                 </td>
                 <td valign="top" style="padding-bottom:14px;">
-                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;
-                    font-size:16px;color:#2a2238;">
-                    We pack your stickers (with a tiny doodle, free)
-                  </div>
-                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;
-                    font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">
-                    Usually within 1&ndash;2 days. Sometimes faster if it&rsquo;s snack time.
-                  </div>
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:16px;color:#2a2238;">We pack your stickers (with a tiny doodle, free)</div>
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">Usually within 1&ndash;2 days. Sometimes faster if it&rsquo;s snack time.</div>
                 </td>
               </tr>
               <tr>
                 <td width="54" valign="top" style="padding-right:14px;">
                   <div style="width:40px;height:40px;border-radius:50%;
-                    background:#6ddc8a;border:3px solid #2a2238;
-                    text-align:center;line-height:36px;
+                    background:#6ddc8a;border:3px solid #2a2238;text-align:center;line-height:36px;
                     font-family:'Bagel Fat One',cursive;font-size:20px;color:#2a2238;">3</div>
                 </td>
                 <td valign="top">
-                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;
-                    font-size:16px;color:#2a2238;">
-                    USPS shows up &middot; you stick them on everything
-                  </div>
-                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;
-                    font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">
-                    Laptops, lunchboxes, foreheads &mdash; we don&rsquo;t judge.
-                  </div>
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:16px;color:#2a2238;">USPS shows up &middot; you stick them on everything</div>
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">Laptops, lunchboxes, foreheads &mdash; we don&rsquo;t judge.</div>
                 </td>
               </tr>
             </table>
@@ -459,22 +421,20 @@ function buildCustomerHtml(order, settings, origin) {
     </td>
   </tr>
 
-  <!-- ── PS ── -->
+  <!-- PS -->
   <tr>
     <td style="padding:20px 32px 8px;text-align:center;">
-      <p style="font-family:'Caveat',cursive;font-size:22px;
-        color:#2a2238;opacity:0.85;margin:0;">
+      <p style="font-family:'Caveat',cursive;font-size:22px;color:#2a2238;opacity:0.85;margin:0;">
         Psst &mdash; questions? Just hit reply. A real human (mostly) will write back.
       </p>
     </td>
   </tr>
 
-  <!-- ── Footer ── -->
+  <!-- Footer -->
   <tr>
     <td style="background:#fff1cf;border-top:3px dashed #2a2238;
-      padding:22px 28px 24px;text-align:center;margin-top:12px;">
-      <p style="font-family:'Caveat',cursive;font-size:24px;
-        color:#2a2238;margin:0 0 4px;">
+      padding:22px 28px 24px;text-align:center;">
+      <p style="font-family:'Caveat',cursive;font-size:24px;color:#2a2238;margin:0 0 4px;">
         stick &lsquo;em everywhere &#10024;<br/>
         &mdash; the Sticker Stop crew
       </p>
@@ -487,38 +447,55 @@ function buildCustomerHtml(order, settings, origin) {
   </tr>
 
 </table>
-<!-- /Email card -->
-
 </td></tr>
 </table>
-<!-- /Outer wrapper -->
-
 </body>
 </html>`;
 }
 
-// ── Main export ───────────────────────────────────────────────────────────────
+// ── Send via Resend SDK ───────────────────────────────────────────────────────
 
-export async function sendOrderEmail(order, settings, origin = '') {
-  if (!settings.smtp_host) return;
+async function sendViaResend(apiKey, { from, to, subject, text, html }) {
+  const resend = new Resend(apiKey);
+  const result = await resend.emails.send({ from, to, subject, text, html });
+  if (result.error) throw new Error(result.error.message);
+  return result;
+}
 
+// ── Send via SMTP (nodemailer fallback) ───────────────────────────────────────
+
+async function sendViaSmtp(settings, { from, to, subject, text, html }) {
   const transporter = nodemailer.createTransport({
     host:   settings.smtp_host,
     port:   parseInt(settings.smtp_port || '587', 10),
     secure: parseInt(settings.smtp_port || '587', 10) === 465,
     auth: { user: settings.smtp_user, pass: settings.smtp_pass },
   });
+  await transporter.sendMail({ from, to, subject, text, html });
+}
 
-  const from = settings.smtp_from || settings.smtp_user;
+// ── Main export ───────────────────────────────────────────────────────────────
+
+export async function sendOrderEmail(order, settings, origin = '') {
+  const useResend = !!settings.resend_api_key;
+  const useSmtp   = !useResend && !!settings.smtp_host;
+  if (!useResend && !useSmtp) return; // nothing configured
+
+  const from = settings.smtp_from || (useResend ? 'Sticker Stop <orders@stickerstop.com>' : settings.smtp_user);
+
+  async function send(msg) {
+    if (useResend) return sendViaResend(settings.resend_api_key, msg);
+    return sendViaSmtp(settings, msg);
+  }
 
   // Admin plain-text notification
   const recipients = (settings.notification_emails || '')
     .split(',').map(e => e.trim()).filter(Boolean);
 
   if (recipients.length) {
-    await transporter.sendMail({
+    await send({
       from,
-      to:      recipients.join(', '),
+      to:      recipients,
       subject: `New Sticker Stop Order #${order.id} — ${order.customer_name}`,
       text:    buildAdminText(order),
     });
@@ -530,19 +507,19 @@ export async function sendOrderEmail(order, settings, origin = '') {
     const text = [
       `Hi ${order.customer_name}!`,
       ``,
-      `Thanks so much for your order #${order.id}! We're so excited to get your stickers to you.`,
+      `Thanks for your order #${order.id}! We're so excited to get your stickers to you.`,
       ``,
       ...order.items.map(i => `  • ${i.name}  ×${i.qty}  $${(i.price * i.qty).toFixed(2)}`),
       ``,
       `Total: $${Number(order.total).toFixed(2)}`,
       settings.apple_pay_contact
-        ? `\nPlease send payment via Apple Pay to: ${settings.apple_pay_contact}\nInclude order #${order.id} in your payment note.`
+        ? `\nPlease send payment via Apple Pay to: ${settings.apple_pay_contact}\nInclude order #${order.id} in your note.`
         : '',
       ``,
       `— The Sticker Stop Team`,
-    ].join('\n');
+    ].filter(l => l !== undefined).join('\n');
 
-    await transporter.sendMail({
+    await send({
       from,
       to:      order.customer_email,
       subject: `🎉 Order #${order.id} confirmed — let's get those stickers shipped!`,
