@@ -259,6 +259,9 @@ function buildAdminHtml(order, origin) {
     </td>
   </tr>
 
+  <!-- Spacer -->
+  <tr><td style="padding:18px 0 0;"></td></tr>
+
   <!-- Footer -->
   <tr>
     <td style="background:#fff1cf;border-top:3px dashed #2a2238;
