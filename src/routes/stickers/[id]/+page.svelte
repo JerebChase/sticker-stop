@@ -1,46 +1,65 @@
 <script>
   import { cart } from '$lib/stores/cart';
-  import { PRICE_SHEET, PRICE_PAIR } from '$lib/data';
 
   let { data } = $props();
   let set = $derived(data.set);
+  let sheets = $derived(set.sheets ?? []);
 
-  let choice = $state('pair'); // 'a' | 'b' | 'pair'
+  // choice: 'set' | number (index into sheets[])
+  let choice = $state(sheets.length > 1 ? 'set' : 0);
   let qty = $state(1);
   let added = $state(false);
 
-  let price = $derived(choice === 'pair' ? PRICE_PAIR : PRICE_SHEET);
+  let isSet = $derived(choice === 'set');
+  let price = $derived(isSet ? set.priceSet : set.priceSheet);
   let lineTotal = $derived(price * qty);
 
   let choiceLabel = $derived(
-    choice === 'pair'
-      ? 'Pair · 2 sheets'
-      : choice === 'a'
-        ? set.sheetA.name
-        : set.sheetB.name
+    isSet
+      ? `Full set · ${sheets.length} sheet${sheets.length !== 1 ? 's' : ''}`
+      : sheets[choice]?.name ?? ''
+  );
+
+  // Savings when buying the full set vs individual sheets
+  let setDiscount = $derived(
+    sheets.length > 1
+      ? Math.max(0, set.priceSheet * sheets.length - set.priceSet)
+      : 0
+  );
+
+  // CSS grid columns: each sheet 1fr, set card 2fr (wider)
+  let gridCols = $derived(
+    sheets.length <= 1
+      ? '1fr'
+      : sheets.map(() => '1fr').join(' ') + ' 2fr'
   );
 
   function addToCart() {
-    if (choice === 'pair') {
+    if (isSet) {
       cart.add({
-        kind: 'pair',
-        setId: set.id,
-        sheetId: `${set.id}-pair`,
-        name: `${set.name} — Both sheets`,
-        image: set.image,
-        side: 'full',
-        price: PRICE_PAIR,
+        kind:    'set',
+        setId:   set.id,
+        sheetId: `${set.id}-set`,
+        name:    `${set.name} — Full set`,
+        image:   set.image,
+        side:    'full',
+        price:   set.priceSet,
       }, qty);
     } else {
-      const sheet = choice === 'a' ? set.sheetA : set.sheetB;
+      const sheet = sheets[choice];
+      // For 2-sheet sets without per-sheet images, use L/R crop of the combined image
+      const hasOwnImage = !!sheet.image;
+      const side = hasOwnImage
+        ? 'full'
+        : (sheets.length === 2 ? (choice === 0 ? 'left' : 'right') : 'full');
       cart.add({
-        kind: 'sheet',
-        setId: set.id,
+        kind:    'sheet',
+        setId:   set.id,
         sheetId: sheet.id,
-        name: `${set.name} — ${sheet.name}`,
-        image: set.image,
-        side: choice === 'a' ? 'left' : 'right',
-        price: PRICE_SHEET,
+        name:    `${set.name} — ${sheet.name}`,
+        image:   sheet.image || set.image,
+        side,
+        price:   set.priceSheet,
       }, qty);
     }
     added = true;
@@ -64,11 +83,13 @@
     </div>
     <div class="title-prices">
       <div class="price-tag white" style="transform:rotate(-4deg)">
-        <span class="hole"></span><span class="price-val">${PRICE_SHEET}</span>
+        <span class="hole"></span><span class="price-val">${set.priceSheet}</span>
       </div>
-      <div class="price-tag yellow" style="transform:rotate(6deg)">
-        <span class="hole"></span><span class="price-val">${PRICE_PAIR}</span>
-      </div>
+      {#if sheets.length > 1}
+        <div class="price-tag yellow" style="transform:rotate(6deg)">
+          <span class="hole"></span><span class="price-val">${set.priceSet}</span>
+        </div>
+      {/if}
     </div>
   </div>
 
@@ -76,19 +97,16 @@
   <div class="choices-wrap">
     <h2 class="choose-heading">What do you want?</h2>
 
-    <div class="options-grid">
-      <!-- Sheet A & B -->
-      {#each [
-        { key: 'a', sheet: set.sheetA, side: 'left' },
-        { key: 'b', sheet: set.sheetB, side: 'right' },
-      ] as sc}
+    <div class="options-grid" style="grid-template-columns:{gridCols}">
+      <!-- Individual sheet cards -->
+      {#each sheets as sheet, i}
         <button
           class="sheet-choice sticker"
-          class:selected={choice === sc.key}
+          class:selected={choice === i}
           style="--accent:{set.color}"
-          onclick={() => choice = sc.key}
+          onclick={() => choice = i}
         >
-          {#if choice === sc.key}
+          {#if choice === i}
             <div class="check-badge" style="background:{set.color}">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M5 12l5 5L20 7"/>
@@ -96,57 +114,64 @@
             </div>
           {/if}
           <div class="sc-img-wrap">
-            {#if sc.sheet.image}
-              <img src={sc.sheet.image} alt={sc.sheet.name} class="sc-img-direct" />
+            {#if sheet.image}
+              <img src={sheet.image} alt={sheet.name} class="sc-img-direct" />
             {:else}
               <img
                 src={set.image}
-                alt={sc.sheet.name}
+                alt={sheet.name}
                 class="sc-img"
-                style="left:{sc.side === 'left' ? '0' : '-100%'}"
+                style="left:{sheets.length === 2 ? (i === 0 ? '0' : '-100%') : '0'}"
               />
             {/if}
           </div>
           <div class="sc-body">
-            <div class="sc-name">{sc.sheet.name}</div>
-            <div class="sc-price">${PRICE_SHEET} · one sheet</div>
-            <p class="sc-blurb">{sc.sheet.blurb}</p>
+            <div class="sc-name">{sheet.name}</div>
+            <div class="sc-price">${set.priceSheet} · one sheet</div>
+            <p class="sc-blurb">{sheet.blurb}</p>
           </div>
         </button>
       {/each}
 
-      <!-- Pair choice -->
-      <button
-        class="pair-choice sticker"
-      class:selected={choice === 'pair'}
-      style="--accent:{set.color}"
-      onclick={() => choice = 'pair'}
-    >
-      {#if choice === 'pair'}
-        <div class="check-badge" style="background:{set.color}">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 12l5 5L20 7"/>
-          </svg>
-        </div>
+      <!-- Full set card (only shown when 2+ sheets) -->
+      {#if sheets.length > 1}
+        <button
+          class="pair-choice sticker"
+          class:selected={choice === 'set'}
+          style="--accent:{set.color}"
+          onclick={() => choice = 'set'}
+        >
+          {#if choice === 'set'}
+            <div class="check-badge" style="background:{set.color}">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12l5 5L20 7"/>
+              </svg>
+            </div>
+          {/if}
+          <div class="ribbon">BEST DEAL!</div>
+          <div class="pair-img-wrap">
+            {#if sheets.every(s => s.image)}
+              {#each sheets.slice(0, 4) as sheet}
+                <img src={sheet.image} alt={sheet.name} class="pair-half" />
+              {/each}
+            {:else}
+              <img src={set.image} alt="{set.name} full set" class="pair-img" />
+            {/if}
+          </div>
+          <div class="pair-body">
+            <div class="pair-title">Get the full set · {sheets.length} sheets</div>
+            <div class="pair-pricing">
+              {#if setDiscount > 0}
+                <span class="strikethrough">${(set.priceSheet * sheets.length).toFixed(2)}</span>
+                ${set.priceSet} · saves you ${setDiscount.toFixed(2)}
+              {:else}
+                ${set.priceSet} · all {sheets.length} sheets
+              {/if}
+            </div>
+            <p class="pair-blurb">Why pick? Stick 'em all. The full set for less than buying separately.</p>
+          </div>
+        </button>
       {/if}
-      <div class="ribbon">BEST DEAL!</div>
-      <div class="pair-img-wrap">
-        {#if set.sheetA.image && set.sheetB.image}
-          <img src={set.sheetA.image} alt="{set.sheetA.name}" class="pair-half" />
-          <img src={set.sheetB.image} alt="{set.sheetB.name}" class="pair-half" />
-        {:else}
-          <img src={set.image} alt="{set.name} pair" class="pair-img" />
-        {/if}
-      </div>
-      <div class="pair-body">
-        <div class="pair-title">Get the pair · both sheets</div>
-        <div class="pair-pricing">
-          <span class="strikethrough">${PRICE_SHEET * 2}</span>
-          ${PRICE_PAIR} · saves you $1
-        </div>
-        <p class="pair-blurb">Why pick? Stick 'em all. Both sheets for less than buying separately.</p>
-      </div>
-    </button>
     </div><!-- end options-grid -->
 
     <!-- Add to cart row -->
@@ -167,7 +192,9 @@
       </button>
     </div>
 
-    <p class="psst">Psst — the pair saves you a buck!</p>
+    {#if setDiscount > 0}
+      <p class="psst">Psst — the full set saves you ${setDiscount.toFixed(2)}!</p>
+    {/if}
   </div>
 </div>
 
@@ -278,30 +305,24 @@
   }
 
   /* ── Options grid ── */
-  /* Two-row subgrid: row 1 = images (height driven by pair), row 2 = text */
+  /* grid-template-columns is set dynamically via inline style */
   .options-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 2fr;
     grid-template-rows: auto auto;
     column-gap: 14px;
     row-gap: 0;
   }
 
-  /* Small: all three cards stacked in a single column */
+  /* Stack everything on small screens */
   @media (max-width: 720px) {
     .options-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr !important;
       grid-template-rows: auto;
       row-gap: 14px;
     }
-    .sheet-choice {
-      grid-row: auto !important;
-      display: flex !important;
-      flex-direction: column;
-    }
+    .sheet-choice,
     .pair-choice {
       grid-row: auto !important;
-      grid-column: auto;
       display: flex !important;
       flex-direction: column;
     }
@@ -322,7 +343,6 @@
     transition: outline 0.15s, transform 0.2s;
     width: 100%;
     overflow: visible;
-    /* Subgrid: span both rows, children align to parent grid rows */
     grid-row: span 2;
     display: grid;
     grid-template-rows: subgrid;
@@ -356,10 +376,8 @@
     border-radius: 12px;
     overflow: hidden;
     background: var(--paper-2);
-    /* Height is set by the subgrid image row — no aspect-ratio needed */
   }
 
-  /* Half-crop fallback (when only a combined image exists) */
   .sc-img {
     position: absolute;
     top: 0;
@@ -370,7 +388,6 @@
     display: block;
   }
 
-  /* Direct image (when each sheet has its own image) */
   .sc-img-direct {
     width: 100%;
     height: 100%;
@@ -397,7 +414,7 @@
 
   .sc-blurb { font-size: 13.5px; line-height: 1.4; opacity: 0.75; margin: 0; }
 
-  /* ── Pair choice ── */
+  /* ── Full set choice ── */
   .pair-choice {
     position: relative;
     background: white;
@@ -411,7 +428,6 @@
     transition: outline 0.15s, transform 0.2s;
     width: 100%;
     overflow: visible;
-    /* Subgrid: span both rows, children align to parent grid rows */
     grid-row: span 2;
     display: grid;
     grid-template-rows: subgrid;
@@ -445,14 +461,12 @@
     border-radius: 12px;
     overflow: hidden;
     background: var(--paper-2);
-    aspect-ratio: 1197 / 884; /* Drives the image row height for the whole grid */
+    aspect-ratio: 1197 / 884;
+    display: flex;
   }
 
-  /* Fallback: single combined image */
   .pair-img { width: 100%; height: 100%; object-fit: cover; }
 
-  /* Side-by-side when individual sheet images exist */
-  .pair-img-wrap { display: flex; }
   .pair-half {
     flex: 1;
     min-width: 0;

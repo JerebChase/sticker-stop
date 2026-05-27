@@ -193,7 +193,7 @@
               </div>
               <div class="item-info">
                 <span class="item-name">{item.name}</span>
-                <span class="item-kind">{item.kind === 'pair' ? 'Pair · 2 sheets' : 'Single sheet'}</span>
+                <span class="item-kind">{item.kind === 'set' || item.kind === 'pair' ? 'Full set' : 'Single sheet'}</span>
                 <div class="item-controls">
                   <div class="item-stepper">
                     <button
