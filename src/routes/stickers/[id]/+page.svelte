@@ -174,6 +174,10 @@
 <style>
   .page { padding: 8px 0 80px; position: relative; z-index: 2; }
 
+  @media (max-width: 600px) {
+    .page { padding-inline: 20px; }
+  }
+
   .back-link {
     font-family: 'Fredoka', sans-serif;
     font-size: 15px;
@@ -283,10 +287,10 @@
     row-gap: 0;
   }
 
-  /* Small: A + B top row, pair full-width bottom row */
+  /* Small: all three cards stacked in a single column */
   @media (max-width: 720px) {
     .options-grid {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       grid-template-rows: auto;
       row-gap: 14px;
     }
@@ -297,7 +301,7 @@
     }
     .pair-choice {
       grid-row: auto !important;
-      grid-column: span 2;
+      grid-column: auto;
       display: flex !important;
       flex-direction: column;
     }
