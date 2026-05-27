@@ -41,7 +41,7 @@
         setId:   set.id,
         sheetId: `${set.id}-set`,
         name:    `${set.name} — Full set`,
-        image:   set.image,
+        image:   sheets[0]?.image || set.image || '',
         side:    'full',
         price:   set.priceSet,
       }, qty);
@@ -150,13 +150,9 @@
           {/if}
           <div class="ribbon">BEST DEAL!</div>
           <div class="pair-img-wrap">
-            {#if sheets.every(s => s.image)}
-              {#each sheets.slice(0, 4) as sheet}
-                <img src={sheet.image} alt={sheet.name} class="pair-half" />
-              {/each}
-            {:else}
-              <img src={set.image} alt="{set.name} full set" class="pair-img" />
-            {/if}
+            {#each sheets.slice(0, 2).filter(s => s.image) as sheet}
+              <img src={sheet.image} alt={sheet.name} class="pair-half" />
+            {/each}
           </div>
           <div class="pair-body">
             <div class="pair-title">Get the full set · {sheets.length} sheets</div>

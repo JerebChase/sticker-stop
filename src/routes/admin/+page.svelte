@@ -531,32 +531,6 @@
       <span class="field-label">Tagline</span>
       <input type="text" bind:value={f.tagline} placeholder="Tiny clay friends from forest & shore." />
     </label>
-    <div class="field">
-      <span class="field-label">Image</span>
-      <div class="img-upload-wrap">
-        {#if f.image}
-          <img src={f.image} alt="preview" class="img-preview" />
-        {/if}
-        <div class="img-controls">
-          <label class="upload-btn" class:uploading={uploadingImage}>
-            {#if uploadingImage}Uploading…{:else if f.image}Change image{:else}Upload image{/if}
-            <input
-              type="file"
-              accept="image/*"
-              style="display:none"
-              disabled={uploadingImage}
-              onchange={(e) => handleImageUpload(e, f, f.id || 'new')}
-            />
-          </label>
-          <input
-            type="text"
-            bind:value={f.image}
-            placeholder="or paste a URL"
-            class="url-fallback"
-          />
-        </div>
-      </div>
-    </div>
 
     <div class="sheets-section">
       <div class="sheets-header">
