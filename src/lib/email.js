@@ -378,7 +378,7 @@ function buildCustomerHtml(order, settings, origin) {
               max-width:380px;line-height:1.6;">
               Thanks for buying my stickers! &#127881; We accept
               <strong>Apple Pay or cash</strong> &mdash; you can send your payment
-              to my mom or dad. Just reply to this email and we&rsquo;ll send you their info!
+              to my mom or dad. Enjoy!
             </p>
           </td>
         </tr>
@@ -652,7 +652,7 @@ function buildCustomerHtml(order, settings, origin) {
                   <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:16px;color:#2a2238;">
                     You send payment (Apple Pay or cash) &#9757;&#65039;
                   </div>
-                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">Reply to this email and we&rsquo;ll send you payment details!</div>
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">Apple Pay or cash both work great!</div>
                 </td>
               </tr>
               <tr>
@@ -756,7 +756,7 @@ export async function sendOrderEmail(order, settings, origin = '') {
       ...order.items.map(i => `  • ${i.name}  ×${i.qty}  $${(i.price * i.qty).toFixed(2)}`),
       ``,
       `Total: $${Number(order.total).toFixed(2)}`,
-      `\nThanks for buying my stickers! We accept Apple Pay or cash — you can send your payment to my mom or dad. Just reply to this email and we'll send you their info!`,
+      `\nThanks for buying my stickers! We accept Apple Pay or cash — you can send your payment to my mom or dad. Enjoy!`,
       ``,
       `— The Sticker Stop Team`,
     ].filter(l => l !== undefined).join('\n');
