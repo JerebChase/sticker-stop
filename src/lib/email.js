@@ -366,31 +366,29 @@ function buildCustomerHtml(order, settings, origin) {
     <td style="padding:0 22px 22px;">
       <table cellpadding="0" cellspacing="0" border="0" width="100%">
         <tr>
-          <td style="background:#2a2238;border-radius:22px;padding:28px 24px;
+          <td style="background:#ffd23f;border-radius:22px;padding:24px 22px;
             text-align:center;border:3px solid #2a2238;
-            box-shadow:0 8px 0 rgba(42,34,56,0.85);">
-            <div style="display:inline-block;background:#ffd23f;color:#2a2238;
-              border:3px solid white;border-radius:999px;padding:4px 18px;
-              margin-bottom:14px;
-              font-family:'Bagel Fat One',cursive;font-size:28px;line-height:1;">$${total} total</div>
+            box-shadow:0 6px 0 rgba(42,34,56,0.85);">
+            <div style="font-size:28px;margin-bottom:10px;">💸</div>
             <h3 style="font-family:'Bagel Fat One',cursive;font-size:26px;
-              margin:0 0 6px;color:white;letter-spacing:-0.3px;">
-              One last thing &mdash; let&rsquo;s get paid!
+              margin:0 0 10px;color:#2a2238;letter-spacing:-0.3px;">
+              One tiny thing!
             </h3>
             <p style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;
-              font-size:15px;color:rgba(255,255,255,0.85);margin:0 auto 18px;
-              max-width:380px;line-height:1.5;">
-              Send payment via Apple Pay to finish your order. As soon as it&rsquo;s paid, ${isPickup ? 'your order will be ready for pickup' : 'your stickers go in the mail'}. Pinky promise.
+              font-size:16px;color:#2a2238;margin:0 auto 16px;
+              max-width:360px;line-height:1.5;">
+              Thanks for buying my stickers! We accept <strong>Apple Pay or cash</strong> &mdash;
+              you can send your payment to my mom or dad:
             </p>
-            <div style="display:inline-block;background:white;color:#2a2238;
+            <div style="display:inline-block;background:#2a2238;color:white;
               font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:19px;
-              padding:14px 28px;border-radius:999px;border:3px solid #2a2238;
-              box-shadow:0 6px 0 #ff4d8d;letter-spacing:-0.2px;">
-              &#xF8FF;&nbsp; Send $${total} &rarr; ${contact}
+              padding:12px 28px;border-radius:999px;border:3px solid #2a2238;
+              box-shadow:0 5px 0 #ff4d8d;letter-spacing:-0.2px;">
+              ${contact}
             </div>
-            <div style="margin-top:14px;font-family:'Fredoka',Arial,sans-serif;
-              font-weight:500;font-size:13px;color:rgba(255,255,255,0.65);">
-              Include order #${order.id} in your payment note so we can match it up!
+            <div style="margin-top:12px;font-family:'Caveat',cursive;
+              font-size:16px;color:#2a2238;opacity:0.75;">
+              Include order #${order.id} in your note &mdash; thanks! &#128591;
             </div>
           </td>
         </tr>
@@ -495,7 +493,7 @@ function buildCustomerHtml(order, settings, origin) {
       </h1>
       <p style="font-family:'Caveat',cursive;font-size:24px;
         color:#2a2238;opacity:0.85;margin:0 0 8px;">
-        ${isPickup ? 'Your order is ready for pickup whenever you are! &#127881;' : 'Your stickers are picked, packed, and waiting on payment &#10024;'}
+        ${isPickup ? 'Your order is ready for pickup whenever you are! &#127881;' : 'Your stickers are picked, packed, and getting ready! &#10024;'}
       </p>
     </td>
   </tr>
@@ -662,9 +660,9 @@ function buildCustomerHtml(order, settings, origin) {
                 </td>
                 <td valign="top" style="padding-bottom:14px;">
                   <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:16px;color:#2a2238;">
-                    ${contact ? `You send payment via Apple Pay &#9757;&#65039;` : `We receive your order &#9757;&#65039;`}
+                    ${contact ? `You send payment (Apple Pay or cash) &#9757;&#65039;` : `We receive your order &#9757;&#65039;`}
                   </div>
-                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">Takes 10 seconds, promise.</div>
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">${contact ? 'Apple Pay or cash — either works great!' : 'We\'ll be in touch soon!'}</div>
                 </td>
               </tr>
               <tr>
@@ -769,7 +767,7 @@ export async function sendOrderEmail(order, settings, origin = '') {
       ``,
       `Total: $${Number(order.total).toFixed(2)}`,
       settings.apple_pay_contact
-        ? `\nPlease send payment via Apple Pay to: ${settings.apple_pay_contact}\nInclude order #${order.id} in your note.`
+        ? `\nThanks for buying my stickers! We accept Apple Pay or cash — you can send payment to my mom or dad: ${settings.apple_pay_contact}\nInclude order #${order.id} in your note!`
         : '',
       ``,
       `— The Sticker Stop Team`,
