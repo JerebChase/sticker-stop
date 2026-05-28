@@ -114,7 +114,7 @@
 
       <div class="pay-callout">
         <p class="pay-callout-msg">
-          Thanks for buying my stickers! 🎉 We accept <strong>Apple Pay or cash</strong> — you can send your payment to my mom or dad. Check your confirmation email for details!
+          Thanks for buying my stickers! 🎉 We accept <strong>Apple Pay or cash</strong> — you can send your payment to my mom or dad. Enjoy!
         </p>
       </div>
 
