@@ -425,6 +425,7 @@
             <div
               class="set-row"
               class:drag-over={dragTarget === i && dragIndex !== i}
+              class:editing={editingId === set.id}
               draggable={editingId === null}
               ondragstart={() => onDragStart(i)}
               ondragover={(e) => onDragOver(e, i)}
@@ -993,6 +994,11 @@
     background: white;
     border-radius: 14px;
     border: 2.5px solid var(--ink);
+  }
+
+  .set-row.editing {
+    background: transparent;
+    border: none;
   }
 
   .set-row[draggable="true"] { cursor: grab; }
