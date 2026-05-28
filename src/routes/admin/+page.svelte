@@ -23,6 +23,8 @@
   let editingId = $state(null); // id of set being edited, or 'new'
   let editForm = $state(null);  // the working copy of the form
   let uploadingImage = $state(false);
+  let dragIndex = $state(null);
+  let dragTarget = $state(null);
 
   function blankSet() {
     return {
@@ -32,6 +34,30 @@
       priceSheet: 2,
       priceSet: 2,
     };
+  }
+
+  function onDragStart(i) { dragIndex = i; }
+  function onDragOver(e, i) { e.preventDefault(); dragTarget = i; }
+  function onDragLeave() { dragTarget = null; }
+  function onDragEnd() { dragIndex = null; dragTarget = null; }
+
+  function onDrop(i) {
+    if (dragIndex === null || dragIndex === i) { dragIndex = null; dragTarget = null; return; }
+    const next = [...sets];
+    const [moved] = next.splice(dragIndex, 1);
+    next.splice(i, 0, moved);
+    sets = next;
+    dragIndex = null;
+    dragTarget = null;
+    saveOrder();
+  }
+
+  async function saveOrder() {
+    await fetch('/api/admin/sticker-sets', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+      body: JSON.stringify(sets.map((s, i) => ({ id: s.id, sortOrder: i }))),
+    });
   }
 
   async function loadSets() {
@@ -77,6 +103,7 @@
     // New sets: sheet IDs are generated server-side
 
     const isNew = editingId === 'new';
+    if (isNew) editForm.sortOrder = sets.length;
     const url = isNew ? '/api/admin/sticker-sets' : `/api/admin/sticker-sets/${editingId}`;
     const method = isNew ? 'POST' : 'PUT';
     const res = await fetch(url, {
@@ -394,8 +421,17 @@
           {/if}
 
           <!-- Existing sets list -->
-          {#each sets as set}
-            <div class="set-row">
+          {#each sets as set, i}
+            <div
+              class="set-row"
+              class:drag-over={dragTarget === i && dragIndex !== i}
+              draggable={editingId === null}
+              ondragstart={() => onDragStart(i)}
+              ondragover={(e) => onDragOver(e, i)}
+              ondragleave={onDragLeave}
+              ondrop={() => onDrop(i)}
+              ondragend={onDragEnd}
+            >
               {#if editingId === set.id}
                 <div class="set-edit-card">
                   <h3 class="edit-card-title">Editing: {set.name}</h3>
@@ -408,10 +444,20 @@
                 </div>
               {:else}
                 <div class="set-summary">
+                  <div class="drag-handle" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <circle cx="5" cy="4" r="1.5" fill="currentColor"/>
+                      <circle cx="11" cy="4" r="1.5" fill="currentColor"/>
+                      <circle cx="5" cy="8" r="1.5" fill="currentColor"/>
+                      <circle cx="11" cy="8" r="1.5" fill="currentColor"/>
+                      <circle cx="5" cy="12" r="1.5" fill="currentColor"/>
+                      <circle cx="11" cy="12" r="1.5" fill="currentColor"/>
+                    </svg>
+                  </div>
                   <div class="set-swatch" style="background:{set.color}"></div>
                   <div class="set-info">
                     <span class="set-name">{set.name}</span>
-                    <span class="set-meta">{set.active ? 'Active' : 'Hidden'} · order {set.sortOrder}</span>
+                    <span class="set-meta">{set.active ? 'Active' : 'Hidden'}</span>
                   </div>
                   <div class="set-row-actions">
                     <button class="row-edit-btn" onclick={() => startEdit(set)}>Edit</button>
@@ -496,10 +542,6 @@
 {#snippet setForm(f)}
   <div class="set-form">
     <div class="set-form-row">
-      <label class="field">
-        <span class="field-label">Sort order</span>
-        <input type="number" bind:value={f.sortOrder} min="0" />
-      </label>
       <label class="field">
         <span class="field-label">Accent color</span>
         <div class="color-select-row">
@@ -953,6 +995,24 @@
     border: 2.5px solid var(--ink);
   }
 
+  .set-row[draggable="true"] { cursor: grab; }
+  .set-row[draggable="true"]:active { cursor: grabbing; }
+
+  .set-row.drag-over {
+    outline: 2.5px solid var(--blue);
+    outline-offset: -2px;
+    background: #e8f7ff;
+    border-radius: 14px;
+  }
+
+  .drag-handle {
+    color: var(--ink);
+    opacity: 0.3;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+
   .set-summary {
     display: flex;
     align-items: center;
@@ -1024,13 +1084,9 @@
 
   .set-form-row {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: 1fr auto;
     gap: 12px;
     align-items: end;
-  }
-
-  @media (max-width: 700px) {
-    .set-form-row { grid-template-columns: 1fr 1fr; }
   }
 
   .color-select-row { display: flex; gap: 8px; flex-wrap: wrap; }

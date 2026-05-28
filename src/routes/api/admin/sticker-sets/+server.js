@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { listAllStickerSets, upsertStickerSet } from '$lib/db';
+import { listAllStickerSets, upsertStickerSet, updateStickerSetOrder } from '$lib/db';
 import { ADMIN_PASSWORD } from '$env/static/private';
 
 function auth(request) {
@@ -14,6 +14,17 @@ export async function GET({ request }) {
     return json(sets);
   } catch (err) {
     return json({ error: 'Database not configured.' }, { status: 503 });
+  }
+}
+
+export async function PATCH({ request }) {
+  if (!auth(request)) return json({ error: 'Unauthorized.' }, { status: 401 });
+  try {
+    const order = await request.json(); // [{ id, sortOrder }]
+    await Promise.all(order.map(({ id, sortOrder }) => updateStickerSetOrder(id, sortOrder)));
+    return json({ ok: true });
+  } catch (err) {
+    return json({ error: err.message ?? 'Failed to reorder.' }, { status: 500 });
   }
 }
 

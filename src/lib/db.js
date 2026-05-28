@@ -250,6 +250,11 @@ export async function updateOrder(id, fields) {
   }
 }
 
+export async function updateStickerSetOrder(id, sortOrder) {
+  const db = sql();
+  await db`UPDATE sticker_sets SET sort_order = ${sortOrder} WHERE id = ${id}`;
+}
+
 export async function saveFeedback(data) {
   const db = sql();
   const [row] = await db`
