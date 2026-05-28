@@ -39,6 +39,10 @@
   {@render children()}
 </main>
 
+{#if currentPath !== '/feedback'}
+  <a href="/feedback" class="fab" aria-label="Send feedback">💬</a>
+{/if}
+
 <footer>
   <div class="max-w footer-inner">
     <span class="footer-text">Made with stickers, by stickers, for stickers.</span>
@@ -233,5 +237,34 @@
     position: absolute;
     animation: bob 6s ease-in-out infinite;
     opacity: 0.55;
+  }
+
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 200;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--pink);
+    border: 3px solid var(--ink);
+    box-shadow: 0 6px 0 var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .fab:hover {
+    transform: translateY(-3px) scale(1.08);
+    box-shadow: 0 9px 0 var(--ink);
+  }
+
+  .fab:active {
+    transform: translateY(3px);
+    box-shadow: 0 3px 0 var(--ink);
   }
 </style>
