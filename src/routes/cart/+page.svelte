@@ -2,7 +2,6 @@
   import { cart } from '$lib/stores/cart';
 
   let { data } = $props();
-  const paymentContact = data.paymentContact || '';
 
   let name = $state('');
   let email = $state('');
@@ -113,15 +112,11 @@
           : "We've saved your order. Check your email for payment info!"}
       </p>
 
-      {#if paymentContact}
-        <div class="pay-callout">
-          <p class="pay-callout-msg">
-            We accept <strong>Apple Pay or cash</strong> — you can send your payment to my mom or dad:
-          </p>
-          <div class="pay-callout-contact">{paymentContact}</div>
-          <p class="pay-callout-note">Include order #{success.orderId} in your note, thanks! 🙏</p>
-        </div>
-      {/if}
+      <div class="pay-callout">
+        <p class="pay-callout-msg">
+          Thanks for buying my stickers! 🎉 We accept <strong>Apple Pay or cash</strong> — you can send your payment to my mom or dad. Check your confirmation email for details!
+        </p>
+      </div>
 
       <div class="receipt">
         <div class="receipt-header">

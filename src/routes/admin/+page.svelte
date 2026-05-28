@@ -11,7 +11,6 @@
   // Settings
   let settings = $state({
     notification_emails: '',
-    apple_pay_contact: '',
   });
   let newPassword = $state('');
   let settingsSaved = $state(false);
@@ -411,12 +410,6 @@
         <label class="field">
           <span class="field-label">Send new order alerts to (comma-separated)</span>
           <input type="text" bind:value={settings.notification_emails} placeholder="you@example.com" />
-        </label>
-
-        <h2 class="settings-heading">Payment</h2>
-        <label class="field">
-          <span class="field-label">Apple Pay contact (phone number or Cashtag shown in confirmation email)</span>
-          <input type="text" bind:value={settings.apple_pay_contact} placeholder="$stickerstop or +1 (555) 000-0000" />
         </label>
 
         <h2 class="settings-heading">Security</h2>

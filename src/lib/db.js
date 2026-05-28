@@ -99,13 +99,12 @@ export async function getSettings() {
   const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
   return {
     notification_emails: map.notification_emails ?? '',
-    apple_pay_contact:   map.apple_pay_contact   ?? '',
   };
 }
 
 export async function updateSettings(updates) {
   const db = sql();
-  const allowed = ['notification_emails', 'apple_pay_contact'];
+  const allowed = ['notification_emails'];
   for (const key of allowed) {
     if (updates[key] !== undefined && updates[key] !== '') {
       await db`
