@@ -48,7 +48,7 @@
 
 <footer>
   <div class="max-w footer-inner">
-    <span class="footer-text">Happy stickering</span>
+    <span class="footer-text">Happy stickering!</span>
     <span class="footer-copy">© {new Date().getFullYear()} Sticker Stop</span>
   </div>
 </footer>
