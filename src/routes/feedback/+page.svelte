@@ -14,7 +14,7 @@
     { emoji: '🤔', label: 'Meh', color: 'var(--yellow)' },
     { emoji: '😊', label: 'Good', color: 'var(--mint)' },
     { emoji: '🤩', label: 'Great', color: 'var(--blue)' },
-    { emoji: '🥳', label: 'stickerrific!', color: 'var(--pink)' },
+    { emoji: '🥳', label: 'Stickerrific!', color: 'var(--pink)' },
   ];
 
   const topicOptions = [
