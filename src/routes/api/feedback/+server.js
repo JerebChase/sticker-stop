@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { Resend } from 'resend';
 import { RESEND_API_KEY, EMAIL_FROM } from '$env/static/private';
+import { getSettings } from '$lib/db';
 
 export async function POST({ request }) {
   const body = await request.json();
@@ -10,15 +11,21 @@ export async function POST({ request }) {
     return json({ error: 'Message is required.' }, { status: 400 });
   }
 
-  const resend = new Resend(RESEND_API_KEY);
+  let recipientList = (notificationEmails || '')
+    .split(',').map(e => e.trim()).filter(Boolean);
 
-  const recipients = notificationEmails
-    ? notificationEmails.split(',').map(e => e.trim()).filter(Boolean)
-    : [];
+  if (!recipientList.length) {
+    let settings = { notification_emails: '' };
+    try { settings = await getSettings(); } catch {}
+    recipientList = (settings.notification_emails || '')
+      .split(',').map(e => e.trim()).filter(Boolean);
+  }
 
-  if (!recipients.length) {
+  if (!recipientList.length || !RESEND_API_KEY) {
     return json({ success: true });
   }
+
+  const resend = new Resend(RESEND_API_KEY);
 
   const moodEmoji = mood || '💬';
   const topicsText = topics?.length ? topics.join(', ') : 'General';
@@ -48,13 +55,14 @@ export async function POST({ request }) {
 </body></html>`;
 
   try {
+    const from = EMAIL_FROM || 'Sticker Stop <orders@stickerstop.com>';
     await resend.emails.send({
-      from: EMAIL_FROM,
+      from,
       ...((!anonymous && email) ? { replyTo: email } : {}),
-      to: recipients,
-      subject: `${moodEmoji} Feedback from ${fromLabel}`,
+      to: recipientList,
+      subject: `New Feedback: ${moodEmoji} ${moodLabel || ''} — Sticker Stop`,
       html,
-      text: `Feedback from ${fromLabel}\nMood: ${moodLabel}\nTopics: ${topicsText}\n\n${message}`,
+      text: `Feedback from ${fromLabel}\nMood: ${moodLabel || moodEmoji}\nTopics: ${topicsText}\n\n${message}`,
     });
   } catch (err) {
     console.error('Feedback email failed:', err.message);
