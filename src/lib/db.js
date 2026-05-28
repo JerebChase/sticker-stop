@@ -71,6 +71,20 @@ export async function ensureSchema() {
     )
   `;
 
+  await db`
+    CREATE TABLE IF NOT EXISTS feedback (
+      id         SERIAL PRIMARY KEY,
+      mood       TEXT DEFAULT '',
+      mood_label TEXT DEFAULT '',
+      topics     JSONB DEFAULT '[]',
+      name       TEXT DEFAULT '',
+      email      TEXT DEFAULT '',
+      message    TEXT NOT NULL,
+      anonymous  BOOLEAN DEFAULT false,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+
   // Seed with static data if the table is empty
   const [{ count }] = await db`SELECT COUNT(*) FROM sticker_sets`;
   if (parseInt(count) === 0) {
@@ -277,4 +291,27 @@ export async function updateOrder(id, fields) {
   } else if (notes !== undefined) {
     await db`UPDATE orders SET notes = ${notes} WHERE id = ${id}`;
   }
+}
+
+export async function saveFeedback(data) {
+  const db = sql();
+  const [row] = await db`
+    INSERT INTO feedback (mood, mood_label, topics, name, email, message, anonymous)
+    VALUES (
+      ${data.mood ?? ''},
+      ${data.mood_label ?? ''},
+      ${JSON.stringify(data.topics ?? [])},
+      ${data.name ?? ''},
+      ${data.email ?? ''},
+      ${data.message},
+      ${data.anonymous ?? false}
+    )
+    RETURNING id, created_at
+  `;
+  return row;
+}
+
+export async function listFeedback() {
+  const db = sql();
+  return db`SELECT * FROM feedback ORDER BY created_at DESC`;
 }

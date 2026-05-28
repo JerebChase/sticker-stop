@@ -149,12 +149,18 @@
       loadOrders();
       loadSettings();
       loadSets();
+      loadFeedback();
     } else {
       authError = true;
     }
   }
 
   let ordersError = $state('');
+
+  // Feedback
+  let feedback = $state([]);
+  let feedbackLoading = $state(false);
+  let feedbackError = $state('');
 
   async function loadOrders() {
     ordersLoading = true;
@@ -183,6 +189,23 @@
         settings = { ...settings, ...data };
       }
     } catch { /* settings will use defaults */ }
+  }
+
+  async function loadFeedback() {
+    feedbackLoading = true;
+    feedbackError = '';
+    try {
+      const res = await fetch('/api/admin/feedback', {
+        headers: { 'x-admin-password': password },
+      });
+      const data = await res.json();
+      if (!res.ok) feedbackError = data.error ?? 'Failed to load feedback.';
+      else feedback = data;
+    } catch {
+      feedbackError = 'Could not reach server.';
+    } finally {
+      feedbackLoading = false;
+    }
   }
 
   async function updateStatus(id, status) {
@@ -260,6 +283,7 @@
       <button class="tab" class:active={tab === 'orders'}   onclick={() => tab = 'orders'}>Orders</button>
       <button class="tab" class:active={tab === 'sets'}     onclick={() => tab = 'sets'}>Sticker Sets</button>
       <button class="tab" class:active={tab === 'settings'} onclick={() => tab = 'settings'}>Settings</button>
+      <button class="tab" class:active={tab === 'feedback'} onclick={() => tab = 'feedback'}>Feedback</button>
     </div>
 
     {#if tab === 'orders'}
@@ -400,6 +424,47 @@
           {#if sets.length === 0 && editingId !== 'new'}
             <div class="empty-orders">No sticker sets yet — add one above.</div>
           {/if}
+        {/if}
+      </div>
+
+    {:else if tab === 'feedback'}
+      <div class="feedback-panel">
+        <h2 class="settings-heading">Feedback</h2>
+        {#if feedbackLoading}
+          <p class="loading-msg">Loading feedback…</p>
+        {:else if feedbackError}
+          <div class="empty-orders" style="color:var(--pink)">⚠️ {feedbackError}</div>
+        {:else if feedback.length === 0}
+          <div class="empty-orders">No feedback yet — it'll show up here when someone submits the form.</div>
+        {:else}
+          <div class="feedback-list">
+            {#each feedback as f}
+              {@const topicsArr = Array.isArray(f.topics) ? f.topics : []}
+              <div class="feedback-card">
+                <div class="feedback-top">
+                  <span class="feedback-mood">{f.mood || '💬'}</span>
+                  <div class="feedback-meta">
+                    <span class="feedback-from">{f.anonymous ? 'Anonymous' : (f.name || 'Someone')}</span>
+                    {#if !f.anonymous && f.email}
+                      <a href="mailto:{f.email}" class="feedback-email">{f.email}</a>
+                    {/if}
+                    <span class="feedback-date">{new Date(f.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  </div>
+                  {#if f.mood_label}
+                    <span class="feedback-mood-label">{f.mood_label}</span>
+                  {/if}
+                </div>
+                {#if topicsArr.length}
+                  <div class="feedback-topics">
+                    {#each topicsArr as t}
+                      <span class="topic-pill">{t}</span>
+                    {/each}
+                  </div>
+                {/if}
+                <p class="feedback-message">{f.message}</p>
+              </div>
+            {/each}
+          </div>
         {/if}
       </div>
 
@@ -1188,4 +1253,91 @@
     opacity: 0.7;
   }
   .url-fallback:focus { opacity: 1; border-color: var(--blue); }
+
+  .feedback-panel { padding-top: 8px; }
+
+  .feedback-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .feedback-card {
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 18px;
+    padding: 18px 20px;
+    box-shadow: 0 5px 0 var(--ink);
+  }
+
+  .feedback-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .feedback-mood { font-size: 28px; line-height: 1; flex-shrink: 0; }
+
+  .feedback-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex: 1;
+  }
+
+  .feedback-from {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  .feedback-email {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    color: var(--blue);
+    text-decoration: none;
+  }
+
+  .feedback-date {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 12px;
+    opacity: 0.5;
+  }
+
+  .feedback-mood-label {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    background: var(--paper-2);
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 3px 10px;
+  }
+
+  .feedback-topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .topic-pill {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 3px 10px;
+  }
+
+  .feedback-message {
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-wrap;
+  }
 </style>
