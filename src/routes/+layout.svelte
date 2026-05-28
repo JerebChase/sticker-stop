@@ -40,7 +40,10 @@
 </main>
 
 {#if currentPath !== '/feedback'}
-  <a href="/feedback" class="fab" aria-label="Send feedback">💬</a>
+  <a href="/feedback" class="fab" aria-label="Leave feedback">
+    <span class="fab-icon">💬</span>
+    <span class="fab-label">Feedback</span>
+  </a>
 {/if}
 
 <footer>
@@ -244,27 +247,49 @@
     bottom: 24px;
     right: 24px;
     z-index: 200;
-    width: 56px;
     height: 56px;
-    border-radius: 50%;
+    border-radius: 999px;
     background: var(--pink);
     border: 3px solid var(--ink);
     box-shadow: 0 6px 0 var(--ink);
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 24px;
+    gap: 6px;
+    padding: 0 20px 0 16px;
     text-decoration: none;
     transition: transform 0.15s, box-shadow 0.15s;
   }
 
   .fab:hover {
-    transform: translateY(-3px) scale(1.08);
+    transform: translateY(-3px);
     box-shadow: 0 9px 0 var(--ink);
   }
 
   .fab:active {
     transform: translateY(3px);
     box-shadow: 0 3px 0 var(--ink);
+  }
+
+  .fab-icon {
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .fab-label {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+  }
+
+  @media (max-width: 600px) {
+    .fab {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      padding: 0;
+      justify-content: center;
+    }
+    .fab-label { display: none; }
   }
 </style>
