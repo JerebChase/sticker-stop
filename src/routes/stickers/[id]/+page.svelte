@@ -81,16 +81,6 @@
       <h1 class="set-name">{set.name}</h1>
       <p class="set-tagline">{set.tagline}</p>
     </div>
-    <div class="title-prices">
-      <div class="price-tag white" style="transform:rotate(-4deg)">
-        <span class="hole"></span><span class="price-val">${set.priceSheet}</span>
-      </div>
-      {#if sheets.length > 1}
-        <div class="price-tag yellow" style="transform:rotate(6deg)">
-          <span class="hole"></span><span class="price-val">${set.priceSet}</span>
-        </div>
-      {/if}
-    </div>
   </div>
 
   <!-- Choices -->
@@ -127,8 +117,12 @@
           </div>
           <div class="sc-body">
             <div class="sc-name">{sheet.name}</div>
-            <div class="sc-price">${set.priceSheet} · one sheet</div>
             <p class="sc-blurb">{sheet.blurb}</p>
+            <div class="card-price-tag">
+              <span class="tag-hole"></span>
+              <span class="tag-val">${set.priceSheet}</span>
+              <span class="tag-label">per sheet</span>
+            </div>
           </div>
         </button>
       {/each}
@@ -156,15 +150,16 @@
           </div>
           <div class="pair-body">
             <div class="pair-title">Get the full set · {sheets.length} sheets</div>
-            <div class="pair-pricing">
+            <p class="pair-blurb">Why pick? Stick 'em all. The full set for less than buying separately.</p>
+            <div class="card-price-tag tag-set">
+              <span class="tag-hole"></span>
+              <span class="tag-val">${set.priceSet}</span>
               {#if setDiscount > 0}
-                <span class="strikethrough">${(set.priceSheet * sheets.length).toFixed(2)}</span>
-                ${set.priceSet} · saves you ${setDiscount.toFixed(2)}
+                <span class="tag-save">save ${setDiscount % 1 === 0 ? setDiscount : setDiscount.toFixed(2)}</span>
               {:else}
-                ${set.priceSet} · all {sheets.length} sheets
+                <span class="tag-label">full set</span>
               {/if}
             </div>
-            <p class="pair-blurb">Why pick? Stick 'em all. The full set for less than buying separately.</p>
           </div>
         </button>
       {/if}
@@ -254,40 +249,6 @@
     opacity: 0.85;
   }
 
-  .title-prices {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    padding-bottom: 8px;
-    flex-shrink: 0;
-  }
-
-  .price-tag {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    border: 3px solid var(--ink);
-    border-radius: 8px 28px 28px 8px;
-    box-shadow: 0 4px 0 rgba(42,34,56,0.85);
-    font-family: 'Bagel Fat One', sans-serif;
-    line-height: 1;
-  }
-  .price-tag.white  { background: white; }
-  .price-tag.yellow { background: var(--yellow); }
-
-  .hole {
-    display: inline-block;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: var(--paper);
-    border: 2px solid var(--ink);
-    margin: 6px 4px 6px 8px;
-    flex-shrink: 0;
-  }
-
-  .price-val { font-size: 30px; padding: 8px 18px 8px 6px; }
-
   /* ── Choices container ── */
   .choices-wrap {
     display: flex;
@@ -343,6 +304,7 @@
     display: grid;
     grid-template-rows: subgrid;
     gap: 0;
+    color: var(--ink);
   }
 
   .sheet-choice.selected {
@@ -400,15 +362,7 @@
     margin-bottom: 6px;
   }
 
-  .sc-price {
-    font-family: 'Fredoka', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
-    opacity: 0.85;
-    margin-bottom: 8px;
-  }
-
-  .sc-blurb { font-size: 13.5px; line-height: 1.4; opacity: 0.75; margin: 0; }
+  .sc-blurb { font-size: 13.5px; line-height: 1.4; opacity: 0.75; margin: 0 0 10px; }
 
   /* ── Full set choice ── */
   .pair-choice {
@@ -428,6 +382,7 @@
     display: grid;
     grid-template-rows: subgrid;
     gap: 0;
+    color: var(--ink);
   }
 
   .pair-choice.selected {
@@ -480,17 +435,49 @@
     margin-bottom: 6px;
   }
 
-  .pair-pricing {
-    font-family: 'Fredoka', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
-    opacity: 0.85;
-    margin-bottom: 8px;
+  .pair-blurb { font-size: 13.5px; line-height: 1.4; opacity: 0.75; margin: 0 0 10px; }
+
+  /* ── Price tags on cards ── */
+  .card-price-tag {
+    display: inline-flex;
+    align-items: center;
+    border: 2.5px solid var(--ink);
+    border-radius: 6px 20px 20px 6px;
+    box-shadow: 0 3px 0 rgba(42,34,56,0.85);
+    font-family: 'Bagel Fat One', sans-serif;
+    background: white;
   }
 
-  .strikethrough { text-decoration: line-through; opacity: 0.5; margin-right: 8px; }
+  .card-price-tag.tag-set { background: var(--yellow); }
 
-  .pair-blurb { font-size: 13.5px; line-height: 1.4; opacity: 0.75; margin: 0; }
+  .tag-hole {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    margin: 4px 3px 4px 7px;
+    flex-shrink: 0;
+  }
+
+  .tag-val { font-size: 22px; padding: 4px 6px 4px 4px; }
+
+  .tag-label {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    padding-right: 12px;
+    opacity: 0.7;
+  }
+
+  .tag-save {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    padding-right: 12px;
+    color: #1a7a42;
+  }
 
   /* ── Add to cart panel ── */
   .atc-panel {

@@ -6,7 +6,6 @@
   let name = $state('');
   let email = $state('');
   let message = $state('');
-  let anonymous = $state(false);
   let submitting = $state(false);
   let submitted = $state(false);
 
@@ -15,7 +14,7 @@
     { emoji: '🤔', label: 'Meh', color: 'var(--yellow)' },
     { emoji: '😊', label: 'Good', color: 'var(--mint)' },
     { emoji: '🤩', label: 'Great', color: 'var(--blue)' },
-    { emoji: '🥳', label: 'Stuck!', color: 'var(--pink)' },
+    { emoji: '🥳', label: 'stickerrific!', color: 'var(--pink)' },
   ];
 
   const topicOptions = [
@@ -50,7 +49,8 @@ let canSubmit = $derived(message.trim().length > 0);
           mood,
           moodLabel: selectedMood?.label || '',
           topics: topicLabels,
-          name, email, message, anonymous,
+          name, email, message,
+          anonymous: !name.trim() && !email.trim(),
           notificationEmails: data.notificationEmails,
         }),
       });
@@ -82,7 +82,7 @@ let canSubmit = $derived(message.trim().length > 0);
   {:else}
     <!-- Hero -->
     <div class="hero">
-      <div class="stamp">A little birdie · whispers welcome</div>
+      <div class="stamp">a little birdie told me</div>
       <h1 class="hero-title">Tell us stuff!</h1>
       <p class="hero-sub">Compliments, complaints, weird ideas, sticker requests — we read every word.</p>
     </div>
@@ -91,7 +91,7 @@ let canSubmit = $derived(message.trim().length > 0);
       <!-- Form -->
       <div class="form-card">
           <div class="washi washi-pink"></div>
-          <h2 class="form-heading">Leave your mark</h2>
+          <h2 class="form-heading">What did you think?</h2>
 
           <div class="fields">
             <!-- Mood selector -->
@@ -128,11 +128,11 @@ let canSubmit = $derived(message.trim().length > 0);
             <!-- Name + Email row -->
             <div class="field-row">
               <label class="field">
-                <span class="field-label">Name <span class="opt">(or a nickname)</span></span>
+                <span class="field-label">Name</span>
                 <input type="text" bind:value={name} placeholder="Pickle's friend" />
               </label>
               <label class="field">
-                <span class="field-label">Email <span class="opt">(if you want a reply)</span></span>
+                <span class="field-label">Email</span>
                 <input type="email" bind:value={email} placeholder="you@example.com" />
               </label>
             </div>
@@ -146,12 +146,6 @@ let canSubmit = $derived(message.trim().length > 0);
                 placeholder="Tell us anything! The more the merrier."
                 required
               ></textarea>
-            </label>
-
-            <!-- Anonymous -->
-            <label class="anon-row">
-              <input type="checkbox" bind:checked={anonymous} />
-              <span>Keep me anonymous — don't send a reply, just listen 🤫</span>
             </label>
 
             <div class="submit-col">
@@ -232,18 +226,19 @@ let canSubmit = $derived(message.trim().length > 0);
     box-shadow: 0 8px 0 var(--ink);
     padding: 28px;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .washi {
     position: absolute;
-    top: 0;
+    top: -14px;
     left: -10px;
     width: 90px;
     height: 28px;
     transform: rotate(-8deg);
     transform-origin: top left;
-    opacity: 0.85;
+    opacity: 0.9;
+    z-index: 2;
   }
 
   .washi-pink {
@@ -376,20 +371,6 @@ let canSubmit = $derived(message.trim().length > 0);
   .topic-chip input { display: none; }
   .topic-chip:hover { border-color: var(--ink); }
   .topic-chip.checked { border-color: var(--pink); background: #fff0f6; }
-
-  /* Anonymous row */
-  .anon-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    font-family: 'Fredoka', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    line-height: 1.4;
-  }
-
-  .anon-row input { margin-top: 2px; flex-shrink: 0; width: 16px; height: 16px; }
 
   /* Submit col */
   .submit-col {

@@ -12,14 +12,14 @@
 <div class="page">
   <!-- Hero -->
   <section class="hero max-w">
-    <div class="hero-pill">FRESH BATCH · HAND-PICKED SHEETS</div>
+    <div class="hero-pill">Hand-Crafted • Specialty Sheets</div>
     <h1 class="hero-heading">
       <span class="word w1">Stickers</span>
       <span class="word w2 pink">that</span>
       <span class="word w3">stick</span>
       <span class="word w4 blue">!</span>
     </h1>
-    <p class="hero-sub">$2 a sheet · $3 for the pair · stick them on EVERYTHING</p>
+    <p class="hero-sub">$2 a sheet • Save on sets • stick them on EVERYTHING</p>
   </section>
 
   <!-- Card grid -->
@@ -38,21 +38,30 @@
           <!-- Image area -->
           <div class="card-img-wrap">
             <img src={set.image} alt={set.name} class="card-img" />
-            <div class="price-tags">
-              <div class="price-tag yellow" style="--tag-rot:8deg">$3 pair</div>
-              <div class="price-tag white" style="--tag-rot:-4deg">$2 sheet</div>
-            </div>
+          </div>
+
+          <!-- Price tags — positioned relative to card so they sit on top -->
+          <div class="price-tags">
+            {#if set.sheets && set.sheets.length > 1}
+              <div class="price-tag yellow" style="--tag-rot:8deg">${set.priceSet} set</div>
+            {/if}
+            <div class="price-tag white" style="--tag-rot:-4deg">${set.priceSheet} sheet</div>
           </div>
 
           <!-- Card body -->
           <div class="card-body">
             <div class="card-title-row">
               <span class="card-name">{set.name}</span>
-              <span class="chip" style="background:{set.color};border-color:{set.color}">2 sheets</span>
+              <span class="chip" style="background:{set.color};border-color:{set.color}">{set.sheets?.length ?? 2} sheets</span>
             </div>
             <p class="card-tagline">{set.tagline}</p>
             <div class="card-footer">
-              <span class="deal-text">Pair deal · save $1</span>
+              {#if set.sheets && set.sheets.length > 1}
+                {@const savings = set.priceSheet * set.sheets.length - set.priceSet}
+                {#if savings > 0}
+                  <span class="deal-text">Set deal · save ${savings % 1 === 0 ? savings : savings.toFixed(2)}</span>
+                {/if}
+              {/if}
               <span class="see-btn">See sheets →</span>
             </div>
           </div>
@@ -65,9 +74,9 @@
   <section class="hiw-section max-w">
     <div class="hiw-panel">
       {#each [
-        { n: '1', color: 'var(--pink)',   label: 'Pick your sheets', sub: 'Browse 5 sets' },
-        { n: '2', color: 'var(--yellow)', label: 'Add to cart',      sub: 'Single or pair' },
-        { n: '3', color: 'var(--blue)',   label: 'Place your order', sub: 'No payment online' },
+        { n: '1', color: 'var(--pink)',   label: 'Pick your sheets', sub: 'Browse them all' },
+        { n: '2', color: 'var(--yellow)', label: 'Add to cart',      sub: 'Save on sets' },
+        { n: '3', color: 'var(--blue)',   label: 'Place your order', sub: 'Apple Pay or cash' },
         { n: '4', color: 'var(--mint)',   label: 'Stickers ship out', sub: 'Stick everywhere 🎉' },
       ] as step}
         <div class="hiw-step">
@@ -189,12 +198,13 @@
 
   .price-tags {
     position: absolute;
-    top: 10px;
-    right: -8px;
+    top: 20px;
+    right: -10px;
     display: flex;
     flex-direction: column;
     gap: 6px;
     align-items: flex-end;
+    z-index: 2;
   }
 
   .price-tag {

@@ -165,7 +165,8 @@
       {#if items.length === 0}
         It's a little empty in here…
       {:else}
-        {items.reduce((s, i) => s + i.qty, 0)} item{items.reduce((s, i) => s + i.qty, 0) !== 1 ? 's' : ''} ready to ship
+        {@const count = items.reduce((s, i) => s + i.qty, 0)}
+        {count} item{count !== 1 ? 's' : ''} {deliveryMethod === 'pickup' ? 'to be picked up' : 'ready to ship'}
       {/if}
     </p>
 
@@ -297,7 +298,7 @@
             >
               {submitting ? 'Placing order…' : 'Place order →'}
             </button>
-            <p class="no-payment">No payment collected now — we'll reach out about payment after!</p>
+            <p class="no-payment">We accept Apple Pay or cash</p>
           </div>
         </div>
       </div>
@@ -382,6 +383,7 @@
     align-items: center;
     gap: 14px;
     overflow: hidden;
+    padding-left: 12px;
   }
 
   .item-thumb-wrap {
@@ -391,6 +393,8 @@
     position: relative;
     overflow: hidden;
     background: var(--paper-2);
+    border-radius: 10px;
+    margin: 10px 0;
   }
 
   .item-thumb {
