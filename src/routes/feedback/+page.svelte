@@ -27,13 +27,7 @@
     { id: 'bug', label: 'Something broke', emoji: '🐛' },
   ];
 
-  const quotes = [
-    { text: 'MORE FROGS PLEASE 🐸🐸🐸', author: 'Ava, age 9' },
-    { text: "Loved the doodle on my envelope. Made my Tuesday.", author: 'Marcus K.' },
-    { text: "Pls do a dinosaur-vs-pirate set, I beg", author: 'Anonymous' },
-  ];
-
-  let canSubmit = $derived(message.trim().length > 0);
+let canSubmit = $derived(message.trim().length > 0);
 
   function toggleTopic(id) {
     if (topics.includes(id)) {
@@ -183,22 +177,6 @@
           <a href="/custom" class="big-btn purple-btn">Request custom stickers →</a>
         </div>
 
-        <div class="sidebar-card quotes-card">
-          <h3 class="sidebar-heading">What folks said lately</h3>
-          <div class="quotes-list">
-            {#each quotes as q}
-              <div class="quote-item">
-                <p class="quote-text">"{q.text}"</p>
-                <span class="quote-author">— {q.author}</span>
-              </div>
-            {/each}
-          </div>
-        </div>
-
-        <div class="sidebar-card fast-reply-card">
-          <h3 class="sidebar-heading">Need a fast reply?</h3>
-          <p class="sidebar-body">Just reply to any order email and we'll get back to you within a day or two!</p>
-        </div>
       </div>
     </div>
   {/if}
@@ -498,36 +476,6 @@
     line-height: 1.6;
     opacity: 0.8;
     margin-bottom: 16px;
-  }
-
-  .quotes-card { background: var(--mint); }
-  .fast-reply-card { background: var(--yellow); }
-
-  .quotes-list {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .quote-item {
-    background: white;
-    border: 2px solid var(--ink);
-    border-radius: 14px;
-    padding: 12px 14px;
-  }
-
-  .quote-text {
-    font-family: 'Caveat', cursive;
-    font-size: 17px;
-    line-height: 1.4;
-    margin-bottom: 4px;
-  }
-
-  .quote-author {
-    font-family: 'Fredoka', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    opacity: 0.65;
   }
 
   /* Success */
