@@ -53,23 +53,10 @@ export async function ensureSchema() {
   await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS sheet_b_image TEXT DEFAULT ''`;
   // Add delivery method column if it doesn't exist yet (migration)
   await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_method TEXT DEFAULT 'mail'`;
-  await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_payment_intent_id TEXT DEFAULT ''`;
   // Add flexible sheets + per-set pricing columns (migration)
   await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS sheets JSONB DEFAULT '[]'`;
   await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS price_sheet NUMERIC(10,2) DEFAULT 2.00`;
   await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS price_set   NUMERIC(10,2) DEFAULT 3.00`;
-  // Cross-device QR Apple Pay checkout sessions
-  await db`
-    CREATE TABLE IF NOT EXISTS checkout_sessions (
-      id         TEXT PRIMARY KEY,
-      cart       JSONB NOT NULL DEFAULT '[]',
-      form_data  JSONB NOT NULL DEFAULT '{}',
-      status     TEXT NOT NULL DEFAULT 'pending',
-      order_id   INTEGER,
-      expires_at TIMESTAMPTZ NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `;
 
   await db`
     CREATE TABLE IF NOT EXISTS feedback (
@@ -134,12 +121,12 @@ export async function createOrder(order) {
   const [row] = await db`
     INSERT INTO orders
       (customer_name, customer_email, customer_address, customer_notes,
-       items, subtotal, shipping, total, delivery_method, stripe_payment_intent_id)
+       items, subtotal, shipping, total, delivery_method)
     VALUES
       (${order.customer_name}, ${order.customer_email}, ${order.customer_address},
        ${order.customer_notes}, ${JSON.stringify(order.items)},
        ${order.subtotal}, ${order.shipping}, ${order.total},
-       ${order.delivery_method ?? 'mail'}, ${order.stripe_payment_intent_id ?? ''})
+       ${order.delivery_method ?? 'mail'})
     RETURNING id, created_at
   `;
   return row;
@@ -247,36 +234,6 @@ export async function upsertStickerSet(set) {
 export async function deleteStickerSet(id) {
   const db = sql();
   await db`DELETE FROM sticker_sets WHERE id = ${id}`;
-}
-
-// ── Checkout Sessions (cross-device QR Apple Pay) ─────────────
-
-export async function createCheckoutSession(id, cart, formData) {
-  const db = sql();
-  const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 min TTL
-  await db`
-    INSERT INTO checkout_sessions (id, cart, form_data, status, expires_at)
-    VALUES (${id}, ${JSON.stringify(cart)}, ${JSON.stringify(formData)}, 'pending', ${expiresAt.toISOString()})
-  `;
-}
-
-export async function getCheckoutSession(id) {
-  const db = sql();
-  const rows = await db`SELECT * FROM checkout_sessions WHERE id = ${id} AND expires_at > NOW()`;
-  if (!rows.length) return null;
-  const r = rows[0];
-  return {
-    id:       r.id,
-    cart:     r.cart,
-    formData: r.form_data,
-    status:   r.status,
-    orderId:  r.order_id,
-  };
-}
-
-export async function completeCheckoutSession(id, orderId) {
-  const db = sql();
-  await db`UPDATE checkout_sessions SET status = 'complete', order_id = ${orderId} WHERE id = ${id}`;
 }
 
 // ── Orders ────────────────────────────────────────────────────
