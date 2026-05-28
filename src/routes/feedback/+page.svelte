@@ -89,8 +89,7 @@ let canSubmit = $derived(message.trim().length > 0);
 
     <div class="main-grid">
       <!-- Form -->
-      <div class="form-col">
-        <div class="form-card">
+      <div class="form-card">
           <div class="washi washi-pink"></div>
           <h2 class="form-heading">Leave your mark</h2>
 
@@ -166,17 +165,6 @@ let canSubmit = $derived(message.trim().length > 0);
               <p class="human-note">A real human reads these. Promise.</p>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Sidebar -->
-      <div class="sidebar">
-        <div class="sidebar-card custom-card">
-          <h3 class="sidebar-heading">Got a custom idea?</h3>
-          <p class="sidebar-body">Want stickers of your pet, your logo, or something totally unhinged? We do custom sheets!</p>
-          <a href="/custom" class="big-btn purple-btn">Request custom stickers →</a>
-        </div>
-
       </div>
     </div>
   {/if}
@@ -232,14 +220,8 @@ let canSubmit = $derived(message.trim().length > 0);
 
   /* Main grid */
   .main-grid {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 32px;
-    align-items: start;
-  }
-
-  @media (max-width: 900px) {
-    .main-grid { grid-template-columns: 1fr; }
+    max-width: 640px;
+    margin-inline: auto;
   }
 
   /* Form card */
@@ -446,37 +428,6 @@ let canSubmit = $derived(message.trim().length > 0);
   .big-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--ink); }
   .big-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: 0 3px 0 var(--ink); }
   .pink-btn { background: var(--pink); color: white; }
-  .purple-btn { background: var(--purple); color: white; }
-
-  /* Sidebar */
-  .sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-
-  .sidebar-card {
-    background: white;
-    border: 2.5px solid var(--ink);
-    border-radius: 22px;
-    box-shadow: 0 8px 0 var(--ink);
-    padding: 22px;
-  }
-
-  .sidebar-heading {
-    font-family: 'Bagel Fat One', sans-serif;
-    font-size: 22px;
-    letter-spacing: -0.3px;
-    margin-bottom: 12px;
-  }
-
-  .sidebar-body {
-    font-family: 'Nunito', sans-serif;
-    font-size: 14px;
-    line-height: 1.6;
-    opacity: 0.8;
-    margin-bottom: 16px;
-  }
 
   /* Success */
   .success-wrap {
