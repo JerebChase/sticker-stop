@@ -30,7 +30,6 @@ ${itemList}
 Subtotal: $${Number(order.subtotal ?? order.total).toFixed(2)}
 Shipping: $${Number(order.shipping ?? 0).toFixed(2)}
 Total:    $${Number(order.total).toFixed(2)}
-${order.customer_notes ? `\nNotes: ${order.customer_notes}` : ''}
   `.trim();
 }
 
@@ -190,26 +189,6 @@ function buildAdminHtml(order, origin) {
       </table>
     </td>
   </tr>
-
-  ${order.customer_notes ? `
-  <!-- Customer note -->
-  <tr>
-    <td style="padding:6px 28px 4px;">
-      <table cellpadding="0" cellspacing="0" border="0" width="100%"
-        style="background:white;border:3px solid #2a2238;border-radius:18px;
-          box-shadow:0 6px 0 rgba(42,34,56,0.85);">
-        <tr>
-          <td style="padding:18px 22px;">
-            <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:12px;
-              text-transform:uppercase;letter-spacing:1px;color:#2a2238;opacity:0.6;margin-bottom:6px;">
-              Customer note</div>
-            <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;font-size:15px;
-              color:#2a2238;">${order.customer_notes}</div>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>` : ''}
 
   <!-- Order items -->
   <tr>
@@ -609,24 +588,6 @@ function buildCustomerHtml(order, settings, origin) {
     </td>
   </tr>
 
-  ${order.customer_notes ? `
-  <tr>
-    <td style="padding:6px 28px 4px;">
-      <table cellpadding="0" cellspacing="0" border="0" width="100%"
-        style="background:white;border:3px solid #2a2238;border-radius:18px;
-          box-shadow:0 6px 0 rgba(42,34,56,0.85);">
-        <tr>
-          <td style="padding:18px 20px;">
-            <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;
-              font-size:13px;text-transform:uppercase;letter-spacing:1px;
-              color:#2a2238;opacity:0.6;margin-bottom:4px;">Your note</div>
-            <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;
-              font-size:15px;color:#2a2238;">${order.customer_notes}</div>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>` : ''}
 
   <!-- What happens next -->
   <tr>

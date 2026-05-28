@@ -6,7 +6,6 @@
   let name = $state('');
   let email = $state('');
   let address = $state('');
-  let notes = $state('');
   let deliveryMethod = $state('mail'); // 'mail' | 'pickup'
   let submitting = $state(false);
   let success = $state(null);
@@ -46,7 +45,6 @@
           customerName:    name.trim(),
           customerEmail:   email.trim(),
           customerAddress: deliveryMethod === 'mail' ? address.trim() : '',
-          customerNotes:   notes.trim(),
           deliveryMethod,
           items,
           subtotal,
@@ -269,10 +267,6 @@
                   <textarea bind:value={address} placeholder="123 Sticker Lane, Springfield…" rows="3" required></textarea>
                 </label>
               {/if}
-              <label class="field">
-                <span class="field-label">Anything else? <span class="opt">(optional)</span></span>
-                <textarea bind:value={notes} placeholder="Gift wrap? A drawing? Let us know!" rows="2"></textarea>
-              </label>
             </div>
 
             <div class="order-summary">
