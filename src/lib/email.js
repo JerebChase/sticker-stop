@@ -505,7 +505,7 @@ function buildCustomerHtml(order, settings, origin) {
                   <table cellpadding="0" cellspacing="0" border="0" width="100%">
                     <tr>
                       <td style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
-                        font-size:14px;color:#6ddc8a;padding:3px 0;">&#127775; Bonus sticker</td>
+                        font-size:14px;color:#6ddc8a;padding:3px 0;">&#127775; Tiny bonus</td>
                       <td align="right" style="font-family:'Fredoka',Arial,sans-serif;
                         font-weight:600;font-size:14px;color:#6ddc8a;padding:3px 0;">Free!</td>
                     </tr>
@@ -637,7 +637,7 @@ function buildCustomerHtml(order, settings, origin) {
                     font-family:'Bagel Fat One',cursive;font-size:20px;color:#2a2238;">2</div>
                 </td>
                 <td valign="top" style="padding-bottom:14px;">
-                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:16px;color:#2a2238;">We pack your stickers (with a tiny doodle, free)</div>
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:16px;color:#2a2238;">We pack your stickers${isPickup ? '' : ' (with a tiny bonus, free)'}</div>
                   <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">Usually within 1&ndash;2 days. Sometimes faster if it&rsquo;s snack time.</div>
                 </td>
               </tr>
@@ -651,7 +651,7 @@ function buildCustomerHtml(order, settings, origin) {
                   <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:16px;color:#2a2238;">
                     ${isPickup ? 'You come pick them up &middot; then stick them everywhere' : 'USPS shows up &middot; you stick them on everything'}
                   </div>
-                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">Laptops, lunchboxes, foreheads &mdash; we don&rsquo;t judge.</div>
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">Laptops, notebooks, foreheads &mdash; have fun.</div>
                 </td>
               </tr>
             </table>
