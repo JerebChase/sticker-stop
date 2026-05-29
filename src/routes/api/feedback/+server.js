@@ -114,14 +114,6 @@ function buildFeedbackHtml(data) {
                     ${topicsText}</div>
                 </td>
               </tr>
-              <tr>
-                <td colspan="2" style="padding:8px 0 0;">
-                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:11px;
-                    text-transform:uppercase;letter-spacing:1px;color:#2a2238;opacity:0.5;margin-bottom:3px;">Privacy</div>
-                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;font-size:15px;color:#2a2238;">
-                    ${anonymous ? '🤫 Anonymous — no reply needed' : '👋 Happy to receive a reply'}</div>
-                </td>
-              </tr>
             </table>
           </td>
         </tr>
@@ -157,9 +149,6 @@ function buildFeedbackHtml(data) {
   <tr>
     <td style="background:#fff1cf;border-top:3px dashed #2a2238;
       padding:22px 28px 24px;text-align:center;">
-      <p style="font-family:'Caveat',cursive;font-size:22px;color:#2a2238;margin:0 0 4px;">
-        ${anonymous ? 'They just wanted to share ✨' : `Reply to say thanks to ${fromLabel}! 💌`}
-      </p>
       <p style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
         font-size:11px;color:#2a2238;opacity:0.6;
         text-transform:uppercase;letter-spacing:1.2px;margin:10px 0 0;">
@@ -203,7 +192,7 @@ export async function POST({ request }) {
 
   if (recipientList.length && RESEND_API_KEY) {
     const resend = new Resend(RESEND_API_KEY);
-    const from = EMAIL_FROM || 'Sticker Stop <orders@stickerstop.com>';
+    const from = EMAIL_FROM || 'Sticker Stop <feedback@sticker-stop.com>';
     const fromLabel = anonymous ? 'Anonymous' : (name || 'Someone');
     try {
       await resend.emails.send({

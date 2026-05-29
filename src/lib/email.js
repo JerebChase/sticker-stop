@@ -246,7 +246,7 @@ function buildAdminHtml(order, origin) {
     <td style="background:#fff1cf;border-top:3px dashed #2a2238;
       padding:22px 28px 24px;text-align:center;margin-top:22px;">
       <p style="font-family:'Caveat',cursive;font-size:22px;color:#2a2238;margin:0 0 4px;">
-        go pack some stickers! &#127881;
+        Time to pack some stickers!
       </p>
       <p style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
         font-size:11px;color:#2a2238;opacity:0.6;
@@ -476,7 +476,7 @@ function buildCustomerHtml(order, settings, origin) {
       </h1>
       <p style="font-family:'Caveat',cursive;font-size:24px;
         color:#2a2238;opacity:0.85;margin:0 0 8px;">
-        ${isPickup ? 'Your order is ready for pickup whenever you are! &#127881;' : 'Your stickers are picked, packed, and getting ready! &#10024;'}
+        ${isPickup ? 'Your order will be ready for pickup soon!' : 'Your stickers are picked, packed, and getting ready! &#10024;'}
       </p>
     </td>
   </tr>
@@ -661,15 +661,6 @@ function buildCustomerHtml(order, settings, origin) {
     </td>
   </tr>
 
-  <!-- PS -->
-  <tr>
-    <td style="padding:20px 32px 8px;text-align:center;">
-      <p style="font-family:'Caveat',cursive;font-size:22px;color:#2a2238;opacity:0.85;margin:0;">
-        Psst &mdash; questions? Just hit reply. A real human (mostly) will write back.
-      </p>
-    </td>
-  </tr>
-
   <!-- Footer -->
   <tr>
     <td style="background:#fff1cf;border-top:3px dashed #2a2238;
@@ -681,7 +672,7 @@ function buildCustomerHtml(order, settings, origin) {
       <p style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
         font-size:11px;color:#2a2238;opacity:0.6;
         text-transform:uppercase;letter-spacing:1.2px;margin:10px 0 0;">
-        Sticker Stop &middot; Questions? Reply to this email
+        Sticker Stop
       </p>
     </td>
   </tr>
@@ -739,7 +730,7 @@ export async function sendOrderEmail(order, settings, origin = '') {
     await send({
       from,
       to:      order.customer_email,
-      subject: `🎉 Order #${order.id} confirmed — let's get those stickers shipped!`,
+      subject: `🎉Your order #${order.id} is confirmed!`,
       text,
       html,
     });
