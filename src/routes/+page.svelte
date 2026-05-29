@@ -184,6 +184,7 @@
 
   .card-img-wrap {
     display: flex;
+    gap: 3px;
     margin: 14px 14px 0;
     border-radius: 14px;
     overflow: hidden;

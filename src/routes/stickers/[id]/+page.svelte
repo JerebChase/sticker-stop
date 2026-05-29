@@ -414,6 +414,7 @@
     background: var(--paper-2);
     aspect-ratio: 1197 / 884;
     display: flex;
+    gap: 3px;
   }
 
   .pair-img { width: 100%; height: 100%; object-fit: cover; }
