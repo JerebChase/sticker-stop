@@ -499,19 +499,6 @@ function buildCustomerHtml(order, settings, origin) {
           <td style="padding:0 22px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               ${itemRows}
-              ${!isPickup ? `
-              <tr>
-                <td style="padding:8px 0 4px;border-bottom:2px dashed rgba(42,34,56,0.18);">
-                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
-                    <tr>
-                      <td style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
-                        font-size:14px;color:#6ddc8a;padding:3px 0;">&#127775; Tiny bonus</td>
-                      <td align="right" style="font-family:'Fredoka',Arial,sans-serif;
-                        font-weight:600;font-size:14px;color:#6ddc8a;padding:3px 0;">Free!</td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>` : ''}
               <tr>
                 <td style="padding-top:14px;border-top:3px solid #2a2238;">
                   <table cellpadding="0" cellspacing="0" border="0" width="100%">
