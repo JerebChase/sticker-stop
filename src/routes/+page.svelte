@@ -188,7 +188,7 @@
     margin: 14px 14px 0;
     border-radius: 14px;
     overflow: hidden;
-    background: var(--paper-2);
+    background: white;
     aspect-ratio: 16 / 12;
   }
 

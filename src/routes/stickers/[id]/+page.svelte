@@ -411,7 +411,7 @@
     position: relative;
     border-radius: 12px;
     overflow: hidden;
-    background: var(--paper-2);
+    background: white;
     aspect-ratio: 1197 / 884;
     display: flex;
     gap: 3px;
