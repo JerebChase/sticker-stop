@@ -1089,7 +1089,7 @@ function buildFeedbackHtml(data) {
 export async function sendFeedbackEmail(data, recipients) {
   if (!RESEND_API_KEY || !recipients.length) return;
   const resend = new Resend(RESEND_API_KEY);
-  const from = EMAIL_FROM || 'Sticker Stop <feedback@sticker-stop.com>';
+  const from = 'Sticker Stop <feedback@sticker-stop.com>';
   const { mood, moodLabel, topics, name, email, message, anonymous } = data;
   const fromLabel = anonymous ? 'Anonymous' : (name || 'Someone');
 
