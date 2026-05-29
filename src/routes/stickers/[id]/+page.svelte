@@ -493,10 +493,9 @@
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    flex-wrap: wrap;
   }
 
-  .atc-left { display: flex; align-items: center; gap: 14px; }
+  .atc-left { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1; }
 
   .stepper {
     display: inline-flex;
@@ -562,6 +561,12 @@
   .atc-btn:hover { transform: translateY(-2px); }
   .atc-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(42,34,56,0.85); }
   .atc-btn.added { background: var(--mint); }
+
+  @media (max-width: 480px) {
+    .atc-panel { padding: 14px; gap: 10px; }
+    .atc-total { font-size: 24px; }
+    .atc-btn { font-size: 16px; padding: 12px 16px; }
+  }
 
   .psst {
     font-family: 'Caveat', cursive;
