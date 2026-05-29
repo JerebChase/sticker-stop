@@ -151,7 +151,7 @@
         </div>
       </div>
 
-      <a href="/" class="big-btn pink-btn">← Back to stickers</a>
+      <a href="/" class="big-btn blue-btn">← Back to stickers</a>
     </div>
   </div>
 
