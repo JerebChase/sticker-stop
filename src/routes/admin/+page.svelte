@@ -1063,6 +1063,7 @@
     border: 2px solid var(--ink);
     border-radius: 999px;
     background: var(--paper-2);
+    color: var(--ink);
     cursor: pointer;
     transition: background 0.15s;
   }
