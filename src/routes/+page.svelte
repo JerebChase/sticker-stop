@@ -27,7 +27,6 @@
     <div class="card-grid">
       {#each sets as set, i}
         {@const rot = ROTS[i % ROTS.length]}
-        {@const displayImage = set.sheets?.[0]?.image || set.image || ''}
         <a
           href="/stickers/{set.id}"
           class="set-card"
@@ -38,7 +37,9 @@
 
           <!-- Image area -->
           <div class="card-img-wrap">
-            <img src={displayImage} alt={set.name} class="card-img" />
+            {#each (set.sheets ?? []).slice(0, 2).filter(s => s.image) as sheet}
+              <img src={sheet.image} alt={sheet.name} class="card-img" />
+            {/each}
           </div>
 
           <!-- Price tags — positioned relative to card so they sit on top -->
@@ -182,7 +183,7 @@
   }
 
   .card-img-wrap {
-    position: relative;
+    display: flex;
     margin: 14px 14px 0;
     border-radius: 14px;
     overflow: hidden;
@@ -191,7 +192,8 @@
   }
 
   .card-img {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     height: 100%;
     object-fit: cover;
     display: block;
