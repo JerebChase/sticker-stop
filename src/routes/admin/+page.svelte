@@ -22,7 +22,7 @@
   let setsError = $state('');
   let editingId = $state(null); // id of set being edited, or 'new'
   let editForm = $state(null);  // the working copy of the form
-  let uploadingImage = $state(false);
+  let uploadingSheetIndex = $state(null);
   let dragIndex = $state(null);
   let dragTarget = $state(null);
 
@@ -132,10 +132,10 @@
     editForm.priceSet = parseFloat((editForm.priceSheet + (n - 1)).toFixed(2));
   }
 
-  async function handleImageUpload(event, target, prefix) {
+  async function handleImageUpload(event, target, prefix, sheetIndex) {
     const file = event.target.files?.[0];
     if (!file) return;
-    uploadingImage = true;
+    uploadingSheetIndex = sheetIndex;
     try {
       const fd = new FormData();
       fd.append('file', file);
@@ -149,7 +149,7 @@
       if (res.ok) target.image = data.url;
       else alert(data.error ?? 'Upload failed.');
     } finally {
-      uploadingImage = false;
+      uploadingSheetIndex = null;
       event.target.value = '';
     }
   }
@@ -605,12 +605,11 @@
                 <img src={sheet.image} alt="Sheet {i + 1} preview" class="img-preview" />
               {/if}
               <div class="img-controls">
-                <label class="upload-btn" class:uploading={uploadingImage}>
-                  {#if uploadingImage}Uploading…{:else if sheet.image}Change{:else}Upload{/if}
-                  <input type="file" accept="image/*" style="display:none" disabled={uploadingImage}
-                    onchange={(e) => handleImageUpload(e, sheet, `${f.id || 'new'}-sheet-${i + 1}`)} />
+                <label class="upload-btn" class:uploading={uploadingSheetIndex === i}>
+                  {#if uploadingSheetIndex === i}Uploading…{:else if sheet.image}Change{:else}Upload{/if}
+                  <input type="file" accept="image/*" style="display:none" disabled={uploadingSheetIndex !== null}
+                    onchange={(e) => handleImageUpload(e, sheet, `${f.id || 'new'}-sheet-${i + 1}`, i)} />
                 </label>
-                <input type="text" bind:value={sheet.image} placeholder="or paste URL" class="url-fallback" />
               </div>
             </div>
           </div>
@@ -1302,22 +1301,7 @@
   .upload-btn:hover { transform: translateY(-1px); }
   .upload-btn.uploading { opacity: 0.6; cursor: wait; }
 
-  .url-fallback {
-    flex: 1;
-    min-width: 0;
-    border: 2px solid var(--ink);
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 13px;
-    background: var(--paper);
-    outline: none;
-    font-family: 'Nunito', sans-serif;
-    color: var(--ink);
-    opacity: 0.7;
-  }
-  .url-fallback:focus { opacity: 1; border-color: var(--blue); }
-
-  .feedback-panel { padding-top: 8px; }
+.feedback-panel { padding-top: 8px; }
 
   .feedback-list {
     display: flex;
