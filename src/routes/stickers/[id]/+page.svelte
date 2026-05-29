@@ -418,8 +418,6 @@
     gap: 3px;
   }
 
-  .pair-img { width: 100%; height: 100%; object-fit: cover; }
-
   .pair-half {
     flex: 1;
     min-width: 0;

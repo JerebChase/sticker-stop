@@ -145,6 +145,10 @@ export async function getOrder(id) {
 
 // ── Sticker Sets ──────────────────────────────────────────────
 
+function calcDefaultSetPrice(sheetCount) {
+  return Math.max(2, sheetCount + 1);
+}
+
 function rowToSet(row) {
   // Use the flexible sheets array when populated, fall back to legacy sheet_a/b columns
   let sheets;
@@ -155,7 +159,7 @@ function rowToSet(row) {
     if (row.sheet_a_id) sheets.push({ id: row.sheet_a_id, name: row.sheet_a_name ?? '', blurb: row.sheet_a_blurb ?? '', image: row.sheet_a_image ?? '' });
     if (row.sheet_b_id) sheets.push({ id: row.sheet_b_id, name: row.sheet_b_name ?? '', blurb: row.sheet_b_blurb ?? '', image: row.sheet_b_image ?? '' });
   }
-  const defaultSetPrice = sheets.length > 1 ? 2 + (sheets.length - 1) : 2;
+  const defaultSetPrice = calcDefaultSetPrice(sheets.length);
   return {
     id:         row.id,
     name:       row.name,
@@ -202,7 +206,7 @@ export async function upsertStickerSet(set) {
   // Mirror first two sheets into legacy columns for backward compat
   const s0 = sheets[0] ?? {};
   const s1 = sheets[1] ?? {};
-  const defaultSetPrice = sheets.length > 1 ? 2 + (sheets.length - 1) : 2;
+  const defaultSetPrice = calcDefaultSetPrice(sheets.length);
   await db`
     INSERT INTO sticker_sets
       (id, name, tagline, color, image,

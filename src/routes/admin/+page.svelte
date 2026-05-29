@@ -120,16 +120,19 @@
     }
   }
 
-  function addSheet() {
-    editForm.sheets = [...editForm.sheets, { id: '', name: '', blurb: '', image: '' }];
+  function syncDefaultSetPrice() {
     const n = editForm.sheets.length;
     editForm.priceSet = parseFloat((editForm.priceSheet + (n - 1)).toFixed(2));
   }
 
+  function addSheet() {
+    editForm.sheets = [...editForm.sheets, { id: '', name: '', blurb: '', image: '' }];
+    syncDefaultSetPrice();
+  }
+
   function removeSheet(i) {
     editForm.sheets = editForm.sheets.filter((_, idx) => idx !== i);
-    const n = editForm.sheets.length;
-    editForm.priceSet = parseFloat((editForm.priceSheet + (n - 1)).toFixed(2));
+    syncDefaultSetPrice();
   }
 
   async function handleImageUpload(event, target, prefix, sheetIndex) {
