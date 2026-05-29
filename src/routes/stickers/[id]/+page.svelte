@@ -425,6 +425,7 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    border-radius: 8px;
   }
 
   .pair-body { padding: 12px 4px 4px; }

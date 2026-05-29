@@ -198,6 +198,7 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    border-radius: 10px;
   }
 
   .price-tags {
