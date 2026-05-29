@@ -235,8 +235,10 @@
     }
   }
 
+  let emailSentOrderId = $state(null);
+
   async function updateStatus(id, status) {
-    await fetch(`/api/admin/orders/${id}`, {
+    const res = await fetch(`/api/admin/orders/${id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -245,6 +247,11 @@
       body: JSON.stringify({ status }),
     });
     orders = orders.map(o => o.id === id ? { ...o, status } : o);
+    const data = await res.json().catch(() => ({}));
+    if (data.emailSent) {
+      emailSentOrderId = id;
+      setTimeout(() => { emailSentOrderId = null; }, 3500);
+    }
   }
 
   async function saveSettings() {
@@ -381,9 +388,17 @@
                     >
                       <option value="new">New</option>
                       <option value="processing">Processing</option>
+                      {#if o.delivery_method === 'pickup'}
+                        <option value="ready">Ready for Pickup ✉️</option>
+                      {:else}
+                        <option value="shipped">Shipped ✉️</option>
+                      {/if}
                       <option value="fulfilled">Fulfilled</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
+                    {#if emailSentOrderId === o.id}
+                      <div class="email-sent-badge">✉️ Email sent!</div>
+                    {/if}
                   </td>
                 </tr>
               {/each}
@@ -880,10 +895,26 @@
     outline: none;
   }
 
-  .status-select[data-status="new"]       { background: #fffbef; }
-  .status-select[data-status="processing"]{ background: #e8f4ff; }
-  .status-select[data-status="fulfilled"] { background: #efffee; }
-  .status-select[data-status="cancelled"] { background: #fff0f0; }
+  .status-select[data-status="new"]        { background: #fffbef; }
+  .status-select[data-status="processing"] { background: #e8f4ff; }
+  .status-select[data-status="ready"]      { background: #efffee; }
+  .status-select[data-status="shipped"]    { background: #eef4ff; }
+  .status-select[data-status="fulfilled"]  { background: #efffee; }
+  .status-select[data-status="cancelled"]  { background: #fff0f0; }
+
+  .email-sent-badge {
+    margin-top: 6px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: #2a7a3a;
+    background: #d4f5dd;
+    border: 1.5px solid #6ddc8a;
+    border-radius: 999px;
+    padding: 3px 10px;
+    display: inline-block;
+    white-space: nowrap;
+  }
 
   /* ── Settings ── */
   .settings-panel {

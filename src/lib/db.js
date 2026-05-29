@@ -137,6 +137,12 @@ export async function listOrders() {
   return db`SELECT * FROM orders ORDER BY created_at DESC`;
 }
 
+export async function getOrder(id) {
+  const db = sql();
+  const [row] = await db`SELECT * FROM orders WHERE id = ${id}`;
+  return row ?? null;
+}
+
 // ── Sticker Sets ──────────────────────────────────────────────
 
 function rowToSet(row) {

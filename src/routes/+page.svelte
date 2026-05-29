@@ -24,52 +24,70 @@
 
   <!-- Card grid -->
   <section class="grid-section max-w">
-    <div class="card-grid">
-      {#each sets as set, i}
-        {@const rot = ROTS[i % ROTS.length]}
-        <a
-          href="/stickers/{set.id}"
-          class="set-card"
-          style="--rot:{rot}deg; --accent:{set.color}"
-        >
-          <!-- Washi tape -->
-          <div class="washi" style="background:repeating-linear-gradient(45deg, {set.color}, {set.color} 6px, {set.color}88 6px, {set.color}88 12px)"></div>
+    {#if sets.length === 0}
+      <div class="empty-state">
+        <div class="empty-emoji">🌟</div>
+        <p class="empty-heading">No stickers right now</p>
+        <p class="empty-sub">Check back soon — new sheets are on the way!</p>
+      </div>
+    {:else}
+      <div class="card-grid">
+        {#each sets as set, i}
+          {@const rot = ROTS[i % ROTS.length]}
+          <a
+            href="/stickers/{set.id}"
+            class="set-card"
+            style="--rot:{rot}deg; --accent:{set.color}"
+          >
+            <!-- Washi tape -->
+            <div class="washi" style="background:repeating-linear-gradient(45deg, {set.color}, {set.color} 6px, {set.color}88 6px, {set.color}88 12px)"></div>
 
-          <!-- Image area -->
-          <div class="card-img-wrap">
-            {#each (set.sheets ?? []).slice(0, 2).filter(s => s.image) as sheet}
-              <img src={sheet.image} alt={sheet.name} class="card-img" />
-            {/each}
-          </div>
-
-          <!-- Price tags — positioned relative to card so they sit on top -->
-          <div class="price-tags">
-            {#if set.sheets && set.sheets.length > 1}
-              <div class="price-tag yellow" style="--tag-rot:8deg">${set.priceSet} set</div>
-            {/if}
-            <div class="price-tag white" style="--tag-rot:-4deg">${set.priceSheet} sheet</div>
-          </div>
-
-          <!-- Card body -->
-          <div class="card-body">
-            <div class="card-title-row">
-              <span class="card-name">{set.name}</span>
-              <span class="chip" style="background:{set.color};border-color:{set.color}">{set.sheets?.length ?? 2} sheets</span>
+            <!-- Image area -->
+            <div class="card-img-wrap">
+              {#each (set.sheets ?? []).slice(0, 2).filter(s => s.image) as sheet}
+                <img src={sheet.image} alt={sheet.name} class="card-img" />
+              {/each}
             </div>
-            <p class="card-tagline">{set.tagline}</p>
-            <div class="card-footer">
+
+            <!-- Price tags — positioned relative to card so they sit on top -->
+            <div class="price-tags">
               {#if set.sheets && set.sheets.length > 1}
-                {@const savings = set.priceSheet * set.sheets.length - set.priceSet}
-                {#if savings > 0}
-                  <span class="deal-text">Set deal · save ${savings % 1 === 0 ? savings : savings.toFixed(2)}</span>
-                {/if}
+                <div class="price-tag yellow" style="--tag-rot:8deg">${set.priceSet} set</div>
               {/if}
-              <span class="see-btn">See sheets →</span>
+              <div class="price-tag white" style="--tag-rot:-4deg">${set.priceSheet} sheet</div>
             </div>
+
+            <!-- Card body -->
+            <div class="card-body">
+              <div class="card-title-row">
+                <span class="card-name">{set.name}</span>
+                <span class="chip" style="background:{set.color};border-color:{set.color}">{set.sheets?.length ?? 2} sheets</span>
+              </div>
+              <p class="card-tagline">{set.tagline}</p>
+              <div class="card-footer">
+                {#if set.sheets && set.sheets.length > 1}
+                  {@const savings = set.priceSheet * set.sheets.length - set.priceSet}
+                  {#if savings > 0}
+                    <span class="deal-text">Set deal · save ${savings % 1 === 0 ? savings : savings.toFixed(2)}</span>
+                  {/if}
+                {/if}
+                <span class="see-btn">See sheets →</span>
+              </div>
+            </div>
+          </a>
+        {/each}
+
+        <!-- Coming soon card -->
+        <div class="set-card coming-soon-card" style="--rot:{ROTS[sets.length % ROTS.length]}deg">
+          <div class="washi" style="background:repeating-linear-gradient(45deg,#ffd23f,#ffd23f 6px,#ffd23f88 6px,#ffd23f88 12px)"></div>
+          <div class="cs-body">
+            <div class="cs-emoji">✨</div>
+            <p class="cs-heading">More coming soon!</p>
+            <p class="cs-sub">Keep an eye out for new sticker sheets dropping soon</p>
           </div>
-        </a>
-      {/each}
-    </div>
+        </div>
+      </div>
+    {/if}
   </section>
 
   <!-- How it works -->
@@ -144,10 +162,80 @@
   /* ── Card grid ── */
   .grid-section { padding-bottom: 64px; }
 
+  .empty-state {
+    text-align: center;
+    padding: 64px 24px;
+  }
+
+  .empty-emoji {
+    font-size: 64px;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+
+  .empty-heading {
+    font-family: 'Bagel Fat One', sans-serif;
+    font-size: 32px;
+    color: var(--ink);
+    margin: 0 0 8px;
+  }
+
+  .empty-sub {
+    font-family: 'Caveat', cursive;
+    font-size: 22px;
+    color: var(--ink);
+    opacity: 0.65;
+    margin: 0;
+  }
+
   .card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 32px 26px;
+  }
+
+  /* Coming soon card */
+  .coming-soon-card {
+    cursor: default;
+    pointer-events: none;
+    background: var(--paper-2, #efe7d0);
+    border-style: dashed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 260px;
+  }
+
+  .coming-soon-card:hover {
+    transform: rotate(var(--rot, 0deg));
+    box-shadow: 0 1px 0 rgba(0,0,0,.05), 0 6px 0 rgba(0,0,0,.04), 0 18px 28px -10px rgba(42,34,56,0.18);
+  }
+
+  .cs-body {
+    padding: 32px 24px;
+    text-align: center;
+  }
+
+  .cs-emoji {
+    font-size: 52px;
+    line-height: 1;
+    margin-bottom: 14px;
+  }
+
+  .cs-heading {
+    font-family: 'Bagel Fat One', sans-serif;
+    font-size: 24px;
+    color: var(--ink);
+    margin: 0 0 8px;
+  }
+
+  .cs-sub {
+    font-family: 'Caveat', cursive;
+    font-size: 18px;
+    color: var(--ink);
+    opacity: 0.65;
+    margin: 0;
+    line-height: 1.4;
   }
 
   .set-card {

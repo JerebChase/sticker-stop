@@ -686,6 +686,201 @@ function buildCustomerHtml(order, settings, origin) {
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
+// ── Fulfillment email (ready for pickup / shipped) ────────────────────────────
+
+function buildFulfillmentHtml(order, origin) {
+  const isPickup   = order.delivery_method === 'pickup';
+  const firstName  = (order.customer_name?.split(' ')[0]) ?? order.customer_name;
+  const itemRows   = order.items.map(i => buildItemRow(i, origin)).join('');
+  const total      = Number(order.total).toFixed(2);
+  const bannerColor = isPickup ? '#6ddc8a' : '#4ec3ff';
+  const headline   = isPickup ? 'Ready for pickup!' : 'Your order shipped!';
+  const subtext    = isPickup
+    ? 'Your stickers are packed and waiting — come grab them!'
+    : 'Your stickers are on their way. Keep an eye on the mailbox! &#128231;';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>${headline} — Sticker Stop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=Caveat:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  body { margin:0; padding:0; background:#efe7d0; }
+  a    { color:#2a2238; }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#efe7d0;font-family:'Nunito',Arial,sans-serif;">
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%"
+  style="background:#efe7d0;padding:36px 16px 60px;">
+<tr><td align="center">
+
+<table cellpadding="0" cellspacing="0" border="0" width="600"
+  style="max-width:600px;background:#fff7e3;
+    border:3px solid #2a2238;border-radius:26px;overflow:hidden;
+    box-shadow:0 10px 0 rgba(42,34,56,0.85);">
+
+  <!-- Banner -->
+  <tr>
+    <td style="background:${bannerColor};border-bottom:3px solid #2a2238;padding:20px 28px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+          <td valign="middle">
+            <table cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td valign="middle" style="padding-right:12px;">
+                  <div style="width:52px;height:52px;border-radius:50%;
+                    background:#ff4d8d;border:3.5px solid white;
+                    text-align:center;line-height:48px;display:inline-block;
+                    box-shadow:0 3px 0 rgba(0,0,0,0.18);">
+                    <span style="font-family:'Bagel Fat One',cursive;
+                      color:white;font-size:26px;line-height:1;vertical-align:middle;">S!</span>
+                  </div>
+                </td>
+                <td valign="middle">
+                  <div style="font-family:'Bagel Fat One',cursive;color:#2a2238;
+                    font-size:26px;line-height:1;letter-spacing:-0.4px;">Sticker Stop</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+          <td align="right" valign="middle">
+            <div style="display:inline-block;background:white;color:#2a2238;
+              border:3px solid #2a2238;border-radius:999px;padding:6px 14px;
+              font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:13px;
+              box-shadow:0 3px 0 rgba(42,34,56,0.85);">Order #${order.id}</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Hero -->
+  <tr>
+    <td style="padding:36px 28px 8px;text-align:center;">
+      <div style="font-size:72px;line-height:1;margin-bottom:14px;">
+        ${isPickup ? '&#127968;' : '&#128230;'}
+      </div>
+      <h1 style="font-family:'Bagel Fat One',cursive;font-size:48px;
+        margin:0 0 10px;line-height:1;letter-spacing:-1px;color:#2a2238;">
+        <span style="display:inline-block;transform:rotate(-2deg);">Hey,</span>
+        <span style="display:inline-block;transform:rotate(2deg);color:#ff4d8d;">${firstName}</span>
+        <span style="display:inline-block;transform:rotate(-1deg);">&#8212;</span>
+      </h1>
+      <h2 style="font-family:'Bagel Fat One',cursive;font-size:38px;
+        margin:0 0 10px;color:#2a2238;letter-spacing:-0.5px;">
+        ${headline}
+      </h2>
+      <p style="font-family:'Caveat',cursive;font-size:24px;
+        color:#2a2238;opacity:0.85;margin:0 0 8px;">
+        ${subtext}
+      </p>
+      ${isPickup && order.customer_address ? `
+      <div style="display:inline-block;margin-top:10px;background:white;
+        border:2.5px solid #2a2238;border-radius:14px;padding:10px 20px;
+        font-family:'Fredoka',Arial,sans-serif;font-size:14px;color:#2a2238;
+        box-shadow:0 4px 0 rgba(42,34,56,0.85);">
+        &#128205; ${order.customer_address}
+      </div>` : ''}
+      ${!isPickup && order.customer_address ? `
+      <div style="display:inline-block;margin-top:10px;background:white;
+        border:2.5px solid #2a2238;border-radius:14px;padding:10px 20px;
+        font-family:'Fredoka',Arial,sans-serif;font-size:14px;color:#2a2238;
+        box-shadow:0 4px 0 rgba(42,34,56,0.85);">
+        Shipping to: ${order.customer_address}
+      </div>` : ''}
+    </td>
+  </tr>
+
+  <!-- Receipt -->
+  <tr>
+    <td style="padding:22px 28px 4px;">
+      <div style="display:inline-block;background:#ffd23f;
+        border:2.5px solid #2a2238;padding:4px 14px;border-radius:999px;
+        font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:13px;
+        text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;
+        box-shadow:0 3px 0 rgba(42,34,56,0.85);">Your sticker stash</div>
+      <table cellpadding="0" cellspacing="0" border="0" width="100%"
+        style="background:white;border:3px solid #2a2238;border-radius:18px;
+          box-shadow:0 6px 0 rgba(42,34,56,0.85);">
+        <tr>
+          <td style="padding:0 22px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              ${itemRows}
+              <!-- Total -->
+              <tr>
+                <td style="padding:10px 0 12px;" colspan="3">
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td style="font-family:'Bagel Fat One',cursive;font-size:18px;
+                        color:#2a2238;padding:3px 0;">Total</td>
+                      <td align="right" style="font-family:'Bagel Fat One',cursive;
+                        font-size:18px;color:#2a2238;padding:3px 0;">$${total}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Spacer -->
+  <tr><td style="padding:18px 0 0;"></td></tr>
+
+  <!-- Footer -->
+  <tr>
+    <td style="background:#fff1cf;border-top:3px dashed #2a2238;
+      padding:22px 28px 24px;text-align:center;">
+      <p style="font-family:'Caveat',cursive;font-size:24px;color:#2a2238;margin:0 0 4px;">
+        stick &lsquo;em everywhere &#10024;<br/>
+        &mdash; the Sticker Stop crew
+      </p>
+      <p style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
+        font-size:11px;color:#2a2238;opacity:0.6;
+        text-transform:uppercase;letter-spacing:1.2px;margin:10px 0 0;">
+        Sticker Stop
+      </p>
+    </td>
+  </tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+export async function sendFulfillmentEmail(order, origin = '') {
+  if (!RESEND_API_KEY) return;
+  if (!order.customer_email) return;
+
+  const resend   = new Resend(RESEND_API_KEY);
+  const from     = EMAIL_FROM || 'Sticker Stop <orders@stickerstop.com>';
+  const isPickup = order.delivery_method === 'pickup';
+  const subject  = isPickup
+    ? `&#127968; Your order #${order.id} is ready for pickup!`
+    : `&#128230; Your order #${order.id} has shipped!`;
+  const text = isPickup
+    ? `Hi ${order.customer_name}! Great news — your Sticker Stop order #${order.id} is ready for pickup. Come grab your stickers!`
+    : `Hi ${order.customer_name}! Great news — your Sticker Stop order #${order.id} has shipped and is on its way to you!`;
+
+  const result = await resend.emails.send({
+    from,
+    to: order.customer_email,
+    subject,
+    html: buildFulfillmentHtml(order, origin),
+    text,
+  });
+  if (result.error) throw new Error(result.error.message);
+}
+
 export async function sendOrderEmail(order, settings, origin = '') {
   if (!RESEND_API_KEY) return;
 
