@@ -297,7 +297,7 @@
             </div>
 
             <button
-              class="big-btn pink-btn place-btn"
+              class="big-btn place-btn"
               disabled={!canSubmit || submitting}
               onclick={placeOrder}
             >
@@ -676,7 +676,7 @@
   .pink-btn { background: var(--pink); color: white; }
   .blue-btn { background: var(--blue); color: var(--ink); }
 
-  .place-btn { font-size: 20px; padding: 14px 28px; }
+  .place-btn { font-size: 20px; padding: 14px 28px; background: var(--blue); color: var(--ink); }
 
   .no-payment {
     font-family: 'Caveat', cursive;

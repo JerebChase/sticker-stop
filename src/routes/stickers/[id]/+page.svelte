@@ -551,8 +551,8 @@
     padding: 14px 28px;
     border-radius: 999px;
     border: 3px solid var(--ink);
-    background: var(--pink);
-    color: white;
+    background: var(--yellow);
+    color: var(--ink);
     cursor: pointer;
     box-shadow: 0 6px 0 rgba(42,34,56,0.85);
     transition: transform 0.08s, box-shadow 0.08s, background 0.2s;
