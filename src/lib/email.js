@@ -274,7 +274,21 @@ function buildItemRow(item, origin) {
 
   let thumbContent = '';
   if (imageUrl) {
-    if (item.kind === 'pair' || item.side === 'full') {
+    if (item.image2 && (item.kind === 'set' || item.kind === 'pair')) {
+      const image2Url = absoluteUrl(item.image2, origin);
+      thumbContent = `<table cellpadding="0" cellspacing="0" border="0" width="64" height="64" style="border-collapse:separate;border-spacing:2px;">
+        <tr>
+          <td style="padding:0;width:31px;">
+            <img src="${imageUrl}" width="31" height="64" alt=""
+              style="display:block;width:31px;height:64px;object-fit:cover;border-radius:5px;" />
+          </td>
+          <td style="padding:0;width:31px;">
+            <img src="${image2Url}" width="31" height="64" alt=""
+              style="display:block;width:31px;height:64px;object-fit:cover;border-radius:5px;" />
+          </td>
+        </tr>
+      </table>`;
+    } else if (item.side === 'full') {
       thumbContent = `<img src="${imageUrl}" width="64" height="64" alt=""
         style="display:block;width:64px;height:64px;object-fit:cover;border-radius:9px;" />`;
     } else if (item.side === 'left') {

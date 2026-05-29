@@ -41,7 +41,8 @@
         setId:   set.id,
         sheetId: `${set.id}-set`,
         name:    `${set.name} — Full set`,
-        image:   sheets[0]?.image || set.image || '',
+        image:   sheets[0]?.image || '',
+        image2:  sheets[1]?.image || '',
         side:    'full',
         price:   set.priceSet,
       }, qty);

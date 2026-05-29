@@ -185,13 +185,18 @@
         <div class="items-col">
           {#each items as item (item.sheetId)}
             <div class="item-card">
-              <div class="item-thumb-wrap">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  class="item-thumb"
-                  style="left:{item.side === 'left' ? '0' : item.side === 'right' ? '-100%' : '0'}; width:{item.side === 'full' ? '100%' : '200%'}"
-                />
+              <div class="item-thumb-wrap" class:split={item.image2}>
+                {#if item.image2}
+                  <img src={item.image}  alt={item.name} class="item-thumb-half" />
+                  <img src={item.image2} alt={item.name} class="item-thumb-half" />
+                {:else}
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    class="item-thumb"
+                    style="left:{item.side === 'left' ? '0' : item.side === 'right' ? '-100%' : '0'}; width:{item.side === 'full' ? '100%' : '200%'}"
+                  />
+                {/if}
               </div>
               <div class="item-info">
                 <span class="item-name">{item.name}</span>
@@ -392,9 +397,23 @@
     flex-shrink: 0;
     position: relative;
     overflow: hidden;
-    background: var(--paper-2);
+    background: white;
     border-radius: 10px;
     margin: 10px 0;
+  }
+
+  .item-thumb-wrap.split {
+    display: flex;
+    gap: 2px;
+  }
+
+  .item-thumb-half {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 6px;
   }
 
   .item-thumb {
