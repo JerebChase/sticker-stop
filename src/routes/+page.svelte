@@ -204,6 +204,10 @@
     align-items: center;
     justify-content: center;
     min-height: 260px;
+    grid-column: 1 / -1;
+    max-width: 360px;
+    width: 100%;
+    margin: 0 auto;
   }
 
   .coming-soon-card:hover {
