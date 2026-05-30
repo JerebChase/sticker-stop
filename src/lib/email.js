@@ -914,7 +914,7 @@ export async function sendOrderEmail(order, settings, origin = '') {
 
     await send({
       to:      order.customer_email,
-      subject: `🎉Your order #${order.id} is confirmed!`,
+      subject: `🎉 Your order #${order.id} is confirmed!`,
       text,
       html,
     });
