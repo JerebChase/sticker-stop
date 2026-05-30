@@ -853,7 +853,7 @@ export async function sendFulfillmentEmail(order, origin = '') {
   if (!order.customer_email) return;
 
   const resend   = new Resend(RESEND_API_KEY);
-  const from     = EMAIL_FROM || 'Sticker Stop <orders@stickerstop.com>';
+  const from     = EMAIL_FROM || 'Sticker Stop <orders@sticker-stop.com>';
   const isPickup = order.delivery_method === 'pickup';
   const subject  = isPickup
     ? `&#127968; Your order #${order.id} is ready for pickup!`
@@ -876,7 +876,7 @@ export async function sendOrderEmail(order, settings, origin = '') {
   if (!RESEND_API_KEY) return;
 
   const resend = new Resend(RESEND_API_KEY);
-  const from = EMAIL_FROM || 'Sticker Stop <orders@stickerstop.com>';
+  const from = EMAIL_FROM || 'Sticker Stop <orders@sticker-stop.com>';
 
   async function send({ to, subject, text, html }) {
     const result = await resend.emails.send({ from, to, subject, text, html });
@@ -1286,7 +1286,7 @@ function buildCustomRequestHtml(data) {
 export async function sendCustomRequestEmail(data, recipients) {
   if (!RESEND_API_KEY || !recipients.length) return;
   const resend = new Resend(RESEND_API_KEY);
-  const from = EMAIL_FROM || 'Sticker Stop <orders@stickerstop.com>';
+  const from = EMAIL_FROM || 'Sticker Stop <orders@sticker-stop.com>';
   const { name, description } = data;
 
   try {
