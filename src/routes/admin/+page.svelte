@@ -302,6 +302,7 @@
   let announcementSent = $state(false);
   let announcementError = $state('');
   let announcementResults = $state(null);
+  let announcementImageUploading = $state(false);
 
   function openAnnouncement() {
     const emails = [...new Set(
@@ -315,7 +316,30 @@
     announcementSent = false;
     announcementError = '';
     announcementResults = null;
+    announcementImageUploading = false;
     announcementOpen = true;
+  }
+
+  async function handleAnnouncementImageUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    announcementImageUploading = true;
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('setId', 'announcement');
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        headers: { 'x-admin-password': password },
+        body: fd,
+      });
+      const data = await res.json();
+      if (res.ok) announcementImageUrl = data.url;
+      else alert(data.error ?? 'Upload failed.');
+    } finally {
+      announcementImageUploading = false;
+      event.target.value = '';
+    }
   }
 
   function closeAnnouncement() {
@@ -708,10 +732,22 @@
             <textarea bind:value={announcementBody} rows="6" placeholder="Write your message here…&#10;&#10;Use blank lines to separate paragraphs."></textarea>
           </label>
 
-          <label class="field">
-            <span class="field-label">Image URL <span class="field-hint">(optional)</span></span>
-            <input type="url" bind:value={announcementImageUrl} placeholder="https://…" />
-          </label>
+          <div class="field">
+            <span class="field-label">Image <span class="field-hint">(optional)</span></span>
+            {#if announcementImageUrl}
+              <div class="ann-img-preview-wrap">
+                <img src={announcementImageUrl} alt="Announcement image" class="ann-img-preview" />
+                <button class="ann-img-remove" onclick={() => announcementImageUrl = ''}>✕ Remove</button>
+              </div>
+            {:else}
+              <label class="upload-btn" class:uploading={announcementImageUploading}>
+                {announcementImageUploading ? 'Uploading…' : 'Choose image'}
+                <input type="file" accept="image/*" style="display:none"
+                  disabled={announcementImageUploading}
+                  onchange={handleAnnouncementImageUpload} />
+              </label>
+            {/if}
+          </div>
 
           <div class="field">
             <span class="field-label">
@@ -1862,6 +1898,35 @@
     color: var(--pink);
     margin: 0;
   }
+
+  .ann-img-preview-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .ann-img-preview {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 2.5px solid var(--ink);
+    box-shadow: 0 4px 0 var(--ink);
+  }
+
+  .ann-img-remove {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 2px solid var(--ink);
+    background: var(--paper-2);
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .ann-img-remove:hover { background: var(--pink); color: white; border-color: var(--pink); }
 
   /* ── Modal success state ── */
   .modal-success {
