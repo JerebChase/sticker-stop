@@ -12,7 +12,15 @@
 
   let items = $derived($cart);
   let subtotal = $derived(items.reduce((s, i) => s + i.price * i.qty, 0));
-  let shipping = $derived(items.length > 0 && deliveryMethod === 'mail' ? 1 : 0);
+  let totalSheets = $derived(items.reduce((s, i) => {
+    const count = i.sheetCount ?? (i.image3 ? 3 : i.image2 ? 2 : 1);
+    return s + count * i.qty;
+  }, 0));
+  let shipping = $derived(
+    items.length === 0 || deliveryMethod !== 'mail' ? 0 :
+    totalSheets <= 4  ? 1 :
+    totalSheets <= 10 ? 2 : 3
+  );
   let total = $derived(subtotal + shipping);
   let canSubmit = $derived(
     items.length > 0 &&
@@ -243,7 +251,7 @@
                 >
                   <span class="delivery-icon">📬</span>
                   <span class="delivery-name">Ship it to me</span>
-                  <span class="delivery-sub">+bonus sticker!</span>
+                  <span class="delivery-sub">$1–$3 · +bonus sticker!</span>
                 </button>
                 <button
                   class="delivery-btn"

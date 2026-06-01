@@ -37,31 +37,32 @@
   function addToCart() {
     if (isSet) {
       cart.add({
-        kind:    'set',
-        setId:   set.id,
-        sheetId: `${set.id}-set`,
-        name:    `${set.name} — Full set`,
-        image:   sheets[0]?.image || '',
-        image2:  sheets[1]?.image || '',
-        image3:  sheets[2]?.image || '',
-        side:    'full',
-        price:   set.priceSet,
+        kind:       'set',
+        setId:      set.id,
+        sheetId:    `${set.id}-set`,
+        name:       `${set.name} — Full set`,
+        image:      sheets[0]?.image || '',
+        image2:     sheets[1]?.image || '',
+        image3:     sheets[2]?.image || '',
+        side:       'full',
+        price:      set.priceSet,
+        sheetCount: sheets.length,
       }, qty);
     } else {
       const sheet = sheets[choice];
-      // For 2-sheet sets without per-sheet images, use L/R crop of the combined image
       const hasOwnImage = !!sheet.image;
       const side = hasOwnImage
         ? 'full'
         : (sheets.length === 2 ? (choice === 0 ? 'left' : 'right') : 'full');
       cart.add({
-        kind:    'sheet',
-        setId:   set.id,
-        sheetId: sheet.id,
-        name:    `${set.name} — ${sheet.name}`,
-        image:   sheet.image || set.image,
+        kind:       'sheet',
+        setId:      set.id,
+        sheetId:    sheet.id,
+        name:       `${set.name} — ${sheet.name}`,
+        image:      sheet.image || set.image,
         side,
-        price:   set.priceSheet,
+        price:      set.priceSheet,
+        sheetCount: 1,
       }, qty);
     }
     added = true;
