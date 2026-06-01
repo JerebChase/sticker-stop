@@ -1333,15 +1333,15 @@ function buildAnnouncementHtml(subject, body, imageUrl) {
       color:#2a2238;line-height:1.65;margin:0 0 14px;text-align:center;">${escHtml(p).replace(/\n/g, '<br/>')}</p>`
   ).join('');
 
-  const imageBlock = imageUrl ? `
-  <tr>
-    <td style="padding:20px 28px 0;text-align:center;">
-      <img src="${escHtml(imageUrl)}" alt="" width="544"
-        style="display:block;width:100%;max-width:544px;height:auto;margin:0 auto;
-          border-radius:18px;border:3px solid #2a2238;
-          box-shadow:0 6px 0 rgba(42,34,56,0.85);" />
-    </td>
-  </tr>` : '';
+  const imageInCard = imageUrl ? `
+            <tr>
+              <td style="padding:8px 0 6px;">
+                <img src="${escHtml(imageUrl)}" alt="" width="496"
+                  style="display:block;width:100%;max-width:496px;height:auto;
+                    border-radius:12px;border:2.5px solid #2a2238;
+                    box-shadow:0 4px 0 rgba(42,34,56,0.85);" />
+              </td>
+            </tr>` : '';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1415,22 +1415,23 @@ function buildAnnouncementHtml(subject, body, imageUrl) {
     </td>
   </tr>
 
-  <!-- Body -->
+  <!-- Body + Image card -->
   <tr>
     <td style="padding:0 28px 8px;">
       <table cellpadding="0" cellspacing="0" border="0" width="100%"
         style="background:white;border:3px solid #2a2238;border-radius:18px;
           box-shadow:0 6px 0 rgba(42,34,56,0.85);">
         <tr>
-          <td style="padding:22px 24px 8px;text-align:center;">
-            ${paragraphs}
+          <td style="padding:22px 24px 16px;text-align:center;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr><td>${paragraphs}</td></tr>
+              ${imageInCard}
+            </table>
           </td>
         </tr>
       </table>
     </td>
   </tr>
-
-  ${imageBlock}
 
   <!-- Spacer -->
   <tr><td style="padding:18px 0 0;"></td></tr>
