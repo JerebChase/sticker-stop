@@ -43,6 +43,7 @@
         name:    `${set.name} — Full set`,
         image:   sheets[0]?.image || '',
         image2:  sheets[1]?.image || '',
+        image3:  sheets[2]?.image || '',
         side:    'full',
         price:   set.priceSet,
       }, qty);
@@ -145,7 +146,7 @@
           {/if}
           <div class="ribbon">BEST DEAL!</div>
           <div class="pair-img-wrap">
-            {#each sheets.slice(0, 2).filter(s => s.image) as sheet}
+            {#each sheets.filter(s => s.image) as sheet}
               <img src={sheet.image} alt={sheet.name} class="pair-half" />
             {/each}
           </div>

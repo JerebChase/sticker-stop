@@ -189,6 +189,9 @@
                 {#if item.image2}
                   <img src={item.image}  alt={item.name} class="item-thumb-half" />
                   <img src={item.image2} alt={item.name} class="item-thumb-half" />
+                  {#if item.image3}
+                    <img src={item.image3} alt={item.name} class="item-thumb-half" />
+                  {/if}
                 {:else}
                   <img
                     src={item.image}

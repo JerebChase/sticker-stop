@@ -44,7 +44,7 @@
 
             <!-- Image area -->
             <div class="card-img-wrap">
-              {#each (set.sheets ?? []).slice(0, 2).filter(s => s.image) as sheet}
+              {#each (set.sheets ?? []).filter(s => s.image) as sheet}
                 <img src={sheet.image} alt={sheet.name} class="card-img" />
               {/each}
             </div>
