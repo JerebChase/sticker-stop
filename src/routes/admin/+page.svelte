@@ -283,6 +283,14 @@
     revenue:   orders.reduce((s, o) => s + parseFloat(o.total || 0), 0).toFixed(2),
   });
 
+  const TAB_LABELS = { orders: 'Orders', sets: 'Sticker Sets', settings: 'Settings', feedback: 'Feedback' };
+  let tabMenuOpen = $state(false);
+
+  function switchTab(t) {
+    tab = t;
+    tabMenuOpen = false;
+  }
+
   // Announcement modal
   let announcementOpen = $state(false);
   let announcementSubject = $state('');
@@ -388,12 +396,41 @@
       <h1 class="dash-title">Sticker Stop Admin</h1>
     </div>
 
-    <!-- Tabs -->
-    <div class="tabs">
+    <!-- Tabs (desktop) -->
+    <div class="tabs tabs-desktop">
       <button class="tab" class:active={tab === 'orders'}   onclick={() => tab = 'orders'}>Orders</button>
       <button class="tab" class:active={tab === 'sets'}     onclick={() => tab = 'sets'}>Sticker Sets</button>
       <button class="tab" class:active={tab === 'settings'} onclick={() => tab = 'settings'}>Settings</button>
       <button class="tab" class:active={tab === 'feedback'} onclick={() => tab = 'feedback'}>Feedback</button>
+    </div>
+
+    <!-- Tab picker (mobile) -->
+    <div class="tabs-mobile">
+      <button class="tab-picker-btn" onclick={() => tabMenuOpen = !tabMenuOpen}>
+        <span class="tab-picker-label">{TAB_LABELS[tab]}</span>
+        <svg class="tab-picker-chevron" class:open={tabMenuOpen} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 9l6 6 6-6"/>
+        </svg>
+      </button>
+      {#if tabMenuOpen}
+        <div class="tab-dropdown" role="menu">
+          {#each Object.entries(TAB_LABELS) as [key, label]}
+            <button
+              class="tab-option"
+              class:active={tab === key}
+              onclick={() => switchTab(key)}
+              role="menuitem"
+            >
+              {label}
+              {#if tab === key}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12l5 5L20 7"/>
+                </svg>
+              {/if}
+            </button>
+          {/each}
+        </div>
+      {/if}
     </div>
 
     {#if tab === 'orders'}
@@ -917,6 +954,7 @@
     letter-spacing: -1px;
   }
 
+  /* ── Desktop tabs ── */
   .tabs {
     display: flex;
     gap: 8px;
@@ -941,6 +979,76 @@
   }
 
   .tab.active { background: white; }
+
+  /* ── Mobile tab picker ── */
+  .tabs-mobile {
+    display: none;
+    position: relative;
+    margin-bottom: 24px;
+  }
+
+  .tab-picker-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 13px 18px;
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    box-shadow: 0 4px 0 var(--ink);
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .tab-picker-label { flex: 1; text-align: left; }
+
+  .tab-picker-chevron {
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .tab-picker-chevron.open { transform: rotate(180deg); }
+
+  .tab-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    box-shadow: 0 6px 0 var(--ink);
+    overflow: hidden;
+    z-index: 50;
+  }
+
+  .tab-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 14px 18px;
+    background: none;
+    border: none;
+    border-bottom: 1.5px solid rgba(42,34,56,0.1);
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+  }
+  .tab-option:last-child { border-bottom: none; }
+  .tab-option.active { background: var(--paper-2); font-weight: 700; }
+  .tab-option:hover { background: var(--paper-2); }
+
+  @media (max-width: 620px) {
+    .tabs-desktop { display: none; }
+    .tabs-mobile  { display: block; }
+  }
 
   /* ── Stats ── */
   .stats-row {
