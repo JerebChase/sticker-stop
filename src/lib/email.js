@@ -1461,7 +1461,7 @@ function buildAnnouncementHtml(subject, body, imageUrl) {
 export async function sendAnnouncementEmail({ subject, body, imageUrl }, recipients) {
   if (!RESEND_API_KEY || !recipients.length) return;
   const resend = new Resend(RESEND_API_KEY);
-  const from = EMAIL_FROM || 'Sticker Stop <info@sticker-stop.com>';
+  const from = 'Sticker Stop <info@sticker-stop.com>';
 
   const results = { sent: 0, failed: 0, errors: [] };
   for (const to of recipients) {
