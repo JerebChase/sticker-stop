@@ -19,7 +19,8 @@
   let shipping = $derived(
     items.length === 0 || deliveryMethod !== 'mail' ? 0 :
     totalSheets <= 4  ? 1 :
-    totalSheets <= 10 ? 2 : 3
+    totalSheets <= 10 ? 2 :
+    2 + Math.ceil((totalSheets - 10) / 5)
   );
   let total = $derived(subtotal + shipping);
   let canSubmit = $derived(
@@ -251,7 +252,7 @@
                 >
                   <span class="delivery-icon">📬</span>
                   <span class="delivery-name">Ship it to me</span>
-                  <span class="delivery-sub">$1–$3 · +bonus sticker!</span>
+                  <span class="delivery-sub">from $1 · +bonus sticker!</span>
                 </button>
                 <button
                   class="delivery-btn"
