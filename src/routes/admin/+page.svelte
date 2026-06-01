@@ -282,6 +282,79 @@
     fulfilled: orders.filter(o => o.status === 'fulfilled').length,
     revenue:   orders.reduce((s, o) => s + parseFloat(o.total || 0), 0).toFixed(2),
   });
+
+  // Announcement modal
+  let announcementOpen = $state(false);
+  let announcementSubject = $state('');
+  let announcementBody = $state('');
+  let announcementImageUrl = $state('');
+  let announcementRecipients = $state([]);
+  let announcementNewEmail = $state('');
+  let announcementSending = $state(false);
+  let announcementSent = $state(false);
+  let announcementError = $state('');
+  let announcementResults = $state(null);
+
+  function openAnnouncement() {
+    const emails = [...new Set(
+      orders.map(o => o.customer_email).filter(Boolean)
+    )].sort();
+    announcementRecipients = emails;
+    announcementSubject = '';
+    announcementBody = '';
+    announcementImageUrl = '';
+    announcementNewEmail = '';
+    announcementSent = false;
+    announcementError = '';
+    announcementResults = null;
+    announcementOpen = true;
+  }
+
+  function closeAnnouncement() {
+    announcementOpen = false;
+  }
+
+  function removeRecipient(email) {
+    announcementRecipients = announcementRecipients.filter(e => e !== email);
+  }
+
+  function addRecipient() {
+    const email = announcementNewEmail.trim().toLowerCase();
+    if (!email || announcementRecipients.includes(email)) {
+      announcementNewEmail = '';
+      return;
+    }
+    announcementRecipients = [...announcementRecipients, email].sort();
+    announcementNewEmail = '';
+  }
+
+  async function sendAnnouncement() {
+    announcementError = '';
+    announcementSending = true;
+    try {
+      const res = await fetch('/api/admin/announcement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body: JSON.stringify({
+          subject: announcementSubject,
+          body: announcementBody,
+          imageUrl: announcementImageUrl || null,
+          recipients: announcementRecipients,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        announcementError = data.error ?? 'Failed to send.';
+      } else {
+        announcementSent = true;
+        announcementResults = data;
+      }
+    } catch {
+      announcementError = 'Could not reach server.';
+    } finally {
+      announcementSending = false;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -409,6 +482,13 @@
           </table>
         </div>
       {/if}
+
+      <!-- Send Announcement button -->
+      <div class="announcement-bar">
+        <button class="announcement-btn" onclick={openAnnouncement}>
+          ✉️ Send Announcement
+        </button>
+      </div>
 
     {:else if tab === 'sets'}
       <!-- Sticker Sets -->
@@ -557,6 +637,88 @@
     {/if}
   {/if}
 </div>
+
+<!-- Announcement Modal -->
+{#if announcementOpen}
+  <div class="modal-overlay" onclick={(e) => { if (e.target === e.currentTarget) closeAnnouncement(); }}>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">Send Announcement</h2>
+        <button class="modal-close" onclick={closeAnnouncement}>✕</button>
+      </div>
+
+      {#if announcementSent}
+        <div class="modal-success">
+          <div class="success-emoji">🎉</div>
+          <p class="success-heading">Sent!</p>
+          <p class="success-sub">
+            {announcementResults?.sent ?? announcementRecipients.length} email{(announcementResults?.sent ?? announcementRecipients.length) !== 1 ? 's' : ''} delivered
+            {#if announcementResults?.failed > 0}
+              · {announcementResults.failed} failed
+            {/if}
+          </p>
+          <button class="save-btn" onclick={closeAnnouncement}>Done</button>
+        </div>
+      {:else}
+        <div class="modal-body">
+          <label class="field">
+            <span class="field-label">Subject</span>
+            <input type="text" bind:value={announcementSubject} placeholder="New sticker drop! 🎉" />
+          </label>
+
+          <label class="field">
+            <span class="field-label">Body</span>
+            <textarea bind:value={announcementBody} rows="6" placeholder="Write your message here…&#10;&#10;Use blank lines to separate paragraphs."></textarea>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Image URL <span class="field-hint">(optional)</span></span>
+            <input type="url" bind:value={announcementImageUrl} placeholder="https://…" />
+          </label>
+
+          <div class="field">
+            <span class="field-label">
+              Recipients
+              <span class="field-hint">({announcementRecipients.length} email{announcementRecipients.length !== 1 ? 's' : ''})</span>
+            </span>
+            <div class="recipients-list">
+              {#each announcementRecipients as email}
+                <span class="recipient-chip">
+                  {email}
+                  <button class="chip-remove" onclick={() => removeRecipient(email)}>✕</button>
+                </span>
+              {/each}
+            </div>
+            <div class="add-recipient-row">
+              <input
+                type="email"
+                bind:value={announcementNewEmail}
+                placeholder="Add an email…"
+                onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addRecipient(); } }}
+              />
+              <button class="add-recipient-btn" onclick={addRecipient}>Add</button>
+            </div>
+          </div>
+
+          {#if announcementError}
+            <p class="announcement-error">{announcementError}</p>
+          {/if}
+
+          <div class="modal-actions">
+            <button class="cancel-btn" onclick={closeAnnouncement}>Cancel</button>
+            <button
+              class="send-btn"
+              onclick={sendAnnouncement}
+              disabled={announcementSending || !announcementSubject.trim() || !announcementBody.trim() || !announcementRecipients.length}
+            >
+              {announcementSending ? 'Sending…' : `Send to ${announcementRecipients.length}`}
+            </button>
+          </div>
+        </div>
+      {/if}
+    </div>
+  </div>
+{/if}
 
 {#snippet setForm(f)}
   <div class="set-form">
@@ -1420,5 +1582,201 @@
     line-height: 1.6;
     margin: 0;
     white-space: pre-wrap;
+  }
+
+  /* ── Announcement bar ── */
+  .announcement-bar {
+    margin-top: 28px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .announcement-btn {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    padding: 12px 24px;
+    border-radius: 999px;
+    border: 2.5px solid var(--ink);
+    background: var(--blue);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 0 5px 0 var(--ink);
+    transition: transform 0.08s, box-shadow 0.08s;
+  }
+  .announcement-btn:hover { transform: translateY(-2px); }
+  .announcement-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+
+  /* ── Announcement modal ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(42, 34, 56, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+
+  .modal-card {
+    background: var(--paper);
+    border: 3px solid var(--ink);
+    border-radius: 24px;
+    box-shadow: 0 10px 0 var(--ink);
+    width: 100%;
+    max-width: 620px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 24px 16px;
+    border-bottom: 2.5px solid var(--ink);
+  }
+
+  .modal-title {
+    font-family: 'Bagel Fat One', sans-serif;
+    font-size: 24px;
+    margin: 0;
+  }
+
+  .modal-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2.5px solid var(--ink);
+    background: var(--paper-2);
+    font-size: 14px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+
+  .modal-body {
+    padding: 20px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding-top: 4px;
+  }
+
+  .send-btn {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    padding: 12px 28px;
+    border-radius: 999px;
+    border: 2.5px solid var(--ink);
+    background: var(--mint);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 0 5px 0 var(--ink);
+    transition: transform 0.08s, box-shadow 0.08s;
+  }
+  .send-btn:hover:not(:disabled) { transform: translateY(-2px); }
+  .send-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+  .send-btn:disabled { opacity: 0.45; cursor: default; }
+
+  .field-hint {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    opacity: 0.55;
+  }
+
+  .recipients-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+    min-height: 32px;
+  }
+
+  .recipient-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: white;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 3px 8px 3px 10px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .chip-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 10px;
+    opacity: 0.5;
+    padding: 0;
+    line-height: 1;
+  }
+  .chip-remove:hover { opacity: 1; }
+
+  .add-recipient-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .add-recipient-row input {
+    flex: 1;
+  }
+
+  .add-recipient-btn {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 2px solid var(--ink);
+    background: var(--yellow);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .announcement-error {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    color: var(--pink);
+    margin: 0;
+  }
+
+  /* ── Modal success state ── */
+  .modal-success {
+    padding: 48px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .success-emoji { font-size: 56px; line-height: 1; }
+
+  .success-heading {
+    font-family: 'Bagel Fat One', sans-serif;
+    font-size: 32px;
+    margin: 0;
+  }
+
+  .success-sub {
+    font-family: 'Caveat', cursive;
+    font-size: 20px;
+    opacity: 0.75;
+    margin: 0 0 16px;
   }
 </style>

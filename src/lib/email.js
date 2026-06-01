@@ -1324,3 +1324,157 @@ export async function sendCustomRequestEmail(data, recipients) {
     console.error('Custom request email failed:', err.message);
   }
 }
+
+// ── Announcement email ────────────────────────────────────────────────────────
+
+function buildAnnouncementHtml(subject, body, imageUrl) {
+  const paragraphs = body.split(/\n\n+/).map(p =>
+    `<p style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;font-size:17px;
+      color:#2a2238;line-height:1.65;margin:0 0 16px;">${escHtml(p).replace(/\n/g, '<br/>')}</p>`
+  ).join('');
+
+  const imageBlock = imageUrl ? `
+  <tr>
+    <td style="padding:0 28px 20px;">
+      <img src="${escHtml(imageUrl)}" alt="" width="544"
+        style="display:block;width:100%;max-width:544px;height:auto;
+          border-radius:18px;border:3px solid #2a2238;
+          box-shadow:0 6px 0 rgba(42,34,56,0.85);" />
+    </td>
+  </tr>` : '';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>${escHtml(subject)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=Caveat:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  body { margin:0; padding:0; background:#efe7d0; }
+  a    { color:#2a2238; }
+  img  { border:0; outline:0; }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#efe7d0;font-family:'Nunito',Arial,sans-serif;">
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%"
+  style="background:#efe7d0;padding:36px 16px 60px;">
+<tr><td align="center">
+
+<table cellpadding="0" cellspacing="0" border="0" width="600"
+  style="max-width:600px;background:#fff7e3;
+    border:3px solid #2a2238;border-radius:26px;overflow:hidden;
+    box-shadow:0 10px 0 rgba(42,34,56,0.85);">
+
+  <!-- Banner -->
+  <tr>
+    <td style="background:#4ec3ff;border-bottom:3px solid #2a2238;padding:20px 28px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+          <td valign="middle">
+            <table cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td valign="middle" style="padding-right:12px;">
+                  <div style="width:52px;height:52px;border-radius:50%;
+                    background:#ff4d8d;border:3.5px solid white;
+                    text-align:center;line-height:48px;display:inline-block;
+                    box-shadow:0 3px 0 rgba(0,0,0,0.18);">
+                    <span style="font-family:'Bagel Fat One',cursive;
+                      color:white;font-size:26px;line-height:1;vertical-align:middle;">S!</span>
+                  </div>
+                </td>
+                <td valign="middle">
+                  <div style="font-family:'Bagel Fat One',cursive;color:white;font-size:26px;
+                    line-height:1;text-shadow:0 2px 0 rgba(42,34,56,0.35);letter-spacing:-0.4px;">
+                    Sticker Stop</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+          <td align="right" valign="middle">
+            <div style="display:inline-block;background:white;color:#2a2238;
+              border:3px solid #2a2238;border-radius:999px;padding:6px 14px;
+              font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:13px;
+              box-shadow:0 3px 0 rgba(42,34,56,0.85);">News ✨</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Heading -->
+  <tr>
+    <td style="padding:36px 28px 20px;text-align:center;">
+      <h1 style="font-family:'Bagel Fat One',cursive;font-size:42px;
+        margin:0 0 8px;line-height:1.05;letter-spacing:-1px;color:#2a2238;">
+        ${escHtml(subject)}
+      </h1>
+    </td>
+  </tr>
+
+  ${imageBlock}
+
+  <!-- Body -->
+  <tr>
+    <td style="padding:0 28px 28px;">
+      ${paragraphs}
+    </td>
+  </tr>
+
+  <!-- Spacer -->
+  <tr><td style="padding:4px 0 0;"></td></tr>
+
+  <!-- Footer -->
+  <tr>
+    <td style="background:#fff1cf;border-top:3px dashed #2a2238;
+      padding:22px 28px 24px;text-align:center;">
+      <p style="font-family:'Caveat',cursive;font-size:24px;color:#2a2238;margin:0 0 4px;">
+        stick &lsquo;em everywhere &#10024;<br/>
+        &mdash; the Sticker Stop crew
+      </p>
+      <p style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
+        font-size:11px;color:#2a2238;opacity:0.6;
+        text-transform:uppercase;letter-spacing:1.2px;margin:10px 0 0;">
+        Sticker Stop
+      </p>
+    </td>
+  </tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+export async function sendAnnouncementEmail({ subject, body, imageUrl }, recipients) {
+  if (!RESEND_API_KEY || !recipients.length) return;
+  const resend = new Resend(RESEND_API_KEY);
+  const from = EMAIL_FROM || 'Sticker Stop <info@sticker-stop.com>';
+
+  const results = { sent: 0, failed: 0, errors: [] };
+  for (const to of recipients) {
+    try {
+      const result = await resend.emails.send({
+        from,
+        to,
+        subject,
+        html: buildAnnouncementHtml(subject, body, imageUrl),
+        text: body,
+      });
+      if (result.error) {
+        results.failed++;
+        results.errors.push(`${to}: ${result.error.message}`);
+      } else {
+        results.sent++;
+      }
+    } catch (err) {
+      results.failed++;
+      results.errors.push(`${to}: ${err.message}`);
+    }
+  }
+  return results;
+}
