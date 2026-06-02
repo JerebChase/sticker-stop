@@ -84,14 +84,24 @@
     text-align: center;
   }
 
-  @media (max-height: 600px), (max-width: 400px) {
-    .page { align-items: flex-start; padding: 16px; }
-    .card { padding: 24px 20px; gap: 6px; border-radius: 18px; }
+  @media (max-width: 600px) {
+    .page { align-items: flex-start; padding: 12px 16px; min-height: unset; }
+    .card { padding: 20px 18px; gap: 6px; border-radius: 18px; }
     .badge { width: 48px; height: 48px; font-size: 22px; margin-bottom: 0; }
     .title { font-size: 26px; }
     .sub { font-size: 17px; margin-bottom: 0; }
     .input { padding: 10px 14px; }
     .btn { padding: 10px 24px; font-size: 16px; margin-top: 0; }
+  }
+
+  @media (max-height: 600px) {
+    .page { align-items: flex-start; padding: 8px 16px; min-height: unset; }
+    .card { padding: 16px 18px; gap: 4px; border-radius: 16px; }
+    .badge { width: 40px; height: 40px; font-size: 18px; margin-bottom: 0; }
+    .title { font-size: 22px; }
+    .sub { font-size: 15px; margin-bottom: 0; }
+    .input { padding: 8px 12px; }
+    .btn { padding: 8px 20px; font-size: 15px; margin-top: 0; }
   }
 
   .badge {
