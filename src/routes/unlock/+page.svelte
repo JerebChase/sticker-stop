@@ -84,6 +84,16 @@
     text-align: center;
   }
 
+  @media (max-height: 600px), (max-width: 400px) {
+    .page { align-items: flex-start; padding: 16px; }
+    .card { padding: 24px 20px; gap: 6px; border-radius: 18px; }
+    .badge { width: 48px; height: 48px; font-size: 22px; margin-bottom: 0; }
+    .title { font-size: 26px; }
+    .sub { font-size: 17px; margin-bottom: 0; }
+    .input { padding: 10px 14px; }
+    .btn { padding: 10px 24px; font-size: 16px; margin-top: 0; }
+  }
+
   .badge {
     width: 64px;
     height: 64px;
