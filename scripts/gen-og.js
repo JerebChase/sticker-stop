@@ -52,6 +52,20 @@ const blockH   = (tBB.y2 - tBB.y1) + LINE_GAP + (gBB.y2 - gBB.y1);
 const titleY   = badgeCy - blockH / 2 - tBB.y1;
 const taglineY = titleY + (tBB.y2 - tBB.y1) + LINE_GAP - gBB.y1;
 
+// Split each sentence into separate <path> elements — librsvg can struggle
+// with very long single-path strings from multi-word text
+function wordPaths(font, text, x, y, size, fill) {
+  const scale = size / font.unitsPerEm;
+  let cursor = x;
+  return text.split(' ').map(word => {
+    const p = font.getPath(word, cursor, y, size);
+    p.fill = fill;
+    const svg = p.toSVG(2);
+    cursor += font.stringToGlyphs(word + ' ').reduce((s, g) => s + g.advanceWidth * scale, 0);
+    return svg;
+  }).join('\n  ');
+}
+
 // ── Outline star ──────────────────────────────────────────────────────────────
 const STAR = 'M0-10 2.9-1.2 11-1.2 4.6 3.1 7 11 0 6.4-7 11-4.6 3.1-11-1.2-2.9-1.2z';
 function star(cx, cy, sz, color, rot = 0) {
@@ -62,8 +76,8 @@ function star(cx, cy, sz, color, rot = 0) {
 }
 
 // ── SVG ───────────────────────────────────────────────────────────────────────
-const titleSvg   = textPath(bagel,  'Sticker Stop',         TEXT_X, titleY,   TITLE_SZ,   ink);
-const taglineSvg = textPath(caveat, "stick 'em everywhere", TEXT_X, taglineY, TAGLINE_SZ, inkMuted);
+const titleSvg   = wordPaths(bagel,  'Sticker Stop',         TEXT_X, titleY,   TITLE_SZ,   ink);
+const taglineSvg = wordPaths(caveat, "stick 'em everywhere", TEXT_X, taglineY, TAGLINE_SZ, inkMuted);
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <rect width="${W}" height="${H}" fill="${paper}"/>
