@@ -8,3 +8,6 @@ build/
 .vercel/
 .DS_Store
 .claude/
+
+# Font files used for OG image generation (download via scripts/gen-og.js comments)
+*.ttf
