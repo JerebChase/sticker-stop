@@ -47,7 +47,7 @@ const TEXT_X     = 444;
 const tBB = bagel.getPath('Sticker Stop', 0, 0, TITLE_SZ).getBoundingBox();
 const gBB = caveat.getPath("stick 'em everywhere", 0, 0, TAGLINE_SZ).getBoundingBox();
 
-const LINE_GAP = 4;
+const LINE_GAP = -16;
 const blockH   = (tBB.y2 - tBB.y1) + LINE_GAP + (gBB.y2 - gBB.y1);
 const titleY   = badgeCy - blockH / 2 - tBB.y1;
 const taglineY = titleY + (tBB.y2 - tBB.y1) + LINE_GAP - gBB.y1;
