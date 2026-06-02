@@ -11,6 +11,7 @@
   // Settings
   let settings = $state({
     notification_emails: '',
+    site_password: '',
   });
   let newPassword = $state('');
   let settingsSaved = $state(false);
@@ -714,6 +715,12 @@
             <button class="add-recipient-btn" onclick={addNotifEmail}>Add</button>
           </div>
         </div>
+
+        <h2 class="settings-heading">Site Access</h2>
+        <label class="field">
+          <span class="field-label">Site password <span class="field-hint">(leave blank to make site public)</span></span>
+          <input type="password" bind:value={settings.site_password} placeholder="Password to enter the site" />
+        </label>
 
         <h2 class="settings-heading">Security</h2>
         <label class="field">

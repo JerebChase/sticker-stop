@@ -100,18 +100,23 @@ export async function getSettings() {
   const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
   return {
     notification_emails: map.notification_emails ?? '',
+    site_password:       map.site_password       ?? '',
   };
 }
 
 export async function updateSettings(updates) {
   const db = sql();
-  const allowed = ['notification_emails'];
+  const allowed = ['notification_emails', 'site_password'];
   for (const key of allowed) {
-    if (updates[key] !== undefined && updates[key] !== '') {
-      await db`
-        INSERT INTO settings (key, value) VALUES (${key}, ${updates[key]})
-        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
-      `;
+    if (updates[key] !== undefined) {
+      if (updates[key] === '') {
+        await db`DELETE FROM settings WHERE key = ${key}`;
+      } else {
+        await db`
+          INSERT INTO settings (key, value) VALUES (${key}, ${updates[key]})
+          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+        `;
+      }
     }
   }
 }
