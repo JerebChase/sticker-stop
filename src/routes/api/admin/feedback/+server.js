@@ -1,14 +1,9 @@
 import { json } from '@sveltejs/kit';
 import { listFeedback } from '$lib/db';
-import { ADMIN_PASSWORD } from '$env/static/private';
+import { isAdminAuthed } from '$lib/admin-auth';
 
-function auth(request) {
-  const pw = request.headers.get('x-admin-password') ?? new URL(request.url).searchParams.get('password');
-  return pw === ADMIN_PASSWORD;
-}
-
-export async function GET({ request }) {
-  if (!auth(request)) return json({ error: 'Unauthorized.' }, { status: 401 });
+export async function GET({ request, cookies }) {
+  if (!isAdminAuthed({ request, cookies })) return json({ error: 'Unauthorized.' }, { status: 401 });
   try {
     const rows = await listFeedback();
     return json(rows);

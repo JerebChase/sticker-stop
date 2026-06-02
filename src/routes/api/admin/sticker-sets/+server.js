@@ -1,14 +1,9 @@
 import { json } from '@sveltejs/kit';
 import { listAllStickerSets, upsertStickerSet, updateStickerSetOrder } from '$lib/db';
-import { ADMIN_PASSWORD } from '$env/static/private';
+import { isAdminAuthed } from '$lib/admin-auth';
 
-function auth(request) {
-  const pw = request.headers.get('x-admin-password') ?? new URL(request.url).searchParams.get('password');
-  return pw === ADMIN_PASSWORD;
-}
-
-export async function GET({ request }) {
-  if (!auth(request)) return json({ error: 'Unauthorized.' }, { status: 401 });
+export async function GET({ request, cookies }) {
+  if (!isAdminAuthed({ request, cookies })) return json({ error: 'Unauthorized.' }, { status: 401 });
   try {
     const sets = await listAllStickerSets();
     return json(sets);
@@ -17,8 +12,8 @@ export async function GET({ request }) {
   }
 }
 
-export async function PATCH({ request }) {
-  if (!auth(request)) return json({ error: 'Unauthorized.' }, { status: 401 });
+export async function PATCH({ request, cookies }) {
+  if (!isAdminAuthed({ request, cookies })) return json({ error: 'Unauthorized.' }, { status: 401 });
   try {
     const order = await request.json(); // [{ id, sortOrder }]
     await Promise.all(order.map(({ id, sortOrder }) => updateStickerSetOrder(id, sortOrder)));
@@ -28,8 +23,8 @@ export async function PATCH({ request }) {
   }
 }
 
-export async function POST({ request }) {
-  if (!auth(request)) return json({ error: 'Unauthorized.' }, { status: 401 });
+export async function POST({ request, cookies }) {
+  if (!isAdminAuthed({ request, cookies })) return json({ error: 'Unauthorized.' }, { status: 401 });
   try {
     const set = await request.json();
     if (!set.name) return json({ error: 'name is required.' }, { status: 400 });

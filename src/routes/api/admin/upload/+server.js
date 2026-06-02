@@ -1,15 +1,10 @@
 import { json } from '@sveltejs/kit';
 import { put } from '@vercel/blob';
-import { ADMIN_PASSWORD } from '$env/static/private';
+import { isAdminAuthed } from '$lib/admin-auth';
 import { env } from '$env/dynamic/private';
 
-function auth(request) {
-  const pw = request.headers.get('x-admin-password') ?? new URL(request.url).searchParams.get('password');
-  return pw === ADMIN_PASSWORD;
-}
-
-export async function POST({ request }) {
-  if (!auth(request)) return json({ error: 'Unauthorized.' }, { status: 401 });
+export async function POST({ request, cookies }) {
+  if (!isAdminAuthed({ request, cookies })) return json({ error: 'Unauthorized.' }, { status: 401 });
 
   const BLOB_READ_WRITE_TOKEN = env.BLOB_READ_WRITE_TOKEN;
   if (!BLOB_READ_WRITE_TOKEN) {

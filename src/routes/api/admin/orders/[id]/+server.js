@@ -1,15 +1,10 @@
 import { json } from '@sveltejs/kit';
 import { updateOrder, getOrder } from '$lib/db';
 import { sendFulfillmentEmail } from '$lib/email';
-import { ADMIN_PASSWORD } from '$env/static/private';
+import { isAdminAuthed } from '$lib/admin-auth';
 
-function auth(request) {
-  const pw = request.headers.get('x-admin-password') ?? new URL(request.url).searchParams.get('password');
-  return pw === ADMIN_PASSWORD;
-}
-
-export async function PATCH({ request, params }) {
-  if (!auth(request)) return json({ error: 'Unauthorized.' }, { status: 401 });
+export async function PATCH({ request, cookies, params }) {
+  if (!isAdminAuthed({ request, cookies })) return json({ error: 'Unauthorized.' }, { status: 401 });
   const body = await request.json();
   await updateOrder(parseInt(params.id), body);
 

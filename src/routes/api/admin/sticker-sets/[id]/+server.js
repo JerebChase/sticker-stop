@@ -1,14 +1,9 @@
 import { json } from '@sveltejs/kit';
 import { upsertStickerSet, deleteStickerSet } from '$lib/db';
-import { ADMIN_PASSWORD } from '$env/static/private';
+import { isAdminAuthed } from '$lib/admin-auth';
 
-function auth(request) {
-  const pw = request.headers.get('x-admin-password') ?? new URL(request.url).searchParams.get('password');
-  return pw === ADMIN_PASSWORD;
-}
-
-export async function PUT({ request, params }) {
-  if (!auth(request)) return json({ error: 'Unauthorized.' }, { status: 401 });
+export async function PUT({ request, cookies, params }) {
+  if (!isAdminAuthed({ request, cookies })) return json({ error: 'Unauthorized.' }, { status: 401 });
   try {
     const set = await request.json();
     await upsertStickerSet({ ...set, id: params.id });
@@ -18,8 +13,8 @@ export async function PUT({ request, params }) {
   }
 }
 
-export async function DELETE({ request, params }) {
-  if (!auth(request)) return json({ error: 'Unauthorized.' }, { status: 401 });
+export async function DELETE({ request, cookies, params }) {
+  if (!isAdminAuthed({ request, cookies })) return json({ error: 'Unauthorized.' }, { status: 401 });
   try {
     await deleteStickerSet(params.id);
     return json({ ok: true });

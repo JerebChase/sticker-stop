@@ -1,14 +1,9 @@
 import { json } from '@sveltejs/kit';
-import { ADMIN_PASSWORD } from '$env/static/private';
+import { isAdminAuthed } from '$lib/admin-auth';
 import { sendAnnouncementEmail } from '$lib/email';
 
-function auth(request) {
-  const pw = request.headers.get('x-admin-password');
-  return pw === ADMIN_PASSWORD;
-}
-
-export async function POST({ request }) {
-  if (!auth(request)) return json({ error: 'Unauthorized.' }, { status: 401 });
+export async function POST({ request, cookies }) {
+  if (!isAdminAuthed({ request, cookies })) return json({ error: 'Unauthorized.' }, { status: 401 });
 
   const { subject, body, imageUrl, recipients } = await request.json();
 
