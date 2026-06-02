@@ -629,7 +629,7 @@
                     {/if}
                   </td>
                   <td class="order-actions">
-                    {#if o.customer_email && o.status !== 'cancelled' && o.status !== 'canceled'}
+                    {#if o.customer_email && !o.paid && o.status !== 'cancelled' && o.status !== 'canceled'}
                       <button
                         class="remind-btn"
                         class:sent={reminderSentOrderId === o.id}
