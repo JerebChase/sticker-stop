@@ -207,6 +207,10 @@
   }
 
   let ordersError = $state('');
+  const PAGE_SIZE = 20;
+  let ordersPage = $state(0);
+  let pagedOrders = $derived(orders.slice(ordersPage * PAGE_SIZE, (ordersPage + 1) * PAGE_SIZE));
+  let totalPages = $derived(Math.max(1, Math.ceil(orders.length / PAGE_SIZE)));
 
   // Feedback
   let feedback = $state([]);
@@ -571,7 +575,7 @@
               </tr>
             </thead>
             <tbody>
-              {#each orders as o}
+              {#each pagedOrders as o}
                 <tr class="order-row" class:row-new={o.status === 'new'}>
                   <td class="order-id">#{o.id}</td>
                   <td class="order-date">{new Date(o.created_at).toLocaleDateString()}</td>
@@ -649,6 +653,13 @@
             </tbody>
           </table>
         </div>
+        {#if totalPages > 1}
+          <div class="pagination">
+            <button class="page-btn" disabled={ordersPage === 0} onclick={() => ordersPage--}>← Prev</button>
+            <span class="page-indicator">Page {ordersPage + 1} of {totalPages}</span>
+            <button class="page-btn" disabled={ordersPage >= totalPages - 1} onclick={() => ordersPage++}>Next →</button>
+          </div>
+        {/if}
       {/if}
 
       <!-- Send Announcement button -->
@@ -1352,6 +1363,51 @@
     padding: 3px 10px;
     display: inline-block;
     white-space: nowrap;
+  }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 16px 0 4px;
+  }
+
+  .page-btn {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 7px 18px;
+    border-radius: 999px;
+    border: 2.5px solid var(--ink);
+    background: white;
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(42,34,56,0.2);
+    transition: background 0.15s, box-shadow 0.1s;
+  }
+
+  .page-btn:hover:not(:disabled) {
+    background: var(--yellow);
+    box-shadow: 0 3px 0 rgba(42,34,56,0.35);
+  }
+
+  .page-btn:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: none;
+  }
+
+  .page-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .page-indicator {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    opacity: 0.7;
   }
 
   .order-paid { text-align: center; }
