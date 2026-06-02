@@ -773,7 +773,7 @@
               </div>
             {:else}
               <label class="upload-btn" class:uploading={announcementImageUploading}>
-                {announcementImageUploading ? 'Uploading…' : 'Choose image'}
+                {announcementImageUploading ? 'Uploading…' : 'Upload'}
                 <input type="file" accept="image/*" style="display:none"
                   disabled={announcementImageUploading}
                   onchange={handleAnnouncementImageUpload} />
@@ -1921,6 +1921,7 @@
     border-radius: 999px;
     border: 2px solid var(--ink);
     background: var(--yellow);
+    color: var(--ink);
     cursor: pointer;
     white-space: nowrap;
   }
