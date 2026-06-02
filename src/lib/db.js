@@ -57,6 +57,8 @@ export async function ensureSchema() {
   await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS sheets JSONB DEFAULT '[]'`;
   await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS price_sheet NUMERIC(10,2) DEFAULT 2.00`;
   await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS price_set   NUMERIC(10,2) DEFAULT 3.00`;
+  // Add paid column (migration)
+  await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS paid BOOLEAN DEFAULT false`;
 
   await db`
     CREATE TABLE IF NOT EXISTS feedback (
@@ -255,13 +257,16 @@ export async function deleteStickerSet(id) {
 
 export async function updateOrder(id, fields) {
   const db = sql();
-  const { status, notes } = fields;
+  const { status, notes, paid } = fields;
   if (status !== undefined && notes !== undefined) {
     await db`UPDATE orders SET status = ${status}, notes = ${notes} WHERE id = ${id}`;
   } else if (status !== undefined) {
     await db`UPDATE orders SET status = ${status} WHERE id = ${id}`;
   } else if (notes !== undefined) {
     await db`UPDATE orders SET notes = ${notes} WHERE id = ${id}`;
+  }
+  if (paid !== undefined) {
+    await db`UPDATE orders SET paid = ${paid} WHERE id = ${id}`;
   }
 }
 

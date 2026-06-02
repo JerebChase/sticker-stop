@@ -260,6 +260,8 @@
   }
 
   let emailSentOrderId = $state(null);
+  let reminderSentOrderId = $state(null);
+  let reminderSendingId = $state(null);
 
   async function updateStatus(id, status) {
     const res = await fetch(`/api/admin/orders/${id}`, {
@@ -275,6 +277,32 @@
     if (data.emailSent) {
       emailSentOrderId = id;
       setTimeout(() => { emailSentOrderId = null; }, 3500);
+    }
+  }
+
+  async function togglePaid(id, paid) {
+    await fetch(`/api/admin/orders/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': password,
+      },
+      body: JSON.stringify({ paid }),
+    });
+    orders = orders.map(o => o.id === id ? { ...o, paid } : o);
+  }
+
+  async function sendReminder(id) {
+    reminderSendingId = id;
+    try {
+      await fetch(`/api/admin/orders/${id}/remind`, {
+        method: 'POST',
+        headers: { 'x-admin-password': password },
+      });
+      reminderSentOrderId = id;
+      setTimeout(() => { reminderSentOrderId = null; }, 3500);
+    } finally {
+      reminderSendingId = null;
     }
   }
 
@@ -523,7 +551,9 @@
                 <th>Customer</th>
                 <th>Items</th>
                 <th>Total</th>
+                <th>Paid</th>
                 <th>Status</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -546,6 +576,17 @@
                     {/each}
                   </td>
                   <td class="order-total">${parseFloat(o.total).toFixed(2)}</td>
+                  <td class="order-paid">
+                    <label class="paid-checkbox-label" title={o.paid ? 'Paid' : 'Not paid'}>
+                      <input
+                        type="checkbox"
+                        class="paid-checkbox"
+                        checked={o.paid}
+                        onchange={(e) => togglePaid(o.id, e.target.checked)}
+                      />
+                      <span class="paid-checkmark" class:paid={o.paid}></span>
+                    </label>
+                  </td>
                   <td class="order-status">
                     <select
                       value={o.status}
@@ -565,6 +606,28 @@
                     </select>
                     {#if emailSentOrderId === o.id}
                       <div class="email-sent-badge">✉️ Email sent!</div>
+                    {/if}
+                  </td>
+                  <td class="order-actions">
+                    {#if o.customer_email}
+                      <button
+                        class="remind-btn"
+                        class:sent={reminderSentOrderId === o.id}
+                        disabled={reminderSendingId === o.id}
+                        onclick={() => sendReminder(o.id)}
+                        title="Send payment reminder"
+                      >
+                        {#if reminderSentOrderId === o.id}
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12l5 5L20 7"/>
+                          </svg>
+                        {:else}
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 2L11 13"/>
+                            <path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+                          </svg>
+                        {/if}
+                      </button>
                     {/if}
                   </td>
                 </tr>
@@ -1275,6 +1338,92 @@
     padding: 3px 10px;
     display: inline-block;
     white-space: nowrap;
+  }
+
+  .order-paid { text-align: center; }
+
+  .paid-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    width: 28px;
+    height: 28px;
+  }
+
+  .paid-checkbox-label input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .paid-checkmark {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    border: 2.5px solid #c0b8d0;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .paid-checkmark.paid {
+    background: #6ddc8a;
+    border-color: #2a2238;
+  }
+
+  .paid-checkmark.paid::after {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 11px;
+    border-right: 2.5px solid #2a2238;
+    border-bottom: 2.5px solid #2a2238;
+    transform: rotate(45deg) translate(-1px, -1px);
+  }
+
+  .order-actions { text-align: center; padding: 0 8px; }
+
+  .remind-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid #2a2238;
+    background: white;
+    color: #2a2238;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(42,34,56,0.2);
+    transition: background 0.15s, color 0.15s, box-shadow 0.1s;
+    flex-shrink: 0;
+  }
+
+  .remind-btn:hover:not(:disabled) {
+    background: #ffd23f;
+    box-shadow: 0 3px 0 rgba(42,34,56,0.35);
+  }
+
+  .remind-btn:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: none;
+  }
+
+  .remind-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .remind-btn.sent {
+    background: #6ddc8a;
+    border-color: #2a2238;
+    color: #2a2238;
   }
 
   /* ── Settings ── */

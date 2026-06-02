@@ -1086,6 +1086,286 @@ export async function sendCancellationEmail(order, origin = '') {
   if (result.error) throw new Error(result.error.message);
 }
 
+// ── Payment reminder email ────────────────────────────────────────────────────
+
+function buildPaymentReminderHtml(order, origin) {
+  const firstName = (order.customer_name?.split(' ')[0]) ?? order.customer_name;
+  const itemRows  = order.items.map(i => buildItemRow(i, origin)).join('');
+  const total     = Number(order.total).toFixed(2);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Psst… we haven't gotten your payment yet — Sticker Stop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=Caveat:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  body { margin:0; padding:0; background:#efe7d0; }
+  a    { color:#2a2238; }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#efe7d0;font-family:'Nunito',Arial,sans-serif;">
+
+<table cellpadding="0" cellspacing="0" border="0" width="100%"
+  style="background:#efe7d0;padding:36px 16px 60px;">
+<tr><td align="center">
+
+<table cellpadding="0" cellspacing="0" border="0" width="600"
+  style="max-width:600px;background:#fff7e3;
+    border:3px solid #2a2238;border-radius:26px;overflow:hidden;
+    box-shadow:0 10px 0 rgba(42,34,56,0.85);">
+
+  <!-- Banner -->
+  <tr>
+    <td style="background:#ffd23f;border-bottom:3px solid #2a2238;padding:20px 28px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+          <td valign="middle">
+            <table cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td valign="middle" style="padding-right:12px;">
+                  <div style="width:52px;height:52px;border-radius:50%;
+                    background:#ff4d8d;border:3.5px solid white;
+                    text-align:center;line-height:48px;display:inline-block;
+                    box-shadow:0 3px 0 rgba(0,0,0,0.18);">
+                    <span style="font-family:'Bagel Fat One',cursive;
+                      color:white;font-size:26px;line-height:1;vertical-align:middle;">S!</span>
+                  </div>
+                </td>
+                <td valign="middle">
+                  <div style="font-family:'Bagel Fat One',cursive;color:#2a2238;
+                    font-size:26px;line-height:1;letter-spacing:-0.4px;">Sticker Stop</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+          <td align="right" valign="middle">
+            <div style="display:inline-block;background:white;color:#2a2238;
+              border:3px solid #2a2238;border-radius:999px;padding:6px 14px;
+              font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:13px;
+              box-shadow:0 3px 0 rgba(42,34,56,0.85);">Order #${order.id}</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Hero -->
+  <tr>
+    <td style="padding:36px 28px 8px;text-align:center;">
+      <div style="font-size:72px;line-height:1;margin-bottom:14px;">&#128064;</div>
+      <h1 style="font-family:'Bagel Fat One',cursive;font-size:46px;
+        margin:0 0 8px;line-height:1;letter-spacing:-1px;color:#2a2238;">
+        <span style="display:inline-block;transform:rotate(-2deg);">Hey,</span>
+        <span style="display:inline-block;transform:rotate(2deg);color:#ff4d8d;">${escHtml(firstName)}</span>
+        <span style="display:inline-block;transform:rotate(-1deg);">!</span>
+      </h1>
+      <p style="font-family:'Caveat',cursive;font-size:26px;
+        color:#2a2238;opacity:0.9;margin:0 0 12px;line-height:1.3;">
+        No biggie, but&hellip; we haven&rsquo;t gotten your payment yet. &#128591;
+      </p>
+    </td>
+  </tr>
+
+  <!-- Message block -->
+  <tr>
+    <td style="padding:8px 28px 20px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%"
+        style="background:white;border:3px solid #2a2238;border-radius:18px;
+          box-shadow:0 6px 0 rgba(42,34,56,0.85);">
+        <tr>
+          <td style="padding:22px 22px 20px;">
+            <p style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
+              font-size:17px;color:#2a2238;margin:0 0 12px;line-height:1.5;">
+              Totally my fault for not reminding you sooner &mdash; life gets busy,
+              stickers get forgotten, it happens to the best of us. &#128517;
+            </p>
+            <p style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;
+              font-size:15px;color:#2a2238;opacity:0.8;margin:0 0 12px;line-height:1.5;">
+              Your order is all set and just waiting on payment before we can pack it up
+              and send it your way. Your stickers are literally sitting there, ready, staring
+              at the door, wondering when you&rsquo;re coming. &#128293;
+            </p>
+            <p style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;
+              font-size:15px;color:#2a2238;opacity:0.8;margin:0;line-height:1.5;">
+              No pressure, no late fees, no glitter bombs &mdash; just a friendly little nudge.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- How to pay -->
+  <tr>
+    <td style="padding:4px 28px 20px;">
+      <div style="display:inline-block;background:#6ddc8a;
+        border:2.5px solid #2a2238;padding:4px 14px;border-radius:999px;
+        font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:13px;
+        text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;
+        box-shadow:0 3px 0 rgba(42,34,56,0.85);">How to pay</div>
+      <table cellpadding="0" cellspacing="0" border="0" width="100%"
+        style="background:white;border:3px solid #2a2238;border-radius:18px;
+          box-shadow:0 6px 0 rgba(42,34,56,0.85);">
+        <tr>
+          <td style="padding:16px 20px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td width="50" valign="middle" style="padding-right:14px;padding-bottom:14px;">
+                  <div style="width:40px;height:40px;border-radius:50%;
+                    background:#2a2238;border:3px solid #2a2238;text-align:center;
+                    box-shadow:0 3px 0 rgba(42,34,56,0.85);">
+                    <table cellpadding="0" cellspacing="0" border="0" width="40" height="40">
+                      <tr><td align="center" valign="middle">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                          stroke="white" stroke-width="2.5"
+                          stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="2" y="5" width="20" height="14" rx="2"/>
+                          <path d="M2 10h20"/>
+                        </svg>
+                      </td></tr>
+                    </table>
+                  </div>
+                </td>
+                <td valign="middle" style="padding-bottom:14px;">
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;
+                    font-size:16px;color:#2a2238;">Apple Pay</div>
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;
+                    font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">
+                    Tap, pay, done. Extremely satisfying.
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td width="50" valign="middle" style="padding-right:14px;">
+                  <div style="width:40px;height:40px;border-radius:50%;
+                    background:#6ddc8a;border:3px solid #2a2238;text-align:center;
+                    box-shadow:0 3px 0 rgba(42,34,56,0.85);">
+                    <table cellpadding="0" cellspacing="0" border="0" width="40" height="40">
+                      <tr><td align="center" valign="middle">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                          stroke="#2a2238" stroke-width="2.5"
+                          stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="2" y="6" width="20" height="14" rx="1"/>
+                          <path d="M2 10h20M6 14h.01M10 14h4"/>
+                        </svg>
+                      </td></tr>
+                    </table>
+                  </div>
+                </td>
+                <td valign="middle">
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;
+                    font-size:16px;color:#2a2238;">Cash</div>
+                  <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;
+                    font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">
+                    Old school. Timeless. We love it.
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Order recap -->
+  <tr>
+    <td style="padding:4px 28px 20px;">
+      <div style="display:inline-block;background:#ffd23f;
+        border:2.5px solid #2a2238;padding:4px 14px;border-radius:999px;
+        font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:13px;
+        text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;
+        box-shadow:0 3px 0 rgba(42,34,56,0.85);">Your order recap</div>
+      <table cellpadding="0" cellspacing="0" border="0" width="100%"
+        style="background:white;border:3px solid #2a2238;border-radius:18px;
+          box-shadow:0 6px 0 rgba(42,34,56,0.85);">
+        <tr>
+          <td style="padding:0 22px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              ${itemRows}
+              <tr>
+                <td style="padding:10px 0 12px;" colspan="3">
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td style="font-family:'Bagel Fat One',cursive;font-size:18px;
+                        color:#2a2238;padding:3px 0;">Total due</td>
+                      <td align="right" style="font-family:'Bagel Fat One',cursive;
+                        font-size:18px;color:#ff4d8d;padding:3px 0;">$${total}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Spacer -->
+  <tr><td style="padding:8px 0 0;"></td></tr>
+
+  <!-- Footer -->
+  <tr>
+    <td style="background:#fff1cf;border-top:3px dashed #2a2238;
+      padding:22px 28px 24px;text-align:center;">
+      <p style="font-family:'Caveat',cursive;font-size:24px;color:#2a2238;margin:0 0 4px;">
+        thanks for your patience &amp; your excellent taste in stickers &#10024;<br/>
+        &mdash; the Sticker Stop crew
+      </p>
+      <p style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
+        font-size:11px;color:#2a2238;opacity:0.6;
+        text-transform:uppercase;letter-spacing:1.2px;margin:10px 0 0;">
+        Sticker Stop
+      </p>
+    </td>
+  </tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+export async function sendPaymentReminderEmail(order, origin = '') {
+  if (!RESEND_API_KEY) return;
+  if (!order.customer_email) return;
+
+  const resend  = new Resend(RESEND_API_KEY);
+  const from    = EMAIL_FROM || 'Sticker Stop <orders@sticker-stop.com>';
+  const subject = `Psst… we haven't gotten your payment yet 👀 (Order #${order.id})`;
+  const text    = [
+    `Hey ${order.customer_name}!`,
+    ``,
+    `No biggie — just a friendly reminder that we haven't received payment for your Sticker Stop order #${order.id} yet. Totally our fault for not reminding you sooner!`,
+    ``,
+    `Your order:`,
+    ...order.items.map(i => `  • ${i.name}  ×${i.qty}  $${(i.price * i.qty).toFixed(2)}`),
+    ``,
+    `Total due: $${Number(order.total).toFixed(2)}`,
+    ``,
+    `You can pay with Apple Pay or cash — both work great!`,
+    ``,
+    `No pressure, no late fees, no glitter bombs. Just a nudge. 😄`,
+    ``,
+    `— The Sticker Stop Crew`,
+  ].join('\n');
+
+  const result = await resend.emails.send({
+    from,
+    to: order.customer_email,
+    subject,
+    html: buildPaymentReminderHtml(order, origin),
+    text,
+  });
+  if (result.error) throw new Error(result.error.message);
+}
+
 export async function sendOrderEmail(order, settings, origin = '') {
   if (!RESEND_API_KEY) return;
 
