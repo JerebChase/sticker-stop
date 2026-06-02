@@ -325,11 +325,24 @@
     settingsLoading = false;
   }
 
-  let stats = $derived({
-    total:     orders.length,
-    newCount:  orders.filter(o => o.status === 'new').length,
-    fulfilled: orders.filter(o => o.status === 'fulfilled').length,
-    revenue:   orders.filter(o => o.status !== 'canceled' && o.status !== 'cancelled').reduce((s, o) => s + parseFloat(o.total || 0), 0).toFixed(2),
+  let stats = $derived.by(() => {
+    const active = orders.filter(o => o.status !== 'canceled' && o.status !== 'cancelled');
+    const shopFund = active.reduce((s, o) => {
+      const subtotal = parseFloat(o.subtotal || o.total || 0);
+      const shipping = parseFloat(o.shipping || 0);
+      return s + shipping + subtotal / 2;
+    }, 0);
+    const earnings = active.reduce((s, o) => {
+      const subtotal = parseFloat(o.subtotal || o.total || 0);
+      return s + subtotal / 2;
+    }, 0);
+    return {
+      total:     orders.length,
+      newCount:  orders.filter(o => o.status === 'new').length,
+      fulfilled: orders.filter(o => o.status === 'fulfilled').length,
+      shopFund:  shopFund.toFixed(2),
+      earnings:  earnings.toFixed(2),
+    };
   });
 
   const TAB_LABELS = { orders: 'Orders', sets: 'Sticker Sets', settings: 'Settings', feedback: 'Feedback' };
@@ -519,10 +532,11 @@
       <!-- Stats -->
       <div class="stats-row">
         {#each [
-          { label: 'Total Orders', value: stats.total,     color: 'var(--blue)' },
-          { label: 'New',          value: stats.newCount,  color: 'var(--yellow)' },
-          { label: 'Fulfilled',    value: stats.fulfilled, color: 'var(--mint)' },
-          { label: 'Revenue',      value: `$${stats.revenue}`, color: 'var(--pink)' },
+          { label: 'Total Orders', value: stats.total,           color: 'var(--blue)' },
+          { label: 'New',          value: stats.newCount,         color: 'var(--yellow)' },
+          { label: 'Fulfilled',    value: stats.fulfilled,        color: 'var(--mint)' },
+          { label: 'Shop Fund',    value: `$${stats.shopFund}`,  color: 'var(--pink)' },
+          { label: 'Earnings',     value: `$${stats.earnings}`,  color: '#a78bfa' },
         ] as s}
           <div class="stat-card" style="--sc:{s.color}">
             <span class="stat-val">{s.value}</span>
