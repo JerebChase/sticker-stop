@@ -47,21 +47,21 @@ const TEXT_X     = 444;
 const tBB = bagel.getPath('Sticker Stop', 0, 0, TITLE_SZ).getBoundingBox();
 const gBB = caveat.getPath("stick 'em everywhere", 0, 0, TAGLINE_SZ).getBoundingBox();
 
-const LINE_GAP = 66;
+const LINE_GAP = 20;
 const blockH   = (tBB.y2 - tBB.y1) + LINE_GAP + (gBB.y2 - gBB.y1);
 const titleY   = badgeCy - blockH / 2 - tBB.y1;
 const taglineY = titleY + (tBB.y2 - tBB.y1) + LINE_GAP - gBB.y1;
 
-// Split each sentence into separate <path> elements — librsvg can struggle
-// with very long single-path strings from multi-word text
-function wordPaths(font, text, x, y, size, fill) {
+// Per-character paths — librsvg silently truncates long single-path d attributes;
+// keeping each glyph as its own <path> element stays well under the limit.
+function charPaths(font, text, x, y, size, fill) {
   const scale = size / font.unitsPerEm;
   let cursor = x;
-  return text.split(' ').map(word => {
-    const p = font.getPath(word, cursor, y, size);
+  return text.split('').map(ch => {
+    const p = font.getPath(ch, cursor, y, size);
     p.fill = fill;
     const svg = p.toSVG(2);
-    cursor += font.stringToGlyphs(word + ' ').reduce((s, g) => s + g.advanceWidth * scale, 0);
+    cursor += font.stringToGlyphs(ch).reduce((s, g) => s + g.advanceWidth * scale, 0);
     return svg;
   }).join('\n  ');
 }
@@ -76,8 +76,8 @@ function star(cx, cy, sz, color, rot = 0) {
 }
 
 // ── SVG ───────────────────────────────────────────────────────────────────────
-const titleSvg   = wordPaths(bagel,  'Sticker Stop',         TEXT_X, titleY,   TITLE_SZ,   ink);
-const taglineSvg = wordPaths(caveat, "stick 'em everywhere", TEXT_X, taglineY, TAGLINE_SZ, inkMuted);
+const titleSvg   = charPaths(bagel,  'Sticker Stop',         TEXT_X, titleY,   TITLE_SZ,   ink);
+const taglineSvg = charPaths(caveat, "stick 'em everywhere", TEXT_X, taglineY, TAGLINE_SZ, inkMuted);
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <rect width="${W}" height="${H}" fill="${paper}"/>

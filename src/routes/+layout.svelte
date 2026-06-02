@@ -1,3 +1,15 @@
+<svelte:head>
+  <meta property="og:type"         content="website" />
+  <meta property="og:url"          content="https://www.sticker-stop.com" />
+  <meta property="og:title"        content="Sticker Stop" />
+  <meta property="og:description"  content="Hand-crafted specialty sticker sheets" />
+  <meta property="og:image"        content="https://www.sticker-stop.com/og.png" />
+  <meta property="og:image:width"  content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:image"       content="https://www.sticker-stop.com/og.png" />
+</svelte:head>
+
 <script>
   import '../app.css';
   import { cart } from '$lib/stores/cart';
