@@ -57,12 +57,12 @@ const taglineY = titleY + (tBB.y2 - tBB.y1) + LINE_GAP - gBB.y1;
 function charPaths(font, text, x, y, size, fill) {
   const scale = size / font.unitsPerEm;
   let cursor = x;
-  return text.split('').map(ch => {
+  return text.split('').flatMap(ch => {
     const p = font.getPath(ch, cursor, y, size);
-    p.fill = fill;
-    const svg = p.toSVG(2);
     cursor += font.stringToGlyphs(ch).reduce((s, g) => s + g.advanceWidth * scale, 0);
-    return svg;
+    if (!p.commands.length) return [];
+    p.fill = fill;
+    return [p.toSVG(2)];
   }).join('\n  ');
 }
 
