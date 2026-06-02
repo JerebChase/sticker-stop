@@ -15,6 +15,22 @@
   let newPassword = $state('');
   let settingsSaved = $state(false);
   let settingsLoading = $state(false);
+  let notifEmailInput = $state('');
+
+  let notifEmails = $derived(
+    settings.notification_emails.split(',').map(e => e.trim()).filter(Boolean)
+  );
+
+  function addNotifEmail() {
+    const email = notifEmailInput.trim().toLowerCase();
+    if (!email || notifEmails.includes(email)) { notifEmailInput = ''; return; }
+    settings.notification_emails = [...notifEmails, email].join(',');
+    notifEmailInput = '';
+  }
+
+  function removeNotifEmail(email) {
+    settings.notification_emails = notifEmails.filter(e => e !== email).join(',');
+  }
 
   // Sticker Sets
   let sets = $state([]);
@@ -678,10 +694,26 @@
       <!-- Settings -->
       <div class="settings-panel">
         <h2 class="settings-heading">Notification Emails</h2>
-        <label class="field">
-          <span class="field-label">Send new order alerts to (comma-separated)</span>
-          <input type="text" bind:value={settings.notification_emails} placeholder="you@example.com" />
-        </label>
+        <div class="field">
+          <span class="field-label">Send new order alerts to</span>
+          <div class="recipients-list">
+            {#each notifEmails as email}
+              <span class="recipient-chip">
+                {email}
+                <button class="chip-remove" onclick={() => removeNotifEmail(email)}>✕</button>
+              </span>
+            {/each}
+          </div>
+          <div class="add-recipient-row">
+            <input
+              type="email"
+              bind:value={notifEmailInput}
+              placeholder="Add an email…"
+              onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addNotifEmail(); } }}
+            />
+            <button class="add-recipient-btn" onclick={addNotifEmail}>Add</button>
+          </div>
+        </div>
 
         <h2 class="settings-heading">Security</h2>
         <label class="field">
@@ -1583,6 +1615,7 @@
     border: 2.5px solid var(--ink);
     border-radius: 999px;
     background: var(--paper-2);
+    color: var(--ink);
     cursor: pointer;
     transition: transform 0.1s;
   }
