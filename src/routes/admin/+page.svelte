@@ -1,8 +1,10 @@
 <script>
   import { onMount } from 'svelte';
 
+  let { data } = $props();
+
   let password = $state('');
-  let authed = $state(false);
+  let authed = $state(data.authed);
   let authError = $state(false);
   let tab = $state('orders');
 
@@ -407,20 +409,13 @@
     }
   }
 
-  onMount(async () => {
-    try {
-      const res = await fetch('/api/admin/auth');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.ok) {
-          authed = true;
-          loadOrders();
-          loadSettings();
-          loadSets();
-          loadFeedback();
-        }
-      }
-    } catch { /* cookie absent or expired, show login form */ }
+  onMount(() => {
+    if (authed) {
+      loadOrders();
+      loadSettings();
+      loadSets();
+      loadFeedback();
+    }
   });
 </script>
 
