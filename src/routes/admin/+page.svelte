@@ -595,15 +595,17 @@
                   </td>
                   <td class="order-total">${parseFloat(o.total).toFixed(2)}</td>
                   <td class="order-paid">
-                    <label class="paid-checkbox-label" title={o.paid ? 'Paid' : 'Not paid'}>
-                      <input
-                        type="checkbox"
-                        class="paid-checkbox"
-                        checked={o.paid}
-                        onchange={(e) => togglePaid(o.id, e.target.checked)}
-                      />
-                      <span class="paid-checkmark" class:paid={o.paid}></span>
-                    </label>
+                    {#if o.status !== 'cancelled' && o.status !== 'canceled'}
+                      <label class="paid-checkbox-label" title={o.paid ? 'Paid' : 'Not paid'}>
+                        <input
+                          type="checkbox"
+                          class="paid-checkbox"
+                          checked={o.paid}
+                          onchange={(e) => togglePaid(o.id, e.target.checked)}
+                        />
+                        <span class="paid-checkmark" class:paid={o.paid}></span>
+                      </label>
+                    {/if}
                   </td>
                   <td class="order-status">
                     <select
@@ -627,7 +629,7 @@
                     {/if}
                   </td>
                   <td class="order-actions">
-                    {#if o.customer_email}
+                    {#if o.customer_email && o.status !== 'cancelled' && o.status !== 'canceled'}
                       <button
                         class="remind-btn"
                         class:sent={reminderSentOrderId === o.id}
