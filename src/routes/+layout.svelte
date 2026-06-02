@@ -16,7 +16,7 @@
   import { page } from '$app/state';
   import { afterNavigate } from '$app/navigation';
 
-  let { children } = $props();
+  let { children, data } = $props();
 
   afterNavigate(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -24,6 +24,7 @@
 
   let cartCount = $derived($cart.reduce((s, i) => s + i.qty, 0));
   let currentPath = $derived(page.url.pathname);
+  let adminAuthed = $derived(data.adminAuthed);
 </script>
 
 <div class="site-wrap">
@@ -38,6 +39,9 @@
       </a>
       <nav>
         <a href="/" class="nav-btn" class:active={currentPath === '/'}>All Stickers</a>
+        {#if adminAuthed}
+          <a href="/admin" class="nav-btn admin-btn" class:active={currentPath === '/admin'}>Admin</a>
+        {/if}
         <a href="/cart" class="nav-btn cart-btn" class:active={currentPath === '/cart'}>
           🛒 Cart
           {#if cartCount > 0}
@@ -192,7 +196,8 @@
     box-shadow: 0 1px 0 var(--ink);
   }
 
-  .cart-btn { background: var(--yellow); }
+  .cart-btn  { background: var(--yellow); }
+  .admin-btn { background: var(--blue); }
 
   .cart-badge {
     position: absolute;
