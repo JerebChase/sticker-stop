@@ -14,30 +14,39 @@
   let currentPath = $derived(page.url.pathname);
 </script>
 
-<header>
-  <div class="max-w header-inner">
-    <a href="/" class="logo">
-      <div class="logo-badge">S!</div>
-      <div class="logo-text">
-        <span class="logo-name">Sticker Stop</span>
-        <span class="logo-tag">stick 'em everywhere ✨</span>
-      </div>
-    </a>
-    <nav>
-      <a href="/" class="nav-btn" class:active={currentPath === '/'}>All Stickers</a>
-      <a href="/cart" class="nav-btn cart-btn" class:active={currentPath === '/cart'}>
-        🛒 Cart
-        {#if cartCount > 0}
-          <span class="cart-badge">{cartCount}</span>
-        {/if}
+<div class="site-wrap">
+  <header>
+    <div class="max-w header-inner">
+      <a href="/" class="logo">
+        <div class="logo-badge">S!</div>
+        <div class="logo-text">
+          <span class="logo-name">Sticker Stop</span>
+          <span class="logo-tag">stick 'em everywhere ✨</span>
+        </div>
       </a>
-    </nav>
-  </div>
-</header>
+      <nav>
+        <a href="/" class="nav-btn" class:active={currentPath === '/'}>All Stickers</a>
+        <a href="/cart" class="nav-btn cart-btn" class:active={currentPath === '/cart'}>
+          🛒 Cart
+          {#if cartCount > 0}
+            <span class="cart-badge">{cartCount}</span>
+          {/if}
+        </a>
+      </nav>
+    </div>
+  </header>
 
-<main>
-  {@render children()}
-</main>
+  <main>
+    {@render children()}
+  </main>
+
+  <footer>
+    <div class="max-w footer-inner">
+      <span class="footer-text">Happy stickering!</span>
+      <span class="footer-copy">© {new Date().getFullYear()} Sticker Stop</span>
+    </div>
+  </footer>
+</div>
 
 {#if currentPath !== '/feedback'}
   <a href="/feedback" class="fab" aria-label="Leave feedback">
@@ -45,13 +54,6 @@
     <span class="fab-label">Feedback</span>
   </a>
 {/if}
-
-<footer>
-  <div class="max-w footer-inner">
-    <span class="footer-text">Happy stickering!</span>
-    <span class="footer-copy">© {new Date().getFullYear()} Sticker Stop</span>
-  </div>
-</footer>
 
 <!-- Doodle layer -->
 <div class="doodles" aria-hidden="true">
@@ -198,7 +200,17 @@
     animation: pop 0.3s ease;
   }
 
-  main { min-height: calc(100vh - 73px - 60px); }
+  .site-wrap {
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
 
   footer {
     border-top: 2px solid var(--line);

@@ -61,14 +61,12 @@
 
 <style>
   .page {
-    /* 73px ≈ sticky header height (matches layout's main min-height calc) */
-    min-height: calc(100svh - 73px);
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 24px;
     background: var(--paper);
-    box-sizing: border-box;
   }
 
   .card {
