@@ -58,7 +58,7 @@ function charPaths(font, text, x, y, size, fill) {
   const scale = size / font.unitsPerEm;
   let cursor = x;
   return text.split('').flatMap(ch => {
-    const p = font.getPath(ch, cursor, y, size);
+    const p = font.getPath(ch, Math.round(cursor * 1000) / 1000, y, size);
     cursor += font.stringToGlyphs(ch).reduce((s, g) => s + g.advanceWidth * scale, 0);
     if (!p.commands.length) return [];
     p.fill = fill;
