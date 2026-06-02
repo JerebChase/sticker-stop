@@ -301,7 +301,7 @@
     total:     orders.length,
     newCount:  orders.filter(o => o.status === 'new').length,
     fulfilled: orders.filter(o => o.status === 'fulfilled').length,
-    revenue:   orders.reduce((s, o) => s + parseFloat(o.total || 0), 0).toFixed(2),
+    revenue:   orders.filter(o => o.status !== 'canceled' && o.status !== 'cancelled').reduce((s, o) => s + parseFloat(o.total || 0), 0).toFixed(2),
   });
 
   const TAB_LABELS = { orders: 'Orders', sets: 'Sticker Sets', settings: 'Settings', feedback: 'Feedback' };
