@@ -61,12 +61,14 @@
 
 <style>
   .page {
-    min-height: 100vh;
+    /* 73px ≈ sticky header height (matches layout's main min-height calc) */
+    min-height: calc(100svh - 73px);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 24px;
     background: var(--paper);
+    box-sizing: border-box;
   }
 
   .card {
@@ -85,8 +87,8 @@
   }
 
   @media (max-width: 600px) {
-    .page { align-items: flex-start; padding: 12px 16px; min-height: unset; }
-    .card { padding: 20px 18px; gap: 6px; border-radius: 18px; }
+    .page { padding: 16px; }
+    .card { padding: 24px 20px; gap: 6px; border-radius: 18px; }
     .badge { width: 48px; height: 48px; font-size: 22px; margin-bottom: 0; }
     .title { font-size: 26px; }
     .sub { font-size: 17px; margin-bottom: 0; }
@@ -95,7 +97,7 @@
   }
 
   @media (max-height: 600px) {
-    .page { align-items: flex-start; padding: 8px 16px; min-height: unset; }
+    .page { padding: 8px 16px; }
     .card { padding: 16px 18px; gap: 4px; border-radius: 16px; }
     .badge { width: 40px; height: 40px; font-size: 18px; margin-bottom: 0; }
     .title { font-size: 22px; }
