@@ -492,7 +492,10 @@
   {:else}
     <!-- Dashboard -->
     <div class="dash-header">
-      <h1 class="dash-title">Sticker Stop Admin</h1>
+      <h1 class="dash-title">Admin</h1>
+      <button class="announcement-btn" onclick={openAnnouncement}>
+        ✉️ Send Announcement
+      </button>
     </div>
 
     <!-- Tabs (desktop) -->
@@ -664,12 +667,6 @@
         {/if}
       {/if}
 
-      <!-- Send Announcement button -->
-      <div class="announcement-bar">
-        <button class="announcement-btn" onclick={openAnnouncement}>
-          ✉️ Send Announcement
-        </button>
-      </div>
 
     {:else if tab === 'sets'}
       <!-- Sticker Sets -->
@@ -1124,7 +1121,12 @@
   .login-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--ink); }
 
   /* ── Dashboard ── */
-  .dash-header { margin-bottom: 24px; }
+  .dash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
 
   .dash-title {
     font-family: 'Bagel Fat One', sans-serif;
@@ -2002,13 +2004,7 @@
     white-space: pre-wrap;
   }
 
-  /* ── Announcement bar ── */
-  .announcement-bar {
-    margin-top: 28px;
-    display: flex;
-    justify-content: flex-end;
-  }
-
+  /* ── Announcement button ── */
   .announcement-btn {
     font-family: 'Fredoka', sans-serif;
     font-weight: 700;
