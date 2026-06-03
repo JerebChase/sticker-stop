@@ -1903,6 +1903,7 @@
 
   .upload-btn {
     display: inline-block;
+    align-self: flex-start;
     font-family: 'Fredoka', sans-serif;
     font-weight: 700;
     font-size: 14px;
