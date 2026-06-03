@@ -1902,6 +1902,7 @@
   }
 
   .upload-btn {
+    display: inline-block;
     font-family: 'Fredoka', sans-serif;
     font-weight: 700;
     font-size: 14px;
