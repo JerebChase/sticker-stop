@@ -18,8 +18,11 @@
 
   let { children, data } = $props();
 
+  let menuOpen = $state(false);
+
   afterNavigate(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
+    menuOpen = false;
   });
 
   let cartCount = $derived($cart.reduce((s, i) => s + i.qty, 0));
@@ -37,7 +40,7 @@
           <span class="logo-tag">stick 'em everywhere ✨</span>
         </div>
       </a>
-      <nav>
+      <nav class="nav-desktop">
         <a href="/" class="nav-btn" class:active={currentPath === '/'}>All Stickers</a>
         {#if adminAuthed}
           <a href="/admin" class="nav-btn admin-btn" class:active={currentPath === '/admin'}>Admin</a>
@@ -49,7 +52,47 @@
           {/if}
         </a>
       </nav>
+
+      <button
+        class="hamburger"
+        aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+        aria-expanded={menuOpen}
+        onclick={() => menuOpen = !menuOpen}
+      >
+        {#if menuOpen}
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        {:else}
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        {/if}
+        {#if cartCount > 0 && !menuOpen}
+          <span class="hamburger-cart-dot"></span>
+        {/if}
+      </button>
     </div>
+
+    {#if menuOpen}
+      <div class="mobile-menu">
+        <a href="/" class="mobile-nav-btn" class:active={currentPath === '/'}>All Stickers</a>
+        {#if adminAuthed}
+          <a href="/admin" class="mobile-nav-btn admin-mobile-btn" class:active={currentPath === '/admin'}>Admin</a>
+        {/if}
+        <a href="/cart" class="mobile-nav-btn cart-mobile-btn" class:active={currentPath === '/cart'}>
+          🛒 Cart
+          {#if cartCount > 0}
+            <span class="cart-badge cart-badge-mobile">{cartCount}</span>
+          {/if}
+        </a>
+      </div>
+    {/if}
+
+    <!-- close menu when tapping backdrop -->
+    {#if menuOpen}
+      <button class="menu-backdrop" aria-hidden="true" onclick={() => menuOpen = false} tabindex="-1"></button>
+    {/if}
   </header>
 
   <main>
@@ -118,6 +161,7 @@
     background: var(--paper);
     border-bottom: 2.5px solid var(--ink);
     padding: 12px 0;
+    isolation: isolate;
   }
 
   .header-inner {
@@ -175,6 +219,85 @@
     display: flex;
     align-items: center;
     gap: 10px;
+  }
+
+  .hamburger {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2.5px solid var(--ink);
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--ink);
+    flex-shrink: 0;
+    position: relative;
+    transition: background 0.15s;
+  }
+
+  .hamburger:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--ink);
+  }
+
+  .hamburger-cart-dot {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--pink);
+    border: 2px solid var(--ink);
+  }
+
+  .mobile-menu {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px 16px;
+    border-top: 2px solid var(--line);
+  }
+
+  .mobile-nav-btn {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: 2.5px solid var(--ink);
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: 0 3px 0 var(--ink);
+    text-decoration: none;
+    position: relative;
+    text-align: center;
+  }
+
+  .mobile-nav-btn.active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--ink);
+  }
+
+  .cart-mobile-btn  { background: var(--yellow); }
+  .admin-mobile-btn { background: var(--blue); }
+
+  .cart-badge-mobile {
+    top: -6px;
+    right: 10px;
+  }
+
+  .menu-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    background: transparent;
+    border: none;
+    cursor: default;
   }
 
   .nav-btn {
@@ -320,5 +443,10 @@
       justify-content: center;
     }
     .fab-label { display: none; }
+
+    .nav-desktop  { display: none; }
+    .hamburger    { display: flex; }
+    .mobile-menu  { display: flex; }
+    .menu-backdrop { display: block; }
   }
 </style>
