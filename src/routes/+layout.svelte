@@ -88,12 +88,12 @@
         </a>
       </div>
     {/if}
-
-    <!-- close menu when tapping backdrop -->
-    {#if menuOpen}
-      <button class="menu-backdrop" aria-hidden="true" onclick={() => menuOpen = false} tabindex="-1"></button>
-    {/if}
   </header>
+
+  <!-- backdrop outside header so header z-index keeps menu links above it -->
+  {#if menuOpen}
+    <button class="menu-backdrop" aria-hidden="true" onclick={() => menuOpen = false} tabindex="-1"></button>
+  {/if}
 
   <main>
     {@render children()}
