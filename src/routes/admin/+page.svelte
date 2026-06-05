@@ -349,7 +349,34 @@
     };
   });
 
-  const TAB_LABELS = { orders: 'Orders', sets: 'Sticker Sets', settings: 'Settings', feedback: 'Feedback' };
+  let analytics = $derived.by(() => {
+    const active = orders.filter(o => o.status !== 'canceled' && o.status !== 'cancelled');
+    const sheetMap = new Map();
+    const setMap   = new Map();
+    for (const order of active) {
+      for (const item of (order.items ?? [])) {
+        const qty = item.qty ?? 1;
+        if (item.kind === 'sheet') {
+          const key = item.sheetId || item.name;
+          const existing = sheetMap.get(key);
+          if (existing) existing.qty += qty;
+          else sheetMap.set(key, { name: item.name, qty });
+        } else if (item.kind === 'set') {
+          const key = item.setId || item.name;
+          const existing = setMap.get(key);
+          if (existing) existing.qty += qty;
+          else setMap.set(key, { name: item.name, qty });
+        }
+      }
+    }
+    const sheets = [...sheetMap.values()].sort((a, b) => b.qty - a.qty);
+    const sets   = [...setMap.values()].sort((a, b) => b.qty - a.qty);
+    const maxSheet = sheets[0]?.qty || 1;
+    const maxSet   = sets[0]?.qty   || 1;
+    return { sheets, sets, maxSheet, maxSet };
+  });
+
+  const TAB_LABELS = { orders: 'Orders', sets: 'Sticker Sets', analytics: 'Analytics', settings: 'Settings', feedback: 'Feedback' };
   let tabMenuOpen = $state(false);
 
   function switchTab(t) {
@@ -501,9 +528,10 @@
     <!-- Tabs (desktop) -->
     <div class="tabs tabs-desktop">
       <button class="tab" class:active={tab === 'orders'}   onclick={() => tab = 'orders'}>Orders</button>
-      <button class="tab" class:active={tab === 'sets'}     onclick={() => tab = 'sets'}>Sticker Sets</button>
-      <button class="tab" class:active={tab === 'settings'} onclick={() => tab = 'settings'}>Settings</button>
-      <button class="tab" class:active={tab === 'feedback'} onclick={() => tab = 'feedback'}>Feedback</button>
+      <button class="tab" class:active={tab === 'sets'}      onclick={() => tab = 'sets'}>Sticker Sets</button>
+      <button class="tab" class:active={tab === 'analytics'} onclick={() => tab = 'analytics'}>Analytics</button>
+      <button class="tab" class:active={tab === 'settings'}  onclick={() => tab = 'settings'}>Settings</button>
+      <button class="tab" class:active={tab === 'feedback'}  onclick={() => tab = 'feedback'}>Feedback</button>
     </div>
 
     <!-- Tab picker (mobile) -->
@@ -787,6 +815,65 @@
                 <p class="feedback-message">{f.message}</p>
               </div>
             {/each}
+          </div>
+        {/if}
+      </div>
+
+    {:else if tab === 'analytics'}
+      <div class="analytics-panel">
+        {#if orders.length === 0}
+          <div class="empty-orders">No orders yet — analytics will appear once orders come in.</div>
+        {:else}
+          <!-- Top Sheets -->
+          <div class="analytics-section">
+            <div class="analytics-heading-row">
+              <h2 class="analytics-heading">Top Sheets</h2>
+              <span class="analytics-sub">individual sheet purchases</span>
+            </div>
+            {#if analytics.sheets.length === 0}
+              <div class="analytics-empty">No individual sheets sold yet.</div>
+            {:else}
+              <div class="analytics-list">
+                {#each analytics.sheets as item, i}
+                  <div class="analytics-row">
+                    <span class="analytics-rank">#{i + 1}</span>
+                    <div class="analytics-label-wrap">
+                      <span class="analytics-name">{item.name}</span>
+                      <div class="analytics-bar-track">
+                        <div class="analytics-bar" style="width:{(item.qty / analytics.maxSheet) * 100}%; background: var(--{i === 0 ? 'pink' : i === 1 ? 'blue' : i === 2 ? 'mint' : 'yellow'})"></div>
+                      </div>
+                    </div>
+                    <span class="analytics-qty">{item.qty}</span>
+                  </div>
+                {/each}
+              </div>
+            {/if}
+          </div>
+
+          <!-- Top Sets -->
+          <div class="analytics-section">
+            <div class="analytics-heading-row">
+              <h2 class="analytics-heading">Top Sets</h2>
+              <span class="analytics-sub">full set purchases</span>
+            </div>
+            {#if analytics.sets.length === 0}
+              <div class="analytics-empty">No full sets sold yet.</div>
+            {:else}
+              <div class="analytics-list">
+                {#each analytics.sets as item, i}
+                  <div class="analytics-row">
+                    <span class="analytics-rank">#{i + 1}</span>
+                    <div class="analytics-label-wrap">
+                      <span class="analytics-name">{item.name}</span>
+                      <div class="analytics-bar-track">
+                        <div class="analytics-bar" style="width:{(item.qty / analytics.maxSet) * 100}%; background: var(--{i === 0 ? 'pink' : i === 1 ? 'blue' : i === 2 ? 'mint' : 'yellow'})"></div>
+                      </div>
+                    </div>
+                    <span class="analytics-qty">{item.qty}</span>
+                  </div>
+                {/each}
+              </div>
+            {/if}
           </div>
         {/if}
       </div>
@@ -1498,6 +1585,119 @@
     background: #6ddc8a;
     border-color: #2a2238;
     color: #2a2238;
+  }
+
+  /* ── Analytics ── */
+  .analytics-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .analytics-section {
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 5px 0 rgba(42,34,56,0.12);
+  }
+
+  .analytics-heading-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 18px 22px 14px;
+    border-bottom: 2px solid var(--line);
+  }
+
+  .analytics-heading {
+    font-family: 'Bagel Fat One', sans-serif;
+    font-size: 20px;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .analytics-sub {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    opacity: 0.45;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  .analytics-list {
+    padding: 12px 0;
+  }
+
+  .analytics-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 22px;
+  }
+
+  .analytics-row:not(:last-child) {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .analytics-rank {
+    font-family: 'Bagel Fat One', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    opacity: 0.35;
+    width: 28px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .analytics-label-wrap {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .analytics-name {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .analytics-bar-track {
+    height: 10px;
+    background: var(--line);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .analytics-bar {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.4s ease;
+  }
+
+  .analytics-qty {
+    font-family: 'Bagel Fat One', sans-serif;
+    font-size: 18px;
+    color: var(--ink);
+    flex-shrink: 0;
+    min-width: 28px;
+    text-align: right;
+  }
+
+  .analytics-empty {
+    padding: 18px 22px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    opacity: 0.5;
   }
 
   /* ── Settings ── */
