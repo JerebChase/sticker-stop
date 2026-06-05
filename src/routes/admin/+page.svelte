@@ -857,24 +857,23 @@
               <span class="analytics-sub">shipped vs. pickup</span>
             </div>
             <div class="delivery-split">
-              <div class="delivery-col">
-                <span class="delivery-icon">📦</span>
-                <span class="delivery-count">{analytics.shipped}</span>
-                <span class="delivery-label">Shipped</span>
-                <div class="delivery-bar-track">
-                  <div class="delivery-bar" style="height:{(analytics.shipped / analytics.deliveryTotal) * 100}%; background: var(--blue)"></div>
+              <div class="delivery-split-bar">
+                <div class="delivery-segment ship-segment" style="width:{(analytics.shipped / analytics.deliveryTotal) * 100}%">
+                  {#if analytics.shipped > 0}
+                    <span class="segment-label">📦 {analytics.shipped}</span>
+                  {/if}
                 </div>
-                <span class="delivery-pct">{Math.round((analytics.shipped / analytics.deliveryTotal) * 100)}%</span>
+                <div class="delivery-segment pickup-segment" style="width:{(analytics.pickup / analytics.deliveryTotal) * 100}%">
+                  {#if analytics.pickup > 0}
+                    <span class="segment-label">🏠 {analytics.pickup}</span>
+                  {/if}
+                </div>
               </div>
-              <div class="delivery-divider"></div>
-              <div class="delivery-col">
-                <span class="delivery-icon">🏠</span>
-                <span class="delivery-count">{analytics.pickup}</span>
-                <span class="delivery-label">Pickup</span>
-                <div class="delivery-bar-track">
-                  <div class="delivery-bar" style="height:{(analytics.pickup / analytics.deliveryTotal) * 100}%; background: var(--mint)"></div>
-                </div>
-                <span class="delivery-pct">{Math.round((analytics.pickup / analytics.deliveryTotal) * 100)}%</span>
+              <div class="delivery-legend">
+                <span class="legend-dot" style="background: var(--blue)"></span>
+                <span class="legend-text">Shipped — {Math.round((analytics.shipped / analytics.deliveryTotal) * 100)}%</span>
+                <span class="legend-dot" style="background: var(--mint)"></span>
+                <span class="legend-text">Pickup — {Math.round((analytics.pickup / analytics.deliveryTotal) * 100)}%</span>
               </div>
             </div>
           </div>
@@ -1756,72 +1755,62 @@
   }
 
   .delivery-split {
-    display: flex;
-    align-items: stretch;
-    padding: 24px 32px;
-    gap: 0;
-  }
-
-  .delivery-col {
-    flex: 1;
+    padding: 20px 22px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 6px;
+    gap: 12px;
   }
 
-  .delivery-divider {
-    width: 2px;
-    background: var(--paper);
-    margin: 0 24px;
+  .delivery-split-bar {
+    display: flex;
+    height: 40px;
     border-radius: 999px;
+    overflow: hidden;
+    background: var(--paper);
   }
 
-  .delivery-icon {
-    font-size: 28px;
-    line-height: 1;
+  .delivery-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.4s ease;
+    min-width: 0;
+    overflow: hidden;
   }
 
-  .delivery-count {
-    font-family: 'Bagel Fat One', sans-serif;
-    font-size: 42px;
-    color: var(--ink);
-    line-height: 1;
-  }
+  .ship-segment   { background: var(--blue); }
+  .pickup-segment { background: var(--mint); }
 
-  .delivery-label {
+  .segment-label {
     font-family: 'Fredoka', sans-serif;
     font-weight: 700;
     font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
     color: var(--ink);
-    opacity: 0.5;
+    white-space: nowrap;
+    padding: 0 10px;
   }
 
-  .delivery-bar-track {
-    width: 48px;
-    height: 80px;
-    background: var(--paper);
-    border-radius: 999px;
-    overflow: hidden;
+  .delivery-legend {
     display: flex;
-    align-items: flex-end;
-    margin-top: 4px;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
   }
 
-  .delivery-bar {
-    width: 100%;
-    border-radius: 999px;
-    transition: height 0.4s ease;
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    flex-shrink: 0;
   }
 
-  .delivery-pct {
+  .legend-text {
     font-family: 'Fredoka', sans-serif;
-    font-weight: 700;
-    font-size: 15px;
+    font-weight: 600;
+    font-size: 14px;
     color: var(--ink);
-    opacity: 0.6;
+    margin-right: 8px;
   }
 
   /* ── Settings ── */
