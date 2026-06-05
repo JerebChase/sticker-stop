@@ -89,12 +89,12 @@ function buildAdminHtml(order, origin) {
                     background:#ff4d8d;border:3.5px solid white;
                     text-align:center;line-height:48px;display:inline-block;
                     box-shadow:0 3px 0 rgba(0,0,0,0.18);">
-                    <span style="font-family:'Bagel Fat One',cursive;
+                    <span style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;
                       color:white;font-size:26px;line-height:1;vertical-align:middle;">S!</span>
                   </div>
                 </td>
                 <td valign="middle">
-                  <div style="font-family:'Bagel Fat One',cursive;color:white;font-size:26px;
+                  <div style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;color:white;font-size:26px;
                     line-height:1;text-shadow:0 2px 0 rgba(42,34,56,0.35);letter-spacing:-0.4px;">
                     Sticker Stop</div>
                 </td>
@@ -136,11 +136,11 @@ function buildAdminHtml(order, origin) {
         text-transform:uppercase;margin-bottom:14px;">
         New order &middot; ${orderDate}
       </div>
-      <h1 style="font-family:'Bagel Fat One',cursive;font-size:44px;
+      <h1 style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:44px;
         margin:0 0 8px;line-height:1.05;letter-spacing:-1px;color:#2a2238;">
         New order from <span style="color:#ff4d8d;">${escHtml(order.customer_name)}</span>!
       </h1>
-      <p style="font-family:'Caveat',cursive;font-size:22px;color:#2a2238;opacity:0.85;margin:0;">
+      <p style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:22px;color:#2a2238;opacity:0.85;margin:0;">
         Order #${order.id} &middot; $${total} total
       </p>
     </td>
@@ -226,10 +226,10 @@ function buildAdminHtml(order, origin) {
                     </tr>
                     <tr>
                       <td style="padding-top:10px;border-top:2px dashed rgba(42,34,56,0.25);">
-                        <span style="font-family:'Bagel Fat One',cursive;font-size:28px;color:#2a2238;">Total</span>
+                        <span style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:28px;color:#2a2238;">Total</span>
                       </td>
                       <td align="right" style="padding-top:10px;border-top:2px dashed rgba(42,34,56,0.25);">
-                        <span style="font-family:'Bagel Fat One',cursive;font-size:28px;color:#2a2238;">$${total}</span>
+                        <span style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:28px;color:#2a2238;">$${total}</span>
                       </td>
                     </tr>
                   </table>
@@ -249,7 +249,7 @@ function buildAdminHtml(order, origin) {
   <tr>
     <td style="background:#fff1cf;border-top:3px dashed #2a2238;
       padding:22px 28px 24px;text-align:center;margin-top:22px;">
-      <p style="font-family:'Caveat',cursive;font-size:22px;color:#2a2238;margin:0 0 4px;">
+      <p style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:22px;color:#2a2238;margin:0 0 4px;">
         Time to pack some stickers!
       </p>
       <p style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
@@ -345,7 +345,7 @@ function buildItemRow(item, origin) {
               <div style="position:absolute;top:-6px;right:-6px;
                 width:22px;height:22px;border-radius:50%;
                 background:#ff4d8d;color:white;border:2px solid #2a2238;
-                font-family:'Bagel Fat One',Arial,sans-serif;font-size:12px;
+                font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:12px;
                 text-align:center;line-height:20px;
                 box-shadow:0 2px 0 rgba(42,34,56,0.85);">${item.qty}</div>
             </div>
@@ -357,7 +357,7 @@ function buildItemRow(item, origin) {
               font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">${subLabel}</div>
           </td>
           <td valign="middle" align="right" style="white-space:nowrap;padding-left:10px;">
-            <div style="font-family:'Bagel Fat One',cursive;font-size:22px;
+            <div style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:22px;
               line-height:1;color:#2a2238;">$${lineTotal}</div>
           </td>
         </tr>
@@ -386,7 +386,7 @@ function buildCustomerHtml(order, settings, origin) {
             text-align:center;border:3px solid #2a2238;
             box-shadow:0 6px 0 rgba(42,34,56,0.85);">
             <div style="font-size:28px;margin-bottom:10px;">💸</div>
-            <h3 style="font-family:'Bagel Fat One',cursive;font-size:26px;
+            <h3 style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:26px;
               margin:0 0 10px;color:#2a2238;letter-spacing:-0.3px;">
               One tiny thing!
             </h3>
@@ -443,13 +443,13 @@ function buildCustomerHtml(order, settings, origin) {
                     text-align:center;line-height:48px;
                     display:inline-block;
                     box-shadow:0 3px 0 rgba(0,0,0,0.18);">
-                    <span style="font-family:'Bagel Fat One',cursive;
+                    <span style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;
                       color:white;font-size:26px;line-height:1;
                       vertical-align:middle;">S!</span>
                   </div>
                 </td>
                 <td valign="middle">
-                  <div style="font-family:'Bagel Fat One',cursive;
+                  <div style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;
                     color:white;font-size:26px;line-height:1;
                     text-shadow:0 2px 0 rgba(42,34,56,0.35);
                     letter-spacing:-0.4px;">Sticker Stop</div>
@@ -492,13 +492,13 @@ function buildCustomerHtml(order, settings, origin) {
         text-transform:uppercase;margin-bottom:14px;">
         Order received &middot; ${orderDate}
       </div>
-      <h1 style="font-family:'Bagel Fat One',cursive;font-size:52px;
+      <h1 style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:52px;
         margin:0 0 8px;line-height:0.95;letter-spacing:-1px;color:#2a2238;">
         <span style="display:inline-block;transform:rotate(-2deg);">Hooray,</span>
         <span style="display:inline-block;transform:rotate(2deg);color:#ff4d8d;">${escHtml(firstName)}</span>
         <span style="display:inline-block;transform:rotate(-1deg);">!</span>
       </h1>
-      <p style="font-family:'Caveat',cursive;font-size:24px;
+      <p style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:24px;
         color:#2a2238;opacity:0.85;margin:0 0 8px;">
         ${isPickup ? 'Your order will be ready for pickup soon!' : 'Your stickers are picked, packed, and getting ready! &#10024;'}
       </p>
@@ -540,12 +540,12 @@ function buildCustomerHtml(order, settings, origin) {
                     </tr>
                     <tr>
                       <td style="padding-top:10px;border-top:2px dashed rgba(42,34,56,0.25);">
-                        <span style="font-family:'Bagel Fat One',cursive;
+                        <span style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;
                           font-size:28px;color:#2a2238;">Total</span>
                       </td>
                       <td align="right" style="padding-top:10px;
                         border-top:2px dashed rgba(42,34,56,0.25);">
-                        <span style="font-family:'Bagel Fat One',cursive;
+                        <span style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;
                           font-size:28px;color:#2a2238;">$${total}</span>
                       </td>
                     </tr>
@@ -632,7 +632,7 @@ function buildCustomerHtml(order, settings, origin) {
                 <td width="54" valign="top" style="padding-right:14px;padding-bottom:14px;">
                   <div style="width:40px;height:40px;border-radius:50%;
                     background:#ff4d8d;border:3px solid #2a2238;text-align:center;line-height:36px;
-                    font-family:'Bagel Fat One',cursive;font-size:20px;color:white;">1</div>
+                    font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:20px;color:white;">1</div>
                 </td>
                 <td valign="top" style="padding-bottom:14px;">
                   <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:16px;color:#2a2238;">
@@ -645,7 +645,7 @@ function buildCustomerHtml(order, settings, origin) {
                 <td width="54" valign="top" style="padding-right:14px;padding-bottom:14px;">
                   <div style="width:40px;height:40px;border-radius:50%;
                     background:#ffd23f;border:3px solid #2a2238;text-align:center;line-height:36px;
-                    font-family:'Bagel Fat One',cursive;font-size:20px;color:#2a2238;">2</div>
+                    font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:20px;color:#2a2238;">2</div>
                 </td>
                 <td valign="top" style="padding-bottom:14px;">
                   <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:16px;color:#2a2238;">We pack your stickers${isPickup ? '' : ' (with a tiny bonus, free)'}</div>
@@ -656,7 +656,7 @@ function buildCustomerHtml(order, settings, origin) {
                 <td width="54" valign="top" style="padding-right:14px;">
                   <div style="width:40px;height:40px;border-radius:50%;
                     background:#6ddc8a;border:3px solid #2a2238;text-align:center;line-height:36px;
-                    font-family:'Bagel Fat One',cursive;font-size:20px;color:#2a2238;">3</div>
+                    font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:20px;color:#2a2238;">3</div>
                 </td>
                 <td valign="top">
                   <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:16px;color:#2a2238;">
@@ -679,7 +679,7 @@ function buildCustomerHtml(order, settings, origin) {
   <tr>
     <td style="background:#fff1cf;border-top:3px dashed #2a2238;
       padding:22px 28px 24px;text-align:center;">
-      <p style="font-family:'Caveat',cursive;font-size:24px;color:#2a2238;margin:0 0 4px;">
+      <p style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:24px;color:#2a2238;margin:0 0 4px;">
         stick &lsquo;em everywhere &#10024;<br/>
         &mdash; the Sticker Stop crew
       </p>
@@ -751,12 +751,12 @@ function buildFulfillmentHtml(order, origin) {
                     background:#ff4d8d;border:3.5px solid white;
                     text-align:center;line-height:48px;display:inline-block;
                     box-shadow:0 3px 0 rgba(0,0,0,0.18);">
-                    <span style="font-family:'Bagel Fat One',cursive;
+                    <span style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;
                       color:white;font-size:26px;line-height:1;vertical-align:middle;">S!</span>
                   </div>
                 </td>
                 <td valign="middle">
-                  <div style="font-family:'Bagel Fat One',cursive;color:#2a2238;
+                  <div style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;color:#2a2238;
                     font-size:26px;line-height:1;letter-spacing:-0.4px;">Sticker Stop</div>
                 </td>
               </tr>
@@ -779,17 +779,17 @@ function buildFulfillmentHtml(order, origin) {
       <div style="font-size:72px;line-height:1;margin-bottom:14px;">
         ${isPickup ? '&#127968;' : '&#128230;'}
       </div>
-      <h1 style="font-family:'Bagel Fat One',cursive;font-size:48px;
+      <h1 style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:48px;
         margin:0 0 10px;line-height:1;letter-spacing:-1px;color:#2a2238;">
         <span style="display:inline-block;transform:rotate(-2deg);">Hey,</span>
         <span style="display:inline-block;transform:rotate(2deg);color:#ff4d8d;">${escHtml(firstName)}</span>
         <span style="display:inline-block;transform:rotate(-1deg);">&#8212;</span>
       </h1>
-      <h2 style="font-family:'Bagel Fat One',cursive;font-size:38px;
+      <h2 style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:38px;
         margin:0 0 10px;color:#2a2238;letter-spacing:-0.5px;">
         ${headline}
       </h2>
-      <p style="font-family:'Caveat',cursive;font-size:24px;
+      <p style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:24px;
         color:#2a2238;opacity:0.85;margin:0 0 8px;">
         ${subtext}
       </p>
@@ -830,9 +830,9 @@ function buildFulfillmentHtml(order, origin) {
                 <td style="padding:10px 0 12px;" colspan="3">
                   <table cellpadding="0" cellspacing="0" border="0" width="100%">
                     <tr>
-                      <td style="font-family:'Bagel Fat One',cursive;font-size:18px;
+                      <td style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:18px;
                         color:#2a2238;padding:3px 0;">Total</td>
-                      <td align="right" style="font-family:'Bagel Fat One',cursive;
+                      <td align="right" style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;
                         font-size:18px;color:#2a2238;padding:3px 0;">$${total}</td>
                     </tr>
                   </table>
@@ -852,7 +852,7 @@ function buildFulfillmentHtml(order, origin) {
   <tr>
     <td style="background:#fff1cf;border-top:3px dashed #2a2238;
       padding:22px 28px 24px;text-align:center;">
-      <p style="font-family:'Caveat',cursive;font-size:24px;color:#2a2238;margin:0 0 4px;">
+      <p style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:24px;color:#2a2238;margin:0 0 4px;">
         stick &lsquo;em everywhere &#10024;<br/>
         &mdash; the Sticker Stop crew
       </p>
@@ -940,12 +940,12 @@ function buildCancellationHtml(order, origin) {
                     background:#ff4d8d;border:3.5px solid white;
                     text-align:center;line-height:48px;display:inline-block;
                     box-shadow:0 3px 0 rgba(0,0,0,0.18);">
-                    <span style="font-family:'Bagel Fat One',cursive;
+                    <span style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;
                       color:white;font-size:26px;line-height:1;vertical-align:middle;">S!</span>
                   </div>
                 </td>
                 <td valign="middle">
-                  <div style="font-family:'Bagel Fat One',cursive;color:#2a2238;
+                  <div style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;color:#2a2238;
                     font-size:26px;line-height:1;letter-spacing:-0.4px;">Sticker Stop</div>
                 </td>
               </tr>
@@ -966,17 +966,17 @@ function buildCancellationHtml(order, origin) {
   <tr>
     <td style="padding:36px 28px 8px;text-align:center;">
       <div style="font-size:72px;line-height:1;margin-bottom:14px;">&#128565;</div>
-      <h1 style="font-family:'Bagel Fat One',cursive;font-size:48px;
+      <h1 style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:48px;
         margin:0 0 10px;line-height:1;letter-spacing:-1px;color:#2a2238;">
         <span style="display:inline-block;transform:rotate(-2deg);">Oof,</span>
         <span style="display:inline-block;transform:rotate(2deg);color:#ff4d8d;">${escHtml(firstName)}</span>
         <span style="display:inline-block;transform:rotate(-1deg);">&#8212;</span>
       </h1>
-      <h2 style="font-family:'Bagel Fat One',cursive;font-size:36px;
+      <h2 style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:36px;
         margin:0 0 12px;color:#2a2238;letter-spacing:-0.5px;">
         your order got canceled.
       </h2>
-      <p style="font-family:'Caveat',cursive;font-size:22px;
+      <p style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:22px;
         color:#2a2238;opacity:0.85;margin:0 0 6px;line-height:1.4;">
         We had to cancel this one — sorry about that!<br/>
         Your stickers are still out there waiting to be stuck somewhere great. &#128151;
@@ -1008,9 +1008,9 @@ function buildCancellationHtml(order, origin) {
                 <td style="padding:10px 0 12px;" colspan="3">
                   <table cellpadding="0" cellspacing="0" border="0" width="100%">
                     <tr>
-                      <td style="font-family:'Bagel Fat One',cursive;font-size:18px;
+                      <td style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:18px;
                         color:#2a2238;padding:3px 0;">Total</td>
-                      <td align="right" style="font-family:'Bagel Fat One',cursive;
+                      <td align="right" style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;
                         font-size:18px;color:#2a2238;padding:3px 0;">$${total}</td>
                     </tr>
                   </table>
@@ -1026,7 +1026,7 @@ function buildCancellationHtml(order, origin) {
   <!-- CTA -->
   <tr>
     <td style="padding:28px 28px 8px;text-align:center;">
-      <p style="font-family:'Caveat',cursive;font-size:20px;color:#2a2238;
+      <p style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:20px;color:#2a2238;
         opacity:0.85;margin:0 0 16px;line-height:1.4;">
         If you still want these stickers, you're always welcome<br/>to place a new order. We'd love to have you back!
       </p>
@@ -1048,7 +1048,7 @@ function buildCancellationHtml(order, origin) {
   <tr>
     <td style="background:#fff1cf;border-top:3px dashed #2a2238;
       padding:22px 28px 24px;text-align:center;">
-      <p style="font-family:'Caveat',cursive;font-size:24px;color:#2a2238;margin:0 0 4px;">
+      <p style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:24px;color:#2a2238;margin:0 0 4px;">
         stick &lsquo;em everywhere &#10024;<br/>
         &mdash; the Sticker Stop crew
       </p>
@@ -1131,12 +1131,12 @@ function buildPaymentReminderHtml(order, origin) {
                     background:#ff4d8d;border:3.5px solid white;
                     text-align:center;line-height:48px;display:inline-block;
                     box-shadow:0 3px 0 rgba(0,0,0,0.18);">
-                    <span style="font-family:'Bagel Fat One',cursive;
+                    <span style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;
                       color:white;font-size:26px;line-height:1;vertical-align:middle;">S!</span>
                   </div>
                 </td>
                 <td valign="middle">
-                  <div style="font-family:'Bagel Fat One',cursive;color:#2a2238;
+                  <div style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;color:#2a2238;
                     font-size:26px;line-height:1;letter-spacing:-0.4px;">Sticker Stop</div>
                 </td>
               </tr>
@@ -1157,13 +1157,13 @@ function buildPaymentReminderHtml(order, origin) {
   <tr>
     <td style="padding:36px 28px 8px;text-align:center;">
       <div style="font-size:72px;line-height:1;margin-bottom:14px;">&#128064;</div>
-      <h1 style="font-family:'Bagel Fat One',cursive;font-size:46px;
+      <h1 style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:46px;
         margin:0 0 8px;line-height:1;letter-spacing:-1px;color:#2a2238;">
         <span style="display:inline-block;transform:rotate(-2deg);">Hey,</span>
         <span style="display:inline-block;transform:rotate(2deg);color:#ff4d8d;">${escHtml(firstName)}</span>
         <span style="display:inline-block;transform:rotate(-1deg);">!</span>
       </h1>
-      <p style="font-family:'Caveat',cursive;font-size:26px;
+      <p style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:26px;
         color:#2a2238;opacity:0.9;margin:0 0 12px;line-height:1.3;">
         No biggie, but&hellip; we haven&rsquo;t gotten your payment yet. &#128591;
       </p>
@@ -1291,9 +1291,9 @@ function buildPaymentReminderHtml(order, origin) {
                 <td style="padding:10px 0 12px;" colspan="3">
                   <table cellpadding="0" cellspacing="0" border="0" width="100%">
                     <tr>
-                      <td style="font-family:'Bagel Fat One',cursive;font-size:18px;
+                      <td style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:18px;
                         color:#2a2238;padding:3px 0;">Total due</td>
-                      <td align="right" style="font-family:'Bagel Fat One',cursive;
+                      <td align="right" style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;
                         font-size:18px;color:#ff4d8d;padding:3px 0;">$${total}</td>
                     </tr>
                   </table>
@@ -1313,7 +1313,7 @@ function buildPaymentReminderHtml(order, origin) {
   <tr>
     <td style="background:#fff1cf;border-top:3px dashed #2a2238;
       padding:22px 28px 24px;text-align:center;">
-      <p style="font-family:'Caveat',cursive;font-size:24px;color:#2a2238;margin:0 0 4px;">
+      <p style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:24px;color:#2a2238;margin:0 0 4px;">
         thanks for your patience &amp; your excellent taste in stickers &#10024;<br/>
         &mdash; the Sticker Stop crew
       </p>
@@ -1465,12 +1465,12 @@ function buildFeedbackHtml(data) {
                     background:#2a2238;border:3.5px solid white;
                     text-align:center;line-height:48px;display:inline-block;
                     box-shadow:0 3px 0 rgba(0,0,0,0.18);">
-                    <span style="font-family:'Bagel Fat One',cursive;
+                    <span style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;
                       color:white;font-size:26px;line-height:1;vertical-align:middle;">S!</span>
                   </div>
                 </td>
                 <td valign="middle">
-                  <div style="font-family:'Bagel Fat One',cursive;color:#2a2238;font-size:26px;
+                  <div style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;color:#2a2238;font-size:26px;
                     line-height:1;letter-spacing:-0.4px;">Sticker Stop</div>
                 </td>
               </tr>
@@ -1497,11 +1497,11 @@ function buildFeedbackHtml(data) {
         text-transform:uppercase;margin-bottom:14px;">
         ${now}
       </div>
-      <h1 style="font-family:'Bagel Fat One',cursive;font-size:36px;
+      <h1 style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:36px;
         margin:0 0 6px;line-height:1.05;letter-spacing:-1px;color:#2a2238;">
         Feedback from <span style="color:#ff4d8d;">${fromLabel}</span>
       </h1>
-      ${!anonymous && email ? `<p style="font-family:'Caveat',cursive;font-size:20px;color:#2a2238;opacity:0.8;margin:0;">
+      ${!anonymous && email ? `<p style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:20px;color:#2a2238;opacity:0.8;margin:0;">
         <a href="mailto:${escHtml(email)}" style="color:#2a2238;">${escHtml(email)}</a>
       </p>` : ''}
     </td>
@@ -1550,7 +1550,7 @@ function buildFeedbackHtml(data) {
           box-shadow:0 6px 0 rgba(42,34,56,0.85);">
         <tr>
           <td style="padding:20px 22px;">
-            <div style="font-family:'Caveat',cursive;font-size:22px;color:#2a2238;line-height:1.6;">
+            <div style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:22px;color:#2a2238;line-height:1.6;">
               ${escHtml(message).replace(/\n/g, '<br/>')}
             </div>
           </td>
@@ -1651,12 +1651,12 @@ function buildCustomRequestHtml(data) {
                     background:#ff4d8d;border:3.5px solid white;
                     text-align:center;line-height:48px;display:inline-block;
                     box-shadow:0 3px 0 rgba(0,0,0,0.18);">
-                    <span style="font-family:'Bagel Fat One',cursive;
+                    <span style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;
                       color:white;font-size:26px;line-height:1;vertical-align:middle;">S!</span>
                   </div>
                 </td>
                 <td valign="middle">
-                  <div style="font-family:'Bagel Fat One',cursive;color:white;font-size:26px;
+                  <div style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;color:white;font-size:26px;
                     line-height:1;text-shadow:0 2px 0 rgba(42,34,56,0.35);letter-spacing:-0.4px;">
                     Sticker Stop</div>
                 </td>
@@ -1683,11 +1683,11 @@ function buildCustomRequestHtml(data) {
         text-transform:uppercase;margin-bottom:14px;">
         New request &middot; ${now}
       </div>
-      <h1 style="font-family:'Bagel Fat One',cursive;font-size:40px;
+      <h1 style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:40px;
         margin:0 0 8px;line-height:1.05;letter-spacing:-1px;color:#2a2238;">
         Custom request from <span style="color:#8b5cf6;">${escHtml(name)}</span>!
       </h1>
-      <p style="font-family:'Caveat',cursive;font-size:22px;color:#2a2238;opacity:0.85;margin:0;">
+      <p style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:22px;color:#2a2238;opacity:0.85;margin:0;">
         <a href="mailto:${escHtml(email)}" style="color:#2a2238;">${escHtml(email)}</a>
       </p>
     </td>
@@ -1744,7 +1744,7 @@ function buildCustomRequestHtml(data) {
           box-shadow:0 6px 0 rgba(42,34,56,0.85);">
         <tr>
           <td style="padding:18px 22px;">
-            <div style="font-family:'Caveat',cursive;font-size:20px;color:#2a2238;line-height:1.6;">
+            <div style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:20px;color:#2a2238;line-height:1.6;">
               ${escHtml(description).replace(/\n/g, '<br/>')}
             </div>
           </td>
@@ -1759,7 +1759,7 @@ function buildCustomRequestHtml(data) {
   <tr>
     <td style="background:#fff1cf;border-top:3px dashed #2a2238;
       padding:22px 28px 24px;text-align:center;">
-      <p style="font-family:'Caveat',cursive;font-size:22px;color:#2a2238;margin:0 0 4px;">
+      <p style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:22px;color:#2a2238;margin:0 0 4px;">
         time to make some magic! &#10024;
       </p>
       <p style="font-family:'Fredoka',Arial,sans-serif;font-weight:600;
@@ -1853,12 +1853,12 @@ function buildAnnouncementHtml(subject, body, imageUrl) {
                     background:#ff4d8d;border:3.5px solid white;
                     text-align:center;line-height:48px;display:inline-block;
                     box-shadow:0 3px 0 rgba(0,0,0,0.18);">
-                    <span style="font-family:'Bagel Fat One',cursive;
+                    <span style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;
                       color:white;font-size:26px;line-height:1;vertical-align:middle;">S!</span>
                   </div>
                 </td>
                 <td valign="middle">
-                  <div style="font-family:'Bagel Fat One',cursive;color:white;font-size:26px;
+                  <div style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;color:white;font-size:26px;
                     line-height:1;text-shadow:0 2px 0 rgba(42,34,56,0.35);letter-spacing:-0.4px;">
                     Sticker Stop</div>
                 </td>
@@ -1879,7 +1879,7 @@ function buildAnnouncementHtml(subject, body, imageUrl) {
   <!-- Heading -->
   <tr>
     <td style="padding:36px 28px 20px;text-align:center;">
-      <h1 style="font-family:'Bagel Fat One',cursive;font-size:42px;
+      <h1 style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:42px;
         margin:0 0 8px;line-height:1.05;letter-spacing:-1px;color:#2a2238;">
         ${escHtml(subject)}
       </h1>
@@ -1911,7 +1911,7 @@ function buildAnnouncementHtml(subject, body, imageUrl) {
   <tr>
     <td style="background:#fff1cf;border-top:3px dashed #2a2238;
       padding:22px 28px 24px;text-align:center;">
-      <p style="font-family:'Caveat',cursive;font-size:24px;color:#2a2238;margin:0 0 4px;">
+      <p style="font-family:'Caveat','Comic Sans MS','Comic Sans',cursive;font-size:24px;color:#2a2238;margin:0 0 4px;">
         stick &lsquo;em everywhere &#10024;<br/>
         &mdash; the Sticker Stop crew
       </p>
