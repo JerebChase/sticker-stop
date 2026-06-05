@@ -350,9 +350,11 @@
   });
 
   let analytics = $derived.by(() => {
-    const active = orders.filter(o => o.status !== 'canceled' && o.status !== 'cancelled');
-    const sheetMap = new Map();
-    const setMap   = new Map();
+    const active    = orders.filter(o => o.status !== 'canceled' && o.status !== 'cancelled');
+    const setLookup = new Map(sets.map(s => [s.id, s]));
+    const sheetMap  = new Map();
+    const setMap    = new Map();
+
     for (const order of active) {
       for (const item of (order.items ?? [])) {
         const qty = item.qty ?? 1;
@@ -362,18 +364,34 @@
           if (existing) existing.qty += qty;
           else sheetMap.set(key, { name: item.name, qty });
         } else if (item.kind === 'set') {
-          const key = item.setId || item.name;
-          const existing = setMap.get(key);
-          if (existing) existing.qty += qty;
-          else setMap.set(key, { name: item.name, qty });
+          // Tally the full set
+          const setKey = item.setId || item.name;
+          const existingSet = setMap.get(setKey);
+          if (existingSet) existingSet.qty += qty;
+          else setMap.set(setKey, { name: item.name, qty });
+
+          // Also credit each individual sheet that was in the set
+          const setData = setLookup.get(item.setId);
+          if (setData?.sheets) {
+            for (const sheet of setData.sheets) {
+              const sheetName = `${setData.name} — ${sheet.name}`;
+              const existing  = sheetMap.get(sheet.id);
+              if (existing) existing.qty += qty;
+              else sheetMap.set(sheet.id, { name: sheetName, qty });
+            }
+          }
         }
       }
     }
-    const sheets = [...sheetMap.values()].sort((a, b) => b.qty - a.qty);
-    const sets   = [...setMap.values()].sort((a, b) => b.qty - a.qty);
-    const maxSheet = sheets[0]?.qty || 1;
-    const maxSet   = sets[0]?.qty   || 1;
-    return { sheets, sets, maxSheet, maxSet };
+
+    const sheetRankings = [...sheetMap.values()].sort((a, b) => b.qty - a.qty);
+    const setRankings   = [...setMap.values()].sort((a, b) => b.qty - a.qty);
+    return {
+      sheets:   sheetRankings,
+      sets:     setRankings,
+      maxSheet: sheetRankings[0]?.qty || 1,
+      maxSet:   setRankings[0]?.qty   || 1,
+    };
   });
 
   const TAB_LABELS = { orders: 'Orders', sets: 'Sticker Sets', analytics: 'Analytics', settings: 'Settings', feedback: 'Feedback' };
