@@ -386,11 +386,19 @@
 
     const sheetRankings = [...sheetMap.values()].sort((a, b) => b.qty - a.qty);
     const setRankings   = [...setMap.values()].sort((a, b) => b.qty - a.qty);
+
+    const shipped = active.filter(o => o.delivery_method !== 'pickup').length;
+    const pickup  = active.filter(o => o.delivery_method === 'pickup').length;
+    const deliveryTotal = shipped + pickup || 1;
+
     return {
-      sheets:   sheetRankings,
-      sets:     setRankings,
-      maxSheet: sheetRankings[0]?.qty || 1,
-      maxSet:   setRankings[0]?.qty   || 1,
+      sheets:        sheetRankings,
+      sets:          setRankings,
+      maxSheet:      sheetRankings[0]?.qty || 1,
+      maxSet:        setRankings[0]?.qty   || 1,
+      shipped,
+      pickup,
+      deliveryTotal,
     };
   });
 
@@ -842,6 +850,35 @@
         {#if orders.length === 0}
           <div class="empty-orders">No orders yet — analytics will appear once orders come in.</div>
         {:else}
+          <!-- Delivery split -->
+          <div class="analytics-section">
+            <div class="analytics-heading-row">
+              <h2 class="analytics-heading">Delivery</h2>
+              <span class="analytics-sub">shipped vs. pickup</span>
+            </div>
+            <div class="delivery-split">
+              <div class="delivery-col">
+                <span class="delivery-icon">📦</span>
+                <span class="delivery-count">{analytics.shipped}</span>
+                <span class="delivery-label">Shipped</span>
+                <div class="delivery-bar-track">
+                  <div class="delivery-bar" style="height:{(analytics.shipped / analytics.deliveryTotal) * 100}%; background: var(--blue)"></div>
+                </div>
+                <span class="delivery-pct">{Math.round((analytics.shipped / analytics.deliveryTotal) * 100)}%</span>
+              </div>
+              <div class="delivery-divider"></div>
+              <div class="delivery-col">
+                <span class="delivery-icon">🏠</span>
+                <span class="delivery-count">{analytics.pickup}</span>
+                <span class="delivery-label">Pickup</span>
+                <div class="delivery-bar-track">
+                  <div class="delivery-bar" style="height:{(analytics.pickup / analytics.deliveryTotal) * 100}%; background: var(--mint)"></div>
+                </div>
+                <span class="delivery-pct">{Math.round((analytics.pickup / analytics.deliveryTotal) * 100)}%</span>
+              </div>
+            </div>
+          </div>
+
           <!-- Top Sheets -->
           <div class="analytics-section">
             <div class="analytics-heading-row">
@@ -1716,6 +1753,75 @@
     font-size: 15px;
     color: var(--ink);
     opacity: 0.5;
+  }
+
+  .delivery-split {
+    display: flex;
+    align-items: stretch;
+    padding: 24px 32px;
+    gap: 0;
+  }
+
+  .delivery-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .delivery-divider {
+    width: 2px;
+    background: var(--paper);
+    margin: 0 24px;
+    border-radius: 999px;
+  }
+
+  .delivery-icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .delivery-count {
+    font-family: 'Bagel Fat One', sans-serif;
+    font-size: 42px;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  .delivery-label {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ink);
+    opacity: 0.5;
+  }
+
+  .delivery-bar-track {
+    width: 48px;
+    height: 80px;
+    background: var(--paper);
+    border-radius: 999px;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    margin-top: 4px;
+  }
+
+  .delivery-bar {
+    width: 100%;
+    border-radius: 999px;
+    transition: height 0.4s ease;
+  }
+
+  .delivery-pct {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+    opacity: 0.6;
   }
 
   /* ── Settings ── */
