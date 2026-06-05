@@ -858,7 +858,7 @@
                     <div class="analytics-label-wrap">
                       <span class="analytics-name">{item.name}</span>
                       <div class="analytics-bar-track">
-                        <div class="analytics-bar" style="width:{(item.qty / analytics.maxSheet) * 100}%; background: var(--{i === 0 ? 'pink' : i === 1 ? 'blue' : i === 2 ? 'mint' : 'yellow'})"></div>
+                        <div class="analytics-bar" style="width:{(item.qty / analytics.maxSheet) * 100}%; background: var(--{['pink','blue','mint','yellow'][i % 4]})"></div>
                       </div>
                     </div>
                     <span class="analytics-qty">{item.qty}</span>
@@ -884,7 +884,7 @@
                     <div class="analytics-label-wrap">
                       <span class="analytics-name">{item.name}</span>
                       <div class="analytics-bar-track">
-                        <div class="analytics-bar" style="width:{(item.qty / analytics.maxSet) * 100}%; background: var(--{i === 0 ? 'pink' : i === 1 ? 'blue' : i === 2 ? 'mint' : 'yellow'})"></div>
+                        <div class="analytics-bar" style="width:{(item.qty / analytics.maxSet) * 100}%; background: var(--{['pink','blue','mint','yellow'][i % 4]})"></div>
                       </div>
                     </div>
                     <span class="analytics-qty">{item.qty}</span>
@@ -1690,7 +1690,7 @@
 
   .analytics-bar-track {
     height: 10px;
-    background: var(--line);
+    background: var(--paper);
     border-radius: 999px;
     overflow: hidden;
   }
