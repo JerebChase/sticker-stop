@@ -352,17 +352,17 @@
       const subtotal = parseFloat(o.subtotal || o.total || 0);
       return s + subtotal / 2;
     }, 0);
-    const paidOrders   = active.filter(o => o.paid);
-    const applePayCount = paidOrders.filter(o => o.apple_pay).length;
-    const cashCount     = paidOrders.filter(o => !o.apple_pay).length;
+    const paidOrders    = active.filter(o => o.paid);
+    const applePayTotal = paidOrders.filter(o => o.apple_pay).reduce((s, o) => s + parseFloat(o.total || 0), 0).toFixed(2);
+    const cashTotal     = paidOrders.filter(o => !o.apple_pay).reduce((s, o) => s + parseFloat(o.total || 0), 0).toFixed(2);
     return {
-      total:     orders.length,
-      newCount:  orders.filter(o => o.status === 'new').length,
-      fulfilled: orders.filter(o => o.status === 'fulfilled').length,
-      shopFund:  shopFund.toFixed(2),
-      earnings:  earnings.toFixed(2),
-      applePayCount,
-      cashCount,
+      total:         orders.length,
+      newCount:      orders.filter(o => o.status === 'new').length,
+      fulfilled:     orders.filter(o => o.status === 'fulfilled').length,
+      shopFund:      shopFund.toFixed(2),
+      earnings:      earnings.toFixed(2),
+      applePayTotal,
+      cashTotal,
     };
   });
 
@@ -610,33 +610,19 @@
       <!-- Stats -->
       <div class="stats-row">
         {#each [
-          { label: 'Total Orders', value: stats.total,           color: 'var(--blue)' },
-          { label: 'New',          value: stats.newCount,         color: 'var(--yellow)' },
-          { label: 'Fulfilled',    value: stats.fulfilled,        color: 'var(--mint)' },
-          { label: 'Shop Fund',    value: `$${stats.shopFund}`,  color: 'var(--pink)' },
-          { label: 'Earnings',     value: `$${stats.earnings}`,  color: '#a78bfa' },
+          { label: 'Total Orders', value: stats.total,                color: 'var(--blue)' },
+          { label: 'New',          value: stats.newCount,              color: 'var(--yellow)' },
+          { label: 'Fulfilled',    value: stats.fulfilled,             color: 'var(--mint)' },
+          { label: 'Shop Fund',    value: `$${stats.shopFund}`,       color: 'var(--pink)' },
+          { label: 'Earnings',     value: `$${stats.earnings}`,       color: '#a78bfa' },
+          { label: ' Apple Pay',  value: `$${stats.applePayTotal}`,  color: 'var(--ink)' },
+          { label: ' Cash',       value: `$${stats.cashTotal}`,      color: 'var(--mint)' },
         ] as s}
           <div class="stat-card" style="--sc:{s.color}">
             <span class="stat-val">{s.value}</span>
             <span class="stat-label">{s.label}</span>
           </div>
         {/each}
-      </div>
-
-      <!-- Payment method card -->
-      <div class="payment-method-card">
-        <span class="payment-method-title">Payment Method</span>
-        <div class="payment-method-counts">
-          <div class="payment-method-item">
-            <span class="payment-method-val">{stats.applePayCount}</span>
-            <span class="payment-method-label"> Apple Pay</span>
-          </div>
-          <div class="payment-method-divider"></div>
-          <div class="payment-method-item">
-            <span class="payment-method-val">{stats.cashCount}</span>
-            <span class="payment-method-label"> Cash</span>
-          </div>
-        </div>
       </div>
 
       {#if ordersLoading}
@@ -1450,63 +1436,6 @@
     font-size: 14px;
     font-weight: 600;
     opacity: 0.65;
-  }
-
-  /* ── Payment method card ── */
-  .payment-method-card {
-    background: white;
-    border-radius: 14px;
-    border: 2.5px solid var(--ink);
-    box-shadow: 0 4px 0 var(--ink);
-    padding: 16px 22px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 28px;
-  }
-
-  .payment-method-title {
-    font-family: 'Fredoka', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--ink);
-    opacity: 0.5;
-    white-space: nowrap;
-  }
-
-  .payment-method-counts {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .payment-method-item {
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-  }
-
-  .payment-method-val {
-    font-family: 'Bagel Fat One', sans-serif;
-    font-size: 28px;
-    color: var(--ink);
-  }
-
-  .payment-method-label {
-    font-family: 'Fredoka', sans-serif;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--ink);
-    opacity: 0.65;
-  }
-
-  .payment-method-divider {
-    width: 2px;
-    height: 28px;
-    background: var(--line);
-    border-radius: 999px;
   }
 
   /* ── Orders table ── */
