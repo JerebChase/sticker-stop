@@ -419,12 +419,148 @@
     };
   });
 
-  const TAB_LABELS = { orders: 'Orders', sets: 'Sticker Sets', analytics: 'Analytics', settings: 'Settings', feedback: 'Feedback' };
+  const TAB_LABELS = { orders: 'Orders', sets: 'Sticker Sets', analytics: 'Analytics', backgrounds: 'Backgrounds', settings: 'Settings', feedback: 'Feedback' };
   let tabMenuOpen = $state(false);
 
   function switchTab(t) {
     tab = t;
     tabMenuOpen = false;
+  }
+
+  // Backgrounds
+  let bgCats = $state([]);
+  let bgCatsLoading = $state(false);
+  let bgSelectedCatId = $state(null);
+  let bgSelectedCat = $derived(bgCats.find(c => c.id === bgSelectedCatId) ?? null);
+
+  // Add category form
+  let bgNewCatLabel = $state('');
+  let bgNewCatEmoji = $state('🖼️');
+  let bgNewCatColor = $state('#6ddc8a');
+  let bgCatSaving = $state(false);
+
+  // Edit category inline
+  let bgEditingCatId = $state(null);
+  let bgEditCatForm = $state(null);
+
+  // Upload image form
+  let bgNewImgName = $state('');
+  let bgImgUploading = $state(false);
+  let bgImgDeleting = $state(null);
+  let bgCatDeleting = $state(null);
+
+  async function loadBgCats() {
+    bgCatsLoading = true;
+    try {
+      const [catsRes, imgsRes] = await Promise.all([
+        fetch('/api/admin/backgrounds/categories', { headers: { 'x-admin-password': password } }),
+        fetch('/api/admin/backgrounds/images',     { headers: { 'x-admin-password': password } }),
+      ]);
+      if (catsRes.ok && imgsRes.ok) {
+        const cats = await catsRes.json();
+        const imgs = await imgsRes.json();
+        bgCats = cats.map(c => ({ ...c, images: imgs.filter(i => i.category_id === c.id) }));
+      }
+    } finally {
+      bgCatsLoading = false;
+    }
+  }
+
+  async function addBgCategory() {
+    if (!bgNewCatLabel.trim()) return;
+    bgCatSaving = true;
+    try {
+      const res = await fetch('/api/admin/backgrounds/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body: JSON.stringify({ label: bgNewCatLabel, emoji: bgNewCatEmoji, color: bgNewCatColor }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        bgNewCatLabel = '';
+        bgNewCatEmoji = '🖼️';
+        bgNewCatColor = '#6ddc8a';
+        await loadBgCats();
+        bgSelectedCatId = data.id;
+      }
+    } finally {
+      bgCatSaving = false;
+    }
+  }
+
+  function startEditBgCat(cat) {
+    bgEditingCatId = cat.id;
+    bgEditCatForm = { label: cat.label, emoji: cat.emoji, color: cat.color };
+  }
+
+  async function saveEditBgCat() {
+    await fetch(`/api/admin/backgrounds/categories/${bgEditingCatId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+      body: JSON.stringify(bgEditCatForm),
+    });
+    bgEditingCatId = null;
+    bgEditCatForm = null;
+    await loadBgCats();
+  }
+
+  async function deleteBgCat(id) {
+    if (!confirm('Delete this category and all its images?')) return;
+    bgCatDeleting = id;
+    try {
+      await fetch(`/api/admin/backgrounds/categories/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-password': password },
+      });
+      if (bgSelectedCatId === id) bgSelectedCatId = null;
+      await loadBgCats();
+    } finally {
+      bgCatDeleting = null;
+    }
+  }
+
+  async function uploadBgImage(event) {
+    if (!bgSelectedCatId) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const name = bgNewImgName.trim() || file.name.replace(/\.[^.]+$/, '');
+    bgImgUploading = true;
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('setId', `bg-${bgSelectedCatId}`);
+      const upRes = await fetch('/api/admin/upload', {
+        method: 'POST',
+        headers: { 'x-admin-password': password },
+        body: fd,
+      });
+      const upData = await upRes.json();
+      if (!upRes.ok) { alert(upData.error ?? 'Upload failed.'); return; }
+
+      await fetch('/api/admin/backgrounds/images', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body: JSON.stringify({ category_id: bgSelectedCatId, name, file: upData.url }),
+      });
+      bgNewImgName = '';
+      await loadBgCats();
+    } finally {
+      bgImgUploading = false;
+      event.target.value = '';
+    }
+  }
+
+  async function deleteBgImage(id) {
+    bgImgDeleting = id;
+    try {
+      await fetch(`/api/admin/backgrounds/images/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-password': password },
+      });
+      await loadBgCats();
+    } finally {
+      bgImgDeleting = null;
+    }
   }
 
   // Announcement modal
@@ -530,6 +666,7 @@
       loadSettings();
       loadSets();
       loadFeedback();
+      loadBgCats();
     }
   });
 </script>
@@ -572,8 +709,9 @@
     <div class="tabs tabs-desktop">
       <button class="tab" class:active={tab === 'orders'}   onclick={() => tab = 'orders'}>Orders</button>
       <button class="tab" class:active={tab === 'sets'}      onclick={() => tab = 'sets'}>Sticker Sets</button>
-      <button class="tab" class:active={tab === 'analytics'} onclick={() => tab = 'analytics'}>Analytics</button>
-      <button class="tab" class:active={tab === 'settings'}  onclick={() => tab = 'settings'}>Settings</button>
+      <button class="tab" class:active={tab === 'analytics'}    onclick={() => tab = 'analytics'}>Analytics</button>
+      <button class="tab" class:active={tab === 'backgrounds'}  onclick={() => { tab = 'backgrounds'; loadBgCats(); }}>Backgrounds</button>
+      <button class="tab" class:active={tab === 'settings'}     onclick={() => tab = 'settings'}>Settings</button>
       <button class="tab" class:active={tab === 'feedback'}  onclick={() => tab = 'feedback'}>Feedback</button>
     </div>
 
@@ -963,6 +1101,129 @@
             {/if}
           </div>
         {/if}
+      </div>
+
+    {:else if tab === 'backgrounds'}
+      <div class="bg-panel">
+
+        <!-- Left: categories list -->
+        <div class="bg-cats-col">
+          <h2 class="bg-col-heading">Categories</h2>
+
+          {#if bgCatsLoading}
+            <p class="loading-msg">Loading…</p>
+          {:else}
+            <div class="bg-cat-list">
+              {#each bgCats as cat}
+                <div
+                  class="bg-cat-row"
+                  class:selected={bgSelectedCatId === cat.id}
+                  onclick={() => bgSelectedCatId = cat.id}
+                  role="button"
+                  tabindex="0"
+                >
+                  {#if bgEditingCatId === cat.id}
+                    <!-- Inline edit form -->
+                    <div class="bg-cat-edit-form" onclick={(e) => e.stopPropagation()} role="presentation">
+                      <div class="bg-cat-edit-row">
+                        <input class="bg-input small" bind:value={bgEditCatForm.emoji} placeholder="🖼️" style="width:52px;text-align:center" />
+                        <input class="bg-input" bind:value={bgEditCatForm.label} placeholder="Category name" />
+                        <input type="color" class="bg-color-swatch" bind:value={bgEditCatForm.color} title="Pick color" />
+                      </div>
+                      <div class="bg-cat-edit-actions">
+                        <button class="bg-save-btn" onclick={saveEditBgCat}>Save</button>
+                        <button class="bg-cancel-btn" onclick={() => { bgEditingCatId = null; bgEditCatForm = null; }}>Cancel</button>
+                      </div>
+                    </div>
+                  {:else}
+                    <span class="bg-cat-emoji" style="background:{cat.color}">{cat.emoji}</span>
+                    <span class="bg-cat-label">{cat.label}</span>
+                    <span class="bg-cat-count">{cat.images?.length ?? 0}</span>
+                    <div class="bg-cat-actions" onclick={(e) => e.stopPropagation()} role="presentation">
+                      <button class="bg-icon-btn" onclick={() => startEditBgCat(cat)} title="Edit">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </button>
+                      <button class="bg-icon-btn danger" disabled={bgCatDeleting === cat.id} onclick={() => deleteBgCat(cat.id)} title="Delete">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                      </button>
+                    </div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          {/if}
+
+          <!-- Add category form -->
+          <div class="bg-add-cat-form">
+            <h3 class="bg-add-heading">Add Category</h3>
+            <div class="bg-cat-edit-row">
+              <input class="bg-input small" bind:value={bgNewCatEmoji} placeholder="🖼️" style="width:52px;text-align:center" />
+              <input class="bg-input" bind:value={bgNewCatLabel} placeholder="Category name" onkeydown={(e) => e.key === 'Enter' && addBgCategory()} />
+              <input type="color" class="bg-color-swatch" bind:value={bgNewCatColor} title="Pick color" />
+            </div>
+            <button class="bg-add-btn" disabled={bgCatSaving || !bgNewCatLabel.trim()} onclick={addBgCategory}>
+              {bgCatSaving ? 'Adding…' : '+ Add'}
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: images for selected category -->
+        <div class="bg-images-col">
+          {#if !bgSelectedCat}
+            <div class="bg-no-selection">
+              <span class="bg-no-selection-icon">←</span>
+              <p>Select a category to manage its images</p>
+            </div>
+          {:else}
+            <div class="bg-images-header">
+              <h2 class="bg-col-heading">
+                <span style="background:{bgSelectedCat.color}" class="bg-cat-emoji">{bgSelectedCat.emoji}</span>
+                {bgSelectedCat.label}
+              </h2>
+              <span class="bg-img-count">{bgSelectedCat.images?.length ?? 0} image{(bgSelectedCat.images?.length ?? 0) === 1 ? '' : 's'}</span>
+            </div>
+
+            <!-- Upload form -->
+            <div class="bg-upload-form">
+              <input
+                class="bg-input"
+                bind:value={bgNewImgName}
+                placeholder="Image name (optional — defaults to filename)"
+              />
+              <label class="upload-btn" class:uploading={bgImgUploading}>
+                {bgImgUploading ? 'Uploading…' : '⬆ Upload Image'}
+                <input type="file" accept="image/*" style="display:none" disabled={bgImgUploading} onchange={uploadBgImage} />
+              </label>
+            </div>
+
+            <!-- Images grid -->
+            {#if (bgSelectedCat.images?.length ?? 0) === 0}
+              <div class="bg-empty-images">
+                <p>No images yet — upload one above!</p>
+              </div>
+            {:else}
+              <div class="bg-img-grid">
+                {#each bgSelectedCat.images as img}
+                  <div class="bg-img-card">
+                    <div class="bg-img-preview-wrap">
+                      <img src={img.preview || img.file} alt={img.name} class="bg-img-preview" loading="lazy" />
+                      <button
+                        class="bg-img-delete"
+                        disabled={bgImgDeleting === img.id}
+                        onclick={() => deleteBgImage(img.id)}
+                        title="Delete image"
+                      >
+                        {bgImgDeleting === img.id ? '…' : '✕'}
+                      </button>
+                    </div>
+                    <span class="bg-img-name">{img.name}</span>
+                  </div>
+                {/each}
+              </div>
+            {/if}
+          {/if}
+        </div>
+
       </div>
 
     {:else}
@@ -2570,5 +2831,348 @@
     font-size: 20px;
     opacity: 0.75;
     margin: 0 0 16px;
+  }
+
+  /* ── Backgrounds tab ── */
+  .bg-panel {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  @media (max-width: 780px) {
+    .bg-panel { grid-template-columns: 1fr; }
+  }
+
+  .bg-col-heading {
+    font-family: 'Bagel Fat One', sans-serif;
+    font-size: 22px;
+    color: var(--ink);
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .bg-cats-col {
+    background: white;
+    border-radius: 18px;
+    border: 2.5px solid var(--ink);
+    box-shadow: 0 5px 0 var(--ink);
+    padding: 20px;
+  }
+
+  .bg-cat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+
+  .bg-cat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+    user-select: none;
+  }
+
+  .bg-cat-row:hover { background: var(--paper); }
+  .bg-cat-row.selected { background: var(--paper); border-color: var(--ink); }
+
+  .bg-cat-emoji {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .bg-cat-label {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .bg-cat-count {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    border-radius: 999px;
+    padding: 1px 8px;
+    color: var(--ink);
+    opacity: 0.6;
+    flex-shrink: 0;
+  }
+
+  .bg-cat-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .bg-icon-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1.5px solid rgba(42,34,56,0.2);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s, border-color 0.1s;
+    opacity: 0.6;
+  }
+
+  .bg-icon-btn:hover { background: var(--paper); opacity: 1; border-color: var(--ink); }
+  .bg-icon-btn.danger:hover { background: #ffe0e0; border-color: var(--pink); color: var(--pink); }
+
+  .bg-cat-edit-form { width: 100%; }
+
+  .bg-cat-edit-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .bg-input {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 2px solid rgba(42,34,56,0.2);
+    background: var(--paper);
+    color: var(--ink);
+    flex: 1;
+    min-width: 0;
+    transition: border-color 0.15s;
+  }
+
+  .bg-input:focus { outline: none; border-color: var(--blue); }
+  .bg-input.small { flex: none; }
+
+  .bg-color-swatch {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2.5px solid var(--ink);
+    cursor: pointer;
+    padding: 2px;
+    background: none;
+    flex-shrink: 0;
+  }
+
+  .bg-cat-edit-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .bg-save-btn {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 2px solid var(--ink);
+    background: var(--mint);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 0 2px 0 var(--ink);
+  }
+
+  .bg-cancel-btn {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 2px solid rgba(42,34,56,0.2);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    opacity: 0.6;
+  }
+
+  .bg-add-cat-form {
+    border-top: 2px solid var(--line);
+    padding-top: 16px;
+  }
+
+  .bg-add-heading {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ink);
+    opacity: 0.5;
+    margin: 0 0 10px;
+  }
+
+  .bg-add-btn {
+    margin-top: 8px;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 8px 20px;
+    border-radius: 999px;
+    border: 2.5px solid var(--ink);
+    background: var(--yellow);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--ink);
+    transition: opacity 0.1s;
+  }
+
+  .bg-add-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* Images column */
+  .bg-images-col {
+    background: white;
+    border-radius: 18px;
+    border: 2.5px solid var(--ink);
+    box-shadow: 0 5px 0 var(--ink);
+    padding: 20px;
+    min-height: 300px;
+  }
+
+  .bg-no-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    gap: 10px;
+    opacity: 0.4;
+  }
+
+  .bg-no-selection-icon {
+    font-size: 36px;
+  }
+
+  .bg-no-selection p {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .bg-images-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .bg-img-count {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    opacity: 0.5;
+  }
+
+  .bg-upload-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .bg-empty-images {
+    text-align: center;
+    padding: 40px 0;
+    font-family: 'Caveat', 'Comic Sans MS', cursive;
+    font-size: 18px;
+    color: var(--ink);
+    opacity: 0.45;
+  }
+
+  .bg-img-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 14px;
+  }
+
+  .bg-img-card {
+    border-radius: 12px;
+    border: 2px solid var(--ink);
+    overflow: hidden;
+    box-shadow: 0 3px 0 var(--ink);
+    background: white;
+  }
+
+  .bg-img-preview-wrap {
+    position: relative;
+    aspect-ratio: 4/3;
+    overflow: hidden;
+    background: var(--paper);
+  }
+
+  .bg-img-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .bg-img-delete {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: white;
+    color: var(--ink);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .bg-img-card:hover .bg-img-delete { opacity: 1; }
+  .bg-img-delete:hover { background: var(--pink); color: white; border-color: var(--pink); }
+
+  .bg-img-name {
+    display: block;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+    padding: 6px 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 </style>
