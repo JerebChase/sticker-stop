@@ -85,7 +85,7 @@
           <!-- Image grid -->
           <div class="image-grid">
             {#each cat.images as img}
-              <a href={img.file} download={img.name} class="image-card" title="Download {img.name}">
+              <a href={img.file} download={img.name} target="_blank" rel="noopener noreferrer" class="image-card" title="Download {img.name}">
                 <div class="image-preview-wrap">
                   <img src={img.preview || img.file} alt={img.name} class="image-preview" loading="lazy" />
                 </div>
