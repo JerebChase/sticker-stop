@@ -50,7 +50,7 @@
         style="--cat-color:{cat.color}"
         onclick={() => activeCategory = activeCategory === cat.id ? null : cat.id}
       >
-        {cat.emoji} {cat.label}
+        {cat.label}
         {#if cat.images.length > 0}
           <span class="filter-count">{cat.images.length}</span>
         {/if}
@@ -65,9 +65,7 @@
 
         <!-- Section header -->
         <div class="category-header">
-          <div class="category-badge" style="background:{cat.color}">
-            <span class="category-emoji">{cat.emoji}</span>
-          </div>
+          <div class="category-badge" style="background:{cat.color}"></div>
           <div>
             <h2 class="category-name">{cat.label}</h2>
             <p class="category-count">
@@ -265,18 +263,10 @@
   .category-badge {
     width: 52px;
     height: 52px;
-    border-radius: 50%;
+    border-radius: 14px;
     border: 2.5px solid var(--ink);
     box-shadow: 0 3px 0 var(--ink);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     flex-shrink: 0;
-  }
-
-  .category-emoji {
-    font-size: 24px;
-    line-height: 1;
   }
 
   .category-name {

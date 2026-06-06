@@ -428,99 +428,40 @@
   }
 
   // Backgrounds
-  let bgCats = $state([]);
-  let bgCatsLoading = $state(false);
+  let bgImages = $state([]);
+  let bgLoading = $state(false);
   let bgSelectedCatId = $state(null);
-  let bgSelectedCat = $derived(bgCats.find(c => c.id === bgSelectedCatId) ?? null);
-
-  // Add category form
-  let bgNewCatLabel = $state('');
-  let bgNewCatEmoji = $state('🖼️');
-  let bgNewCatColor = $state('#6ddc8a');
-  let bgCatSaving = $state(false);
-
-  // Edit category inline
-  let bgEditingCatId = $state(null);
-  let bgEditCatForm = $state(null);
-
-  // Upload image form
   let bgNewImgName = $state('');
   let bgImgUploading = $state(false);
   let bgImgDeleting = $state(null);
-  let bgCatDeleting = $state(null);
 
-  async function loadBgCats() {
-    bgCatsLoading = true;
-    try {
-      const [catsRes, imgsRes] = await Promise.all([
-        fetch('/api/admin/backgrounds/categories', { headers: { 'x-admin-password': password } }),
-        fetch('/api/admin/backgrounds/images',     { headers: { 'x-admin-password': password } }),
-      ]);
-      if (catsRes.ok && imgsRes.ok) {
-        const cats = await catsRes.json();
-        const imgs = await imgsRes.json();
-        bgCats = cats.map(c => ({ ...c, images: imgs.filter(i => i.category_id === c.id) }));
-      }
-    } finally {
-      bgCatsLoading = false;
+  let bgSelectedCat = $derived.by(() => {
+    if (!bgSelectedCatId) return null;
+    const set = sets.find(s => s.id === bgSelectedCatId);
+    if (set) return { id: set.id, label: set.name, color: set.color };
+    for (const s of sets) {
+      const sheet = s.sheets?.find(sh => sh.id === bgSelectedCatId);
+      if (sheet) return { id: sheet.id, label: `${s.name} — ${sheet.name}`, color: s.color };
     }
-  }
+    return null;
+  });
 
-  async function addBgCategory() {
-    if (!bgNewCatLabel.trim()) return;
-    bgCatSaving = true;
+  let bgSelectedImages = $derived(bgImages.filter(img => img.category_id === bgSelectedCatId));
+
+  async function loadBgImages() {
+    bgLoading = true;
     try {
-      const res = await fetch('/api/admin/backgrounds/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
-        body: JSON.stringify({ label: bgNewCatLabel, emoji: bgNewCatEmoji, color: bgNewCatColor }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        bgNewCatLabel = '';
-        bgNewCatEmoji = '🖼️';
-        bgNewCatColor = '#6ddc8a';
-        await loadBgCats();
-        bgSelectedCatId = data.id;
-      }
-    } finally {
-      bgCatSaving = false;
-    }
-  }
-
-  function startEditBgCat(cat) {
-    bgEditingCatId = cat.id;
-    bgEditCatForm = { label: cat.label, emoji: cat.emoji, color: cat.color };
-  }
-
-  async function saveEditBgCat() {
-    await fetch(`/api/admin/backgrounds/categories/${bgEditingCatId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
-      body: JSON.stringify(bgEditCatForm),
-    });
-    bgEditingCatId = null;
-    bgEditCatForm = null;
-    await loadBgCats();
-  }
-
-  async function deleteBgCat(id) {
-    if (!confirm('Delete this category and all its images?')) return;
-    bgCatDeleting = id;
-    try {
-      await fetch(`/api/admin/backgrounds/categories/${id}`, {
-        method: 'DELETE',
+      const res = await fetch('/api/admin/backgrounds/images', {
         headers: { 'x-admin-password': password },
       });
-      if (bgSelectedCatId === id) bgSelectedCatId = null;
-      await loadBgCats();
+      if (res.ok) bgImages = await res.json();
     } finally {
-      bgCatDeleting = null;
+      bgLoading = false;
     }
   }
 
   async function uploadBgImage(event) {
-    if (!bgSelectedCatId) return;
+    if (!bgSelectedCatId || !bgSelectedCat) return;
     const file = event.target.files?.[0];
     if (!file) return;
     const name = bgNewImgName.trim() || file.name.replace(/\.[^.]+$/, '');
@@ -540,10 +481,15 @@
       await fetch('/api/admin/backgrounds/images', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
-        body: JSON.stringify({ category_id: bgSelectedCatId, name, file: upData.url }),
+        body: JSON.stringify({
+          category_id: bgSelectedCatId,
+          category_label: bgSelectedCat.label,
+          name,
+          file: upData.url,
+        }),
       });
       bgNewImgName = '';
-      await loadBgCats();
+      await loadBgImages();
     } finally {
       bgImgUploading = false;
       event.target.value = '';
@@ -557,7 +503,7 @@
         method: 'DELETE',
         headers: { 'x-admin-password': password },
       });
-      await loadBgCats();
+      await loadBgImages();
     } finally {
       bgImgDeleting = null;
     }
@@ -666,7 +612,7 @@
       loadSettings();
       loadSets();
       loadFeedback();
-      loadBgCats();
+      loadBgImages();
     }
   });
 </script>
@@ -710,7 +656,7 @@
       <button class="tab" class:active={tab === 'orders'}   onclick={() => tab = 'orders'}>Orders</button>
       <button class="tab" class:active={tab === 'sets'}      onclick={() => tab = 'sets'}>Sticker Sets</button>
       <button class="tab" class:active={tab === 'analytics'}    onclick={() => tab = 'analytics'}>Analytics</button>
-      <button class="tab" class:active={tab === 'backgrounds'}  onclick={() => { tab = 'backgrounds'; loadBgCats(); }}>Backgrounds</button>
+      <button class="tab" class:active={tab === 'backgrounds'}  onclick={() => { tab = 'backgrounds'; loadBgImages(); }}>Backgrounds</button>
       <button class="tab" class:active={tab === 'settings'}     onclick={() => tab = 'settings'}>Settings</button>
       <button class="tab" class:active={tab === 'feedback'}  onclick={() => tab = 'feedback'}>Feedback</button>
     </div>
@@ -1106,65 +1052,48 @@
     {:else if tab === 'backgrounds'}
       <div class="bg-panel">
 
-        <!-- Left: categories list -->
+        <!-- Left: sticker sets / sheets picker -->
         <div class="bg-cats-col">
-          <h2 class="bg-col-heading">Categories</h2>
+          <h2 class="bg-col-heading">Category</h2>
 
-          {#if bgCatsLoading}
+          {#if bgLoading}
             <p class="loading-msg">Loading…</p>
+          {:else if sets.length === 0}
+            <div class="bg-no-sets">No sticker sets yet — add some in the Sets tab first.</div>
           {:else}
             <div class="bg-cat-list">
-              {#each bgCats as cat}
+              {#each sets as set}
                 <div
-                  class="bg-cat-row"
-                  class:selected={bgSelectedCatId === cat.id}
-                  onclick={() => bgSelectedCatId = cat.id}
+                  class="bg-cat-row bg-cat-set"
+                  class:selected={bgSelectedCatId === set.id}
+                  onclick={() => bgSelectedCatId = set.id}
                   role="button"
                   tabindex="0"
                 >
-                  {#if bgEditingCatId === cat.id}
-                    <!-- Inline edit form -->
-                    <div class="bg-cat-edit-form" onclick={(e) => e.stopPropagation()} role="presentation">
-                      <div class="bg-cat-edit-row">
-                        <input class="bg-input small" bind:value={bgEditCatForm.emoji} placeholder="🖼️" style="width:52px;text-align:center" />
-                        <input class="bg-input" bind:value={bgEditCatForm.label} placeholder="Category name" />
-                        <input type="color" class="bg-color-swatch" bind:value={bgEditCatForm.color} title="Pick color" />
-                      </div>
-                      <div class="bg-cat-edit-actions">
-                        <button class="bg-save-btn" onclick={saveEditBgCat}>Save</button>
-                        <button class="bg-cancel-btn" onclick={() => { bgEditingCatId = null; bgEditCatForm = null; }}>Cancel</button>
-                      </div>
-                    </div>
-                  {:else}
-                    <span class="bg-cat-emoji" style="background:{cat.color}">{cat.emoji}</span>
-                    <span class="bg-cat-label">{cat.label}</span>
-                    <span class="bg-cat-count">{cat.images?.length ?? 0}</span>
-                    <div class="bg-cat-actions" onclick={(e) => e.stopPropagation()} role="presentation">
-                      <button class="bg-icon-btn" onclick={() => startEditBgCat(cat)} title="Edit">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                      </button>
-                      <button class="bg-icon-btn danger" disabled={bgCatDeleting === cat.id} onclick={() => deleteBgCat(cat.id)} title="Delete">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-                      </button>
-                    </div>
+                  <div class="bg-set-swatch" style="background:{set.color}"></div>
+                  <span class="bg-cat-label">{set.name}</span>
+                  {#if bgImages.filter(i => i.category_id === set.id).length > 0}
+                    <span class="bg-cat-count">{bgImages.filter(i => i.category_id === set.id).length}</span>
                   {/if}
                 </div>
+                {#each set.sheets ?? [] as sheet}
+                  <div
+                    class="bg-cat-row bg-cat-sheet"
+                    class:selected={bgSelectedCatId === sheet.id}
+                    onclick={() => bgSelectedCatId = sheet.id}
+                    role="button"
+                    tabindex="0"
+                  >
+                    <div class="bg-sheet-indent"></div>
+                    <span class="bg-cat-label">{sheet.name}</span>
+                    {#if bgImages.filter(i => i.category_id === sheet.id).length > 0}
+                      <span class="bg-cat-count">{bgImages.filter(i => i.category_id === sheet.id).length}</span>
+                    {/if}
+                  </div>
+                {/each}
               {/each}
             </div>
           {/if}
-
-          <!-- Add category form -->
-          <div class="bg-add-cat-form">
-            <h3 class="bg-add-heading">Add Category</h3>
-            <div class="bg-cat-edit-row">
-              <input class="bg-input small" bind:value={bgNewCatEmoji} placeholder="🖼️" style="width:52px;text-align:center" />
-              <input class="bg-input" bind:value={bgNewCatLabel} placeholder="Category name" onkeydown={(e) => e.key === 'Enter' && addBgCategory()} />
-              <input type="color" class="bg-color-swatch" bind:value={bgNewCatColor} title="Pick color" />
-            </div>
-            <button class="bg-add-btn" disabled={bgCatSaving || !bgNewCatLabel.trim()} onclick={addBgCategory}>
-              {bgCatSaving ? 'Adding…' : '+ Add'}
-            </button>
-          </div>
         </div>
 
         <!-- Right: images for selected category -->
@@ -1177,10 +1106,10 @@
           {:else}
             <div class="bg-images-header">
               <h2 class="bg-col-heading">
-                <span style="background:{bgSelectedCat.color}" class="bg-cat-emoji">{bgSelectedCat.emoji}</span>
+                <div class="bg-header-swatch" style="background:{bgSelectedCat.color}"></div>
                 {bgSelectedCat.label}
               </h2>
-              <span class="bg-img-count">{bgSelectedCat.images?.length ?? 0} image{(bgSelectedCat.images?.length ?? 0) === 1 ? '' : 's'}</span>
+              <span class="bg-img-count">{bgSelectedImages.length} image{bgSelectedImages.length === 1 ? '' : 's'}</span>
             </div>
 
             <!-- Upload form -->
@@ -1197,13 +1126,13 @@
             </div>
 
             <!-- Images grid -->
-            {#if (bgSelectedCat.images?.length ?? 0) === 0}
+            {#if bgSelectedImages.length === 0}
               <div class="bg-empty-images">
                 <p>No images yet — upload one above!</p>
               </div>
             {:else}
               <div class="bg-img-grid">
-                {#each bgSelectedCat.images as img}
+                {#each bgSelectedImages as img}
                   <div class="bg-img-card">
                     <div class="bg-img-preview-wrap">
                       <img src={img.preview || img.file} alt={img.name} class="bg-img-preview" loading="lazy" />
@@ -2885,16 +2814,44 @@
   .bg-cat-row:hover { background: var(--paper); }
   .bg-cat-row.selected { background: var(--paper); border-color: var(--ink); }
 
-  .bg-cat-emoji {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    border: 2px solid var(--ink);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px;
+  .bg-set-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: 1.5px solid var(--ink);
     flex-shrink: 0;
+  }
+
+  .bg-sheet-indent {
+    width: 16px;
+    flex-shrink: 0;
+    margin-left: 6px;
+  }
+
+  .bg-header-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 2px solid var(--ink);
+    flex-shrink: 0;
+  }
+
+  .bg-no-sets {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    opacity: 0.5;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .bg-cat-set {
+    font-weight: 700;
+  }
+
+  .bg-cat-sheet {
+    padding-left: 8px;
+    opacity: 0.85;
   }
 
   .bg-cat-label {
@@ -2922,39 +2879,6 @@
     flex-shrink: 0;
   }
 
-  .bg-cat-actions {
-    display: flex;
-    gap: 4px;
-    flex-shrink: 0;
-  }
-
-  .bg-icon-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    border: 1.5px solid rgba(42,34,56,0.2);
-    background: transparent;
-    color: var(--ink);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.1s, border-color 0.1s;
-    opacity: 0.6;
-  }
-
-  .bg-icon-btn:hover { background: var(--paper); opacity: 1; border-color: var(--ink); }
-  .bg-icon-btn.danger:hover { background: #ffe0e0; border-color: var(--pink); color: var(--pink); }
-
-  .bg-cat-edit-form { width: 100%; }
-
-  .bg-cat-edit-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-
   .bg-input {
     font-family: 'Fredoka', sans-serif;
     font-size: 14px;
@@ -2971,81 +2895,6 @@
 
   .bg-input:focus { outline: none; border-color: var(--blue); }
   .bg-input.small { flex: none; }
-
-  .bg-color-swatch {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 2.5px solid var(--ink);
-    cursor: pointer;
-    padding: 2px;
-    background: none;
-    flex-shrink: 0;
-  }
-
-  .bg-cat-edit-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .bg-save-btn {
-    font-family: 'Fredoka', sans-serif;
-    font-weight: 700;
-    font-size: 13px;
-    padding: 6px 14px;
-    border-radius: 999px;
-    border: 2px solid var(--ink);
-    background: var(--mint);
-    color: var(--ink);
-    cursor: pointer;
-    box-shadow: 0 2px 0 var(--ink);
-  }
-
-  .bg-cancel-btn {
-    font-family: 'Fredoka', sans-serif;
-    font-weight: 700;
-    font-size: 13px;
-    padding: 6px 14px;
-    border-radius: 999px;
-    border: 2px solid rgba(42,34,56,0.2);
-    background: transparent;
-    color: var(--ink);
-    cursor: pointer;
-    opacity: 0.6;
-  }
-
-  .bg-add-cat-form {
-    border-top: 2px solid var(--line);
-    padding-top: 16px;
-  }
-
-  .bg-add-heading {
-    font-family: 'Fredoka', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--ink);
-    opacity: 0.5;
-    margin: 0 0 10px;
-  }
-
-  .bg-add-btn {
-    margin-top: 8px;
-    font-family: 'Fredoka', sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-    padding: 8px 20px;
-    border-radius: 999px;
-    border: 2.5px solid var(--ink);
-    background: var(--yellow);
-    color: var(--ink);
-    cursor: pointer;
-    box-shadow: 0 3px 0 var(--ink);
-    transition: opacity 0.1s;
-  }
-
-  .bg-add-btn:disabled { opacity: 0.4; cursor: default; }
 
   /* Images column */
   .bg-images-col {

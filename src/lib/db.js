@@ -63,26 +63,21 @@ export async function ensureSchema() {
   await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS apple_pay BOOLEAN DEFAULT false`;
 
   await db`
-    CREATE TABLE IF NOT EXISTS background_categories (
-      id         TEXT PRIMARY KEY,
-      label      TEXT NOT NULL,
-      emoji      TEXT DEFAULT '🖼️',
-      color      TEXT DEFAULT '#6ddc8a',
-      sort_order INTEGER DEFAULT 0,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `;
-  await db`
     CREATE TABLE IF NOT EXISTS background_images (
-      id          TEXT PRIMARY KEY,
-      category_id TEXT REFERENCES background_categories(id) ON DELETE CASCADE,
-      name        TEXT NOT NULL,
-      file        TEXT NOT NULL,
-      preview     TEXT DEFAULT '',
-      sort_order  INTEGER DEFAULT 0,
-      created_at  TIMESTAMPTZ DEFAULT NOW()
+      id             TEXT PRIMARY KEY,
+      category_id    TEXT NOT NULL DEFAULT '',
+      category_label TEXT NOT NULL DEFAULT '',
+      name           TEXT NOT NULL,
+      file           TEXT NOT NULL,
+      preview        TEXT DEFAULT '',
+      sort_order     INTEGER DEFAULT 0,
+      created_at     TIMESTAMPTZ DEFAULT NOW()
     )
   `;
+  // Drop old FK-backed category table if it existed, migrate images table
+  await db`ALTER TABLE background_images DROP CONSTRAINT IF EXISTS background_images_category_id_fkey`;
+  await db`ALTER TABLE background_images ADD COLUMN IF NOT EXISTS category_label TEXT NOT NULL DEFAULT ''`;
+  await db`DROP TABLE IF EXISTS background_categories`;
 
   await db`
     CREATE TABLE IF NOT EXISTS feedback (
@@ -325,50 +320,18 @@ export async function listFeedback() {
   return db`SELECT * FROM feedback ORDER BY created_at DESC`;
 }
 
-// ── Background categories ──────────────────────────────────────────────────────
-
-export async function listBackgroundCategories() {
-  const db = sql();
-  return db`SELECT * FROM background_categories ORDER BY sort_order ASC, created_at ASC`;
-}
-
-export async function createBackgroundCategory(cat) {
-  const db = sql();
-  await db`
-    INSERT INTO background_categories (id, label, emoji, color, sort_order)
-    VALUES (${cat.id}, ${cat.label}, ${cat.emoji ?? '🖼️'}, ${cat.color ?? '#6ddc8a'}, ${cat.sort_order ?? 0})
-  `;
-}
-
-export async function updateBackgroundCategory(id, fields) {
-  const db = sql();
-  await db`
-    UPDATE background_categories
-    SET label = ${fields.label}, emoji = ${fields.emoji}, color = ${fields.color}
-    WHERE id = ${id}
-  `;
-}
-
-export async function deleteBackgroundCategory(id) {
-  const db = sql();
-  await db`DELETE FROM background_categories WHERE id = ${id}`;
-}
-
 // ── Background images ──────────────────────────────────────────────────────────
 
-export async function listBackgroundImages(categoryId) {
+export async function listBackgroundImages() {
   const db = sql();
-  if (categoryId) {
-    return db`SELECT * FROM background_images WHERE category_id = ${categoryId} ORDER BY sort_order ASC, created_at ASC`;
-  }
-  return db`SELECT * FROM background_images ORDER BY sort_order ASC, created_at ASC`;
+  return db`SELECT * FROM background_images ORDER BY category_id ASC, sort_order ASC, created_at ASC`;
 }
 
 export async function createBackgroundImage(img) {
   const db = sql();
   await db`
-    INSERT INTO background_images (id, category_id, name, file, preview, sort_order)
-    VALUES (${img.id}, ${img.category_id}, ${img.name}, ${img.file}, ${img.preview ?? ''}, ${img.sort_order ?? 0})
+    INSERT INTO background_images (id, category_id, category_label, name, file, preview, sort_order)
+    VALUES (${img.id}, ${img.category_id}, ${img.category_label}, ${img.name}, ${img.file}, ${img.preview ?? ''}, ${img.sort_order ?? 0})
   `;
 }
 
