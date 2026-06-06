@@ -65,7 +65,6 @@
 
         <!-- Section header -->
         <div class="category-header">
-          <div class="category-badge" style="background:{cat.color}"></div>
           <div>
             <h2 class="category-name">{cat.label}</h2>
             <p class="category-count">
@@ -238,15 +237,6 @@
     align-items: center;
     gap: 14px;
     margin-bottom: 20px;
-  }
-
-  .category-badge {
-    width: 52px;
-    height: 52px;
-    border-radius: 14px;
-    border: 2.5px solid var(--ink);
-    box-shadow: 0 3px 0 var(--ink);
-    flex-shrink: 0;
   }
 
   .category-name {
