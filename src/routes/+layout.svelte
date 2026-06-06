@@ -42,7 +42,10 @@
       </a>
       <nav class="nav-desktop">
         <a href="/" class="nav-btn" class:active={currentPath === '/'}>All Stickers</a>
-        <a href="/backgrounds" class="nav-btn" class:active={currentPath === '/backgrounds'}>Backgrounds</a>
+        <a href="/backgrounds" class="nav-btn" class:active={currentPath === '/backgrounds'}>
+          Backgrounds
+          <span class="free-tag">FREE ✨</span>
+        </a>
         {#if adminAuthed}
           <a href="/admin" class="nav-btn admin-btn" class:active={currentPath === '/admin'}>Admin</a>
         {/if}
@@ -78,7 +81,10 @@
     {#if menuOpen}
       <div class="mobile-menu">
         <a href="/" class="mobile-nav-btn" class:active={currentPath === '/'}>All Stickers</a>
-        <a href="/backgrounds" class="mobile-nav-btn" class:active={currentPath === '/backgrounds'}>Backgrounds</a>
+        <a href="/backgrounds" class="mobile-nav-btn" class:active={currentPath === '/backgrounds'}>
+          Backgrounds
+          <span class="free-tag">FREE ✨</span>
+        </a>
         {#if adminAuthed}
           <a href="/admin" class="mobile-nav-btn admin-mobile-btn" class:active={currentPath === '/admin'}>Admin</a>
         {/if}
@@ -323,6 +329,40 @@
 
   .cart-btn  { background: var(--yellow); }
   .admin-btn { background: var(--blue); }
+
+  .free-tag {
+    position: absolute;
+    top: -11px;
+    right: -4px;
+    background: var(--pink);
+    color: white;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    border: 2px solid var(--ink);
+    box-shadow: 0 2px 0 var(--ink);
+    white-space: nowrap;
+    pointer-events: none;
+    animation: free-sparkle 2.8s ease-in-out infinite;
+  }
+
+  @keyframes free-sparkle {
+    0%, 100% {
+      transform: rotate(6deg) scale(1);
+      box-shadow: 0 2px 0 var(--ink);
+    }
+    45% {
+      transform: rotate(6deg) scale(1.18);
+      box-shadow: 0 2px 0 var(--ink), 0 0 10px 4px rgba(255, 77, 141, 0.55);
+    }
+    55% {
+      transform: rotate(6deg) scale(1.14);
+      box-shadow: 0 2px 0 var(--ink), 0 0 14px 6px rgba(255, 210, 63, 0.5);
+    }
+  }
 
   .cart-badge {
     position: absolute;
