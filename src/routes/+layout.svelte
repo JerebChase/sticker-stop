@@ -42,6 +42,7 @@
       </a>
       <nav class="nav-desktop">
         <a href="/" class="nav-btn" class:active={currentPath === '/'}>All Stickers</a>
+        <a href="/backgrounds" class="nav-btn" class:active={currentPath === '/backgrounds'}>Backgrounds</a>
         {#if adminAuthed}
           <a href="/admin" class="nav-btn admin-btn" class:active={currentPath === '/admin'}>Admin</a>
         {/if}
@@ -77,6 +78,7 @@
     {#if menuOpen}
       <div class="mobile-menu">
         <a href="/" class="mobile-nav-btn" class:active={currentPath === '/'}>All Stickers</a>
+        <a href="/backgrounds" class="mobile-nav-btn" class:active={currentPath === '/backgrounds'}>Backgrounds</a>
         {#if adminAuthed}
           <a href="/admin" class="mobile-nav-btn admin-mobile-btn" class:active={currentPath === '/admin'}>Admin</a>
         {/if}
