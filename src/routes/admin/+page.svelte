@@ -448,6 +448,31 @@
 
   let bgSelectedImages = $derived(bgImages.filter(img => img.category_id === bgSelectedCatId));
 
+  let bgEditingImgId = $state(null);
+  let bgEditingImgName = $state('');
+
+  function startEditImgName(img) {
+    bgEditingImgId = img.id;
+    bgEditingImgName = img.name;
+  }
+
+  function cancelEditImgName() {
+    bgEditingImgId = null;
+    bgEditingImgName = '';
+  }
+
+  async function saveImgName(id) {
+    if (!bgEditingImgName.trim()) return;
+    await fetch(`/api/admin/backgrounds/images/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+      body: JSON.stringify({ name: bgEditingImgName }),
+    });
+    bgEditingImgId = null;
+    bgEditingImgName = '';
+    await loadBgImages();
+  }
+
   async function loadBgImages() {
     bgLoading = true;
     try {
@@ -1145,7 +1170,24 @@
                         {bgImgDeleting === img.id ? '…' : '✕'}
                       </button>
                     </div>
-                    <span class="bg-img-name">{img.name}</span>
+                    {#if bgEditingImgId === img.id}
+                      <div class="bg-img-name-edit">
+                        <input
+                          class="bg-img-name-input"
+                          bind:value={bgEditingImgName}
+                          onkeydown={(e) => { if (e.key === 'Enter') saveImgName(img.id); if (e.key === 'Escape') cancelEditImgName(); }}
+                        />
+                        <button class="bg-name-save" onclick={() => saveImgName(img.id)} title="Save">✓</button>
+                        <button class="bg-name-cancel" onclick={cancelEditImgName} title="Cancel">✕</button>
+                      </div>
+                    {:else}
+                      <div class="bg-img-name-row">
+                        <span class="bg-img-name">{img.name}</span>
+                        <button class="bg-img-rename" onclick={() => startEditImgName(img)} title="Rename">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                      </div>
+                    {/if}
                   </div>
                 {/each}
               </div>
@@ -3013,15 +3055,81 @@
   .bg-img-card:hover .bg-img-delete { opacity: 1; }
   .bg-img-delete:hover { background: var(--pink); color: white; border-color: var(--pink); }
 
+  .bg-img-name-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 6px 4px 8px;
+    min-height: 30px;
+  }
+
   .bg-img-name {
-    display: block;
+    flex: 1;
     font-family: 'Fredoka', sans-serif;
     font-size: 12px;
     font-weight: 600;
     color: var(--ink);
-    padding: 6px 8px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0;
   }
+
+  .bg-img-rename {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 1.5px solid transparent;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s, background 0.1s;
+  }
+
+  .bg-img-card:hover .bg-img-rename { opacity: 0.6; }
+  .bg-img-rename:hover { opacity: 1 !important; background: var(--paper); border-color: rgba(42,34,56,0.2); }
+
+  .bg-img-name-edit {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 6px;
+  }
+
+  .bg-img-name-input {
+    flex: 1;
+    min-width: 0;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 6px;
+    border: 1.5px solid var(--blue);
+    border-radius: 6px;
+    background: white;
+    color: var(--ink);
+    outline: none;
+  }
+
+  .bg-name-save, .bg-name-cancel {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    border: 1.5px solid var(--ink);
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .bg-name-save { background: var(--mint); color: var(--ink); }
+  .bg-name-cancel { background: var(--paper-2); color: var(--ink); }
 </style>

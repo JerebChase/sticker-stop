@@ -86,37 +86,17 @@
           <!-- Image grid -->
           <div class="image-grid">
             {#each cat.images as img}
-              <div class="image-card">
+              <a href={img.file} download={img.name} class="image-card" title="Download {img.name}">
                 <div class="image-preview-wrap">
                   <img src={img.preview || img.file} alt={img.name} class="image-preview" loading="lazy" />
-                  <div class="image-overlay">
-                    <a
-                      href={img.file}
-                      download={img.name}
-                      class="download-btn"
-                      onclick={(e) => e.stopPropagation()}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 5v14M5 12l7 7 7-7"/>
-                      </svg>
-                      Download
-                    </a>
-                  </div>
                 </div>
                 <div class="image-info">
                   <span class="image-name">{img.name}</span>
-                  <a
-                    href={img.file}
-                    download={img.name}
-                    class="download-btn-small"
-                    title="Download {img.name}"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M12 5v14M5 12l7 7 7-7"/>
-                    </svg>
-                  </a>
+                  <svg class="download-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14M5 12l7 7 7-7"/>
+                  </svg>
                 </div>
-              </div>
+              </a>
             {/each}
           </div>
         {/if}
@@ -351,12 +331,16 @@
   }
 
   .image-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
     background: white;
     border-radius: 16px;
     border: 2.5px solid var(--ink);
     box-shadow: 0 5px 0 var(--ink);
     overflow: hidden;
     transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
   }
 
   .image-card:hover {
@@ -365,7 +349,6 @@
   }
 
   .image-preview-wrap {
-    position: relative;
     aspect-ratio: 4 / 3;
     overflow: hidden;
     background: var(--paper);
@@ -381,42 +364,6 @@
 
   .image-card:hover .image-preview {
     transform: scale(1.04);
-  }
-
-  .image-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(42,34,56,0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-
-  .image-card:hover .image-overlay {
-    opacity: 1;
-  }
-
-  .download-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    font-family: 'Fredoka', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    padding: 10px 20px;
-    border-radius: 999px;
-    background: white;
-    color: var(--ink);
-    border: 2.5px solid var(--ink);
-    box-shadow: 0 3px 0 var(--ink);
-    text-decoration: none;
-    transition: background 0.15s;
-  }
-
-  .download-btn:hover {
-    background: var(--yellow);
   }
 
   .image-info {
@@ -435,26 +382,18 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0;
   }
 
-  .download-btn-small {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: var(--paper);
-    border: 2px solid var(--ink);
-    box-shadow: 0 2px 0 var(--ink);
-    color: var(--ink);
-    text-decoration: none;
+  .download-icon {
     flex-shrink: 0;
-    transition: background 0.15s;
+    color: var(--ink);
+    opacity: 0.4;
+    transition: opacity 0.15s;
   }
 
-  .download-btn-small:hover {
-    background: var(--yellow);
+  .image-card:hover .download-icon {
+    opacity: 1;
   }
 
   @media (max-width: 600px) {
@@ -462,7 +401,5 @@
       grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       gap: 14px;
     }
-
-    .image-overlay { display: none; }
   }
 </style>

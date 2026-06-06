@@ -339,3 +339,8 @@ export async function deleteBackgroundImage(id) {
   const db = sql();
   await db`DELETE FROM background_images WHERE id = ${id}`;
 }
+
+export async function updateBackgroundImageName(id, name) {
+  const db = sql();
+  await db`UPDATE background_images SET name = ${name} WHERE id = ${id}`;
+}
