@@ -147,12 +147,13 @@ export async function createOrder(order) {
   const [row] = await db`
     INSERT INTO orders
       (customer_name, customer_email, customer_address, customer_notes,
-       items, subtotal, shipping, total, delivery_method)
+       items, subtotal, shipping, total, delivery_method, status, paid, apple_pay)
     VALUES
       (${order.customer_name}, ${order.customer_email}, ${order.customer_address},
        ${order.customer_notes}, ${JSON.stringify(order.items)},
        ${order.subtotal}, ${order.shipping}, ${order.total},
-       ${order.delivery_method ?? 'mail'})
+       ${order.delivery_method ?? 'mail'}, ${order.status ?? 'new'},
+       ${order.paid ?? false}, ${order.apple_pay ?? false})
     RETURNING id, created_at
   `;
   return row;

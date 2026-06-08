@@ -322,6 +322,89 @@
     }
   }
 
+  // New in-person order modal
+  let newOrderOpen = $state(false);
+  let newOrderName = $state('');
+  let newOrderEmail = $state('');
+  let newOrderItems = $state([]);
+  let newOrderPaid = $state(true);
+  let newOrderApplePay = $state(false);
+  let newOrderSaving = $state(false);
+  let newOrderError = $state('');
+
+  let newOrderSubtotal = $derived(
+    newOrderItems.reduce((s, i) => s + i.price * i.qty, 0)
+  );
+
+  function openNewOrder() {
+    newOrderName = '';
+    newOrderEmail = '';
+    newOrderItems = [];
+    newOrderPaid = true;
+    newOrderApplePay = false;
+    newOrderError = '';
+    newOrderOpen = true;
+  }
+
+  function closeNewOrder() {
+    newOrderOpen = false;
+  }
+
+  function addNewOrderItem(set, sheet = null) {
+    const isSet   = !sheet;
+    const sheetId = isSet ? `${set.id}-set` : sheet.id;
+    const existing = newOrderItems.find(i => i.sheetId === sheetId);
+    if (existing) {
+      newOrderItems = newOrderItems.map(i => i.sheetId === sheetId ? { ...i, qty: i.qty + 1 } : i);
+    } else {
+      newOrderItems = [...newOrderItems, {
+        kind:    isSet ? 'set' : 'sheet',
+        setId:   set.id,
+        sheetId,
+        name:    isSet ? `${set.name} — Full set` : `${set.name} — ${sheet.name}`,
+        price:   isSet ? set.priceSet : set.priceSheet,
+        qty:     1,
+      }];
+    }
+  }
+
+  function changeNewOrderQty(sheetId, delta) {
+    newOrderItems = newOrderItems
+      .map(i => i.sheetId === sheetId ? { ...i, qty: i.qty + delta } : i)
+      .filter(i => i.qty > 0);
+  }
+
+  async function submitNewOrder() {
+    newOrderError = '';
+    if (!newOrderName.trim()) { newOrderError = 'Customer name is required.'; return; }
+    if (newOrderItems.length === 0) { newOrderError = 'Add at least one item.'; return; }
+    newOrderSaving = true;
+    try {
+      const res = await fetch('/api/admin/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body: JSON.stringify({
+          customer_name:  newOrderName.trim(),
+          customer_email: newOrderEmail.trim(),
+          items:          newOrderItems.map(({ kind, setId, sheetId, name, price, qty }) => ({ kind, setId, sheetId, name, price, qty })),
+          paid:           newOrderPaid,
+          apple_pay:      newOrderApplePay,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        newOrderError = data.error ?? 'Failed to create order.';
+      } else {
+        newOrderOpen = false;
+        loadOrders();
+      }
+    } catch {
+      newOrderError = 'Could not reach server.';
+    } finally {
+      newOrderSaving = false;
+    }
+  }
+
   async function saveSettings() {
     settingsLoading = true;
     const payload = { ...settings };
@@ -404,9 +487,10 @@
     const sheetRankings = [...sheetMap.values()].sort((a, b) => b.qty - a.qty);
     const setRankings   = [...setMap.values()].sort((a, b) => b.qty - a.qty);
 
-    const shipped = active.filter(o => o.delivery_method !== 'pickup').length;
-    const pickup  = active.filter(o => o.delivery_method === 'pickup').length;
-    const deliveryTotal = shipped + pickup || 1;
+    const shipped   = active.filter(o => o.delivery_method !== 'pickup' && o.delivery_method !== 'in_person').length;
+    const pickup    = active.filter(o => o.delivery_method === 'pickup').length;
+    const inPerson  = active.filter(o => o.delivery_method === 'in_person').length;
+    const deliveryTotal = shipped + pickup + inPerson || 1;
 
     return {
       sheets:        sheetRankings,
@@ -415,6 +499,7 @@
       maxSet:        setRankings[0]?.qty   || 1,
       shipped,
       pickup,
+      inPerson,
       deliveryTotal,
     };
   });
@@ -716,6 +801,11 @@
     </div>
 
     {#if tab === 'orders'}
+      <!-- Toolbar -->
+      <div class="orders-toolbar">
+        <button class="new-order-btn" onclick={openNewOrder}>🧾 New In-Person Order</button>
+      </div>
+
       <!-- Stats -->
       <div class="stats-row">
         {#each [
@@ -770,8 +860,12 @@
                     {#if o.customer_email}
                       <a href="mailto:{o.customer_email}" class="customer-email">{o.customer_email}</a>
                     {/if}
-                    <span class="delivery-badge" class:pickup-badge={o.delivery_method === 'pickup'} class:ship-badge={o.delivery_method !== 'pickup'}>
-                      {o.delivery_method === 'pickup' ? 'Pickup' : 'Ship'}
+                    <span class="delivery-badge"
+                      class:pickup-badge={o.delivery_method === 'pickup'}
+                      class:person-badge={o.delivery_method === 'in_person'}
+                      class:ship-badge={o.delivery_method !== 'pickup' && o.delivery_method !== 'in_person'}
+                    >
+                      {o.delivery_method === 'pickup' ? 'Pickup' : o.delivery_method === 'in_person' ? 'In Person' : 'Ship'}
                     </span>
                   </td>
                   <td class="order-items">
@@ -815,7 +909,9 @@
                     >
                       <option value="new">New</option>
                       <option value="processing">Processing</option>
-                      {#if o.delivery_method === 'pickup'}
+                      {#if o.delivery_method === 'in_person'}
+                        <!-- No fulfillment emails for walk-in orders -->
+                      {:else if o.delivery_method === 'pickup'}
                         <option value="ready">Ready for Pickup ✉️</option>
                       {:else}
                         <option value="shipped">Shipped ✉️</option>
@@ -996,7 +1092,7 @@
           <div class="analytics-section">
             <div class="analytics-heading-row">
               <h2 class="analytics-heading">Delivery</h2>
-              <span class="analytics-sub">shipped vs. pickup</span>
+              <span class="analytics-sub">shipped vs. pickup vs. in person</span>
             </div>
             <div class="delivery-split">
               <div class="delivery-split-bar">
@@ -1010,12 +1106,19 @@
                     <span class="segment-label">🏠 {analytics.pickup}</span>
                   {/if}
                 </div>
+                <div class="delivery-segment person-segment" style="width:{(analytics.inPerson / analytics.deliveryTotal) * 100}%">
+                  {#if analytics.inPerson > 0}
+                    <span class="segment-label">🤝 {analytics.inPerson}</span>
+                  {/if}
+                </div>
               </div>
               <div class="delivery-legend">
                 <span class="legend-dot" style="background: var(--blue)"></span>
                 <span class="legend-text">Shipped — {Math.round((analytics.shipped / analytics.deliveryTotal) * 100)}%</span>
                 <span class="legend-dot" style="background: var(--mint)"></span>
                 <span class="legend-text">Pickup — {Math.round((analytics.pickup / analytics.deliveryTotal) * 100)}%</span>
+                <span class="legend-dot" style="background: var(--orange)"></span>
+                <span class="legend-text">In Person — {Math.round((analytics.inPerson / analytics.deliveryTotal) * 100)}%</span>
               </div>
             </div>
           </div>
@@ -1338,6 +1441,101 @@
   </div>
 {/if}
 
+<!-- New In-Person Order Modal -->
+{#if newOrderOpen}
+  <div class="modal-overlay" onclick={(e) => { if (e.target === e.currentTarget) closeNewOrder(); }}>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">New In-Person Order</h2>
+        <button class="modal-close" onclick={closeNewOrder}>✕</button>
+      </div>
+
+      <div class="modal-body">
+        <label class="field">
+          <span class="field-label">Customer name</span>
+          <input type="text" bind:value={newOrderName} placeholder="Jane Doe" />
+        </label>
+        <label class="field">
+          <span class="field-label">Email <span class="field-hint">(optional)</span></span>
+          <input type="email" bind:value={newOrderEmail} placeholder="jane@example.com" />
+        </label>
+
+        <div class="field">
+          <span class="field-label">What did they buy?</span>
+          <div class="picker-sets">
+            {#each sets as set}
+              <div class="picker-set">
+                <div class="picker-set-header">
+                  <span class="picker-swatch" style="background:{set.color}"></span>
+                  <span class="picker-set-name">{set.name}</span>
+                </div>
+                <div class="picker-options">
+                  <button type="button" class="picker-chip" onclick={() => addNewOrderItem(set)}>
+                    Full set <span class="picker-chip-price">${set.priceSet.toFixed(2)}</span>
+                  </button>
+                  {#each set.sheets as sheet}
+                    <button type="button" class="picker-chip" onclick={() => addNewOrderItem(set, sheet)}>
+                      {sheet.name} <span class="picker-chip-price">${set.priceSheet.toFixed(2)}</span>
+                    </button>
+                  {/each}
+                </div>
+              </div>
+            {/each}
+          </div>
+        </div>
+
+        {#if newOrderItems.length > 0}
+          <div class="field">
+            <span class="field-label">Cart</span>
+            <div class="new-order-cart">
+              {#each newOrderItems as item (item.sheetId)}
+                <div class="cart-line">
+                  <span class="cart-line-name">{item.name}</span>
+                  <div class="cart-line-qty">
+                    <button type="button" onclick={() => changeNewOrderQty(item.sheetId, -1)}>−</button>
+                    <span>{item.qty}</span>
+                    <button type="button" onclick={() => changeNewOrderQty(item.sheetId, 1)}>+</button>
+                  </div>
+                  <span class="cart-line-price">${(item.price * item.qty).toFixed(2)}</span>
+                </div>
+              {/each}
+            </div>
+            <div class="new-order-total">Total: ${newOrderSubtotal.toFixed(2)}</div>
+          </div>
+        {/if}
+
+        <div class="new-order-toggles">
+          <label class="field field-check">
+            <span class="field-label">Paid</span>
+            <input type="checkbox" bind:checked={newOrderPaid} />
+          </label>
+          {#if newOrderPaid}
+            <label class="field field-check">
+              <span class="field-label">Apple Pay</span>
+              <input type="checkbox" bind:checked={newOrderApplePay} />
+            </label>
+          {/if}
+        </div>
+
+        {#if newOrderError}
+          <p class="announcement-error">{newOrderError}</p>
+        {/if}
+
+        <div class="modal-actions">
+          <button class="cancel-btn" onclick={closeNewOrder}>Cancel</button>
+          <button
+            class="send-btn"
+            onclick={submitNewOrder}
+            disabled={newOrderSaving || !newOrderName.trim() || newOrderItems.length === 0}
+          >
+            {newOrderSaving ? 'Creating…' : `Create order — $${newOrderSubtotal.toFixed(2)}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
 {#snippet setForm(f)}
   <div class="set-form">
     <div class="set-form-row">
@@ -1637,6 +1835,36 @@
   }
 
   /* ── Stats ── */
+  .orders-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+  }
+
+  .new-order-btn {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 14px;
+    border: 2.5px solid var(--ink);
+    background: var(--orange);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--ink);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+
+  .new-order-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 var(--ink);
+  }
+
+  .new-order-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--ink);
+  }
+
   .stats-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -1737,6 +1965,7 @@
   }
   .ship-badge { background: var(--blue); }
   .pickup-badge { background: var(--yellow); }
+  .person-badge { background: var(--orange); }
 
   .item-line { font-size: 13px; opacity: 0.8; }
 
@@ -2045,6 +2274,7 @@
 
   .ship-segment   { background: var(--blue); }
   .pickup-segment { background: var(--mint); }
+  .person-segment { background: var(--orange); }
 
   .segment-label {
     font-family: 'Fredoka', sans-serif;
@@ -2748,6 +2978,148 @@
     font-size: 14px;
     color: var(--pink);
     margin: 0;
+  }
+
+  /* ── New order item picker ── */
+  .picker-sets {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 260px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .picker-set {
+    border: 2px solid var(--ink);
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: white;
+  }
+
+  .picker-set-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .picker-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink);
+    flex-shrink: 0;
+  }
+
+  .picker-set-name {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .picker-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .picker-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.1s, transform 0.1s;
+  }
+
+  .picker-chip:hover {
+    background: var(--yellow);
+    transform: translateY(-1px);
+  }
+
+  .picker-chip-price {
+    opacity: 0.6;
+    font-size: 11px;
+  }
+
+  /* ── New order cart ── */
+  .new-order-cart {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .cart-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    border: 1.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 8px 12px;
+  }
+
+  .cart-line-name {
+    flex: 1;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cart-line-qty {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .cart-line-qty button {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cart-line-qty button:hover { background: var(--yellow); }
+
+  .cart-line-price {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .new-order-total {
+    font-family: 'Bagel Fat One', sans-serif;
+    font-size: 18px;
+    text-align: right;
+    margin-top: 6px;
+  }
+
+  .new-order-toggles {
+    display: flex;
+    gap: 24px;
   }
 
   .ann-img-preview-wrap {
