@@ -432,17 +432,22 @@
     settingsLoading = false;
   }
 
-  let stats = $derived.by(() => {
-    const active = orders.filter(o => o.status !== 'canceled' && o.status !== 'cancelled');
-    const shopFund = active.reduce((s, o) => {
+  function calcTotals(list) {
+    const shopFund = list.reduce((s, o) => {
       const subtotal = parseFloat(o.subtotal || o.total || 0);
       const shipping = parseFloat(o.shipping || 0);
       return s + shipping + subtotal / 2;
     }, 0);
-    const earnings = active.reduce((s, o) => {
+    const earnings = list.reduce((s, o) => {
       const subtotal = parseFloat(o.subtotal || o.total || 0);
       return s + subtotal / 2;
     }, 0);
+    return { shopFund: shopFund.toFixed(2), earnings: earnings.toFixed(2) };
+  }
+
+  let stats = $derived.by(() => {
+    const active = orders.filter(o => o.status !== 'canceled' && o.status !== 'cancelled');
+    const { shopFund, earnings } = calcTotals(active);
     const paidOrders    = active.filter(o => o.paid);
     const applePayTotal = paidOrders.filter(o => o.apple_pay).reduce((s, o) => s + parseFloat(o.total || 0), 0).toFixed(2);
     const cashTotal     = paidOrders.filter(o => !o.apple_pay).reduce((s, o) => s + parseFloat(o.total || 0), 0).toFixed(2);
@@ -450,11 +455,26 @@
       total:         orders.length,
       newCount:      orders.filter(o => o.status === 'new').length,
       fulfilled:     orders.filter(o => o.status === 'fulfilled').length,
-      shopFund:      shopFund.toFixed(2),
-      earnings:      earnings.toFixed(2),
+      shopFund,
+      earnings,
       applePayTotal,
       cashTotal,
     };
+  });
+
+  let sinceOrderId = $state('');
+
+  let statsSince = $derived.by(() => {
+    if (!sinceOrderId) return null;
+    const selected = orders.find(o => String(o.id) === String(sinceOrderId));
+    if (!selected) return null;
+    const cutoff = new Date(selected.created_at).getTime();
+    const active = orders.filter(o =>
+      o.status !== 'canceled' && o.status !== 'cancelled' &&
+      new Date(o.created_at).getTime() >= cutoff
+    );
+    const { shopFund, earnings } = calcTotals(active);
+    return { count: active.length, shopFund, earnings };
   });
 
   let analytics = $derived.by(() => {
@@ -830,6 +850,35 @@
             <span class="stat-label">{s.label}</span>
           </div>
         {/each}
+      </div>
+
+      <!-- Totals since a given order -->
+      <div class="since-panel">
+        <label class="since-row" for="since-select">
+          <span class="since-label">📈 Totals since order</span>
+          <select id="since-select" class="since-select" bind:value={sinceOrderId}>
+            <option value="">— Select a starting order —</option>
+            {#each orders as o}
+              <option value={o.id}>#{o.id} · {new Date(o.created_at).toLocaleDateString()} · {o.customer_name}</option>
+            {/each}
+          </select>
+        </label>
+        {#if statsSince}
+          <div class="stats-row since-stats-row">
+            <div class="stat-card" style="--sc:var(--pink)">
+              <span class="stat-val">${statsSince.shopFund}</span>
+              <span class="stat-label">Shop Fund Since</span>
+            </div>
+            <div class="stat-card" style="--sc:#a78bfa">
+              <span class="stat-val">${statsSince.earnings}</span>
+              <span class="stat-label">Earnings Since</span>
+            </div>
+            <div class="stat-card" style="--sc:var(--blue)">
+              <span class="stat-val">{statsSince.count}</span>
+              <span class="stat-label">Orders Since</span>
+            </div>
+          </div>
+        {/if}
       </div>
 
       {#if ordersLoading}
@@ -1910,6 +1959,50 @@
     font-weight: 600;
     opacity: 0.65;
   }
+
+  .since-panel {
+    background: white;
+    border-radius: 14px;
+    border: 2.5px solid var(--ink);
+    box-shadow: 0 4px 0 var(--ink);
+    padding: 16px;
+    margin-bottom: 28px;
+  }
+
+  .since-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .since-label {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .since-select {
+    flex: 1;
+    min-width: 200px;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 14px;
+    background: var(--paper);
+    outline: none;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  .since-select:focus { border-color: var(--blue); }
+
+  .since-stats-row {
+    grid-template-columns: repeat(3, 1fr);
+    margin: 16px 0 0;
+  }
+
+  @media (max-width: 700px) { .since-stats-row { grid-template-columns: 1fr; } }
 
   /* ── Orders table ── */
   .loading-msg { font-family: 'Caveat', cursive; font-size: 18px; opacity: 0.6; padding: 24px 0; }
