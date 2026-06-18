@@ -59,6 +59,9 @@ export async function ensureSchema() {
   await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS price_set   NUMERIC(10,2) DEFAULT 3.00`;
   // Add paid column (migration)
   await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS paid BOOLEAN DEFAULT false`;
+  // Add sticker set status column (migration) — active | coming_soon | retiring_soon | inactive
+  await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active'`;
+  await db`UPDATE sticker_sets SET status = 'inactive' WHERE active = false AND status = 'active'`;
   // Add apple_pay column (migration)
   await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS apple_pay BOOLEAN DEFAULT false`;
 
@@ -194,7 +197,7 @@ function rowToSet(row) {
     color:      row.color    ?? '#6ddc8a',
     image:      row.image    ?? '',
     sortOrder:  row.sort_order,
-    active:     row.active,
+    status:     row.status ?? (row.active ? 'active' : 'inactive'),
     priceSheet: Number(row.price_sheet ?? 2),
     priceSet:   Number(row.price_set   ?? defaultSetPrice),
     sheets,
@@ -204,7 +207,7 @@ function rowToSet(row) {
 export async function listStickerSets() {
   const db = sql();
   const rows = await db`
-    SELECT * FROM sticker_sets WHERE active = true ORDER BY sort_order ASC, created_at ASC
+    SELECT * FROM sticker_sets WHERE status != 'inactive' ORDER BY sort_order ASC, created_at ASC
   `;
   return rows.map(rowToSet);
 }
@@ -217,7 +220,7 @@ export async function listAllStickerSets() {
 
 export async function getStickerSet(id) {
   const db = sql();
-  const rows = await db`SELECT * FROM sticker_sets WHERE id = ${id} AND active = true`;
+  const rows = await db`SELECT * FROM sticker_sets WHERE id = ${id} AND status IN ('active', 'retiring_soon')`;
   return rows.length ? rowToSet(rows[0]) : null;
 }
 
@@ -234,19 +237,21 @@ export async function upsertStickerSet(set) {
   const s0 = sheets[0] ?? {};
   const s1 = sheets[1] ?? {};
   const defaultSetPrice = calcDefaultSetPrice(sheets.length);
+  const status = set.status ?? (set.active === false ? 'inactive' : 'active');
+  const active = status !== 'inactive'; // legacy column, kept in sync
   await db`
     INSERT INTO sticker_sets
       (id, name, tagline, color, image,
        sheet_a_id, sheet_a_name, sheet_a_blurb, sheet_a_image,
        sheet_b_id, sheet_b_name, sheet_b_blurb, sheet_b_image,
        sheets, price_sheet, price_set,
-       sort_order, active)
+       sort_order, status, active)
     VALUES
       (${set.id}, ${set.name}, ${set.tagline ?? ''}, ${set.color ?? '#6ddc8a'}, ${set.image ?? ''},
        ${s0.id ?? ''}, ${s0.name ?? ''}, ${s0.blurb ?? ''}, ${s0.image ?? ''},
        ${s1.id ?? ''}, ${s1.name ?? ''}, ${s1.blurb ?? ''}, ${s1.image ?? ''},
        ${JSON.stringify(sheets)}, ${set.priceSheet ?? 2}, ${set.priceSet ?? defaultSetPrice},
-       ${set.sortOrder ?? 0}, ${set.active ?? true})
+       ${set.sortOrder ?? 0}, ${status}, ${active})
     ON CONFLICT (id) DO UPDATE SET
       name           = EXCLUDED.name,
       tagline        = EXCLUDED.tagline,
@@ -264,6 +269,7 @@ export async function upsertStickerSet(set) {
       price_sheet    = EXCLUDED.price_sheet,
       price_set      = EXCLUDED.price_set,
       sort_order     = EXCLUDED.sort_order,
+      status         = EXCLUDED.status,
       active         = EXCLUDED.active
   `;
 }

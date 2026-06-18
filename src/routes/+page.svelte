@@ -34,13 +34,23 @@
       <div class="card-grid">
         {#each sets as set, i}
           {@const rot = ROTS[i % ROTS.length]}
+          {@const isComingSoon = set.status === 'coming_soon'}
+          {@const isRetiring = set.status === 'retiring_soon'}
           <a
-            href="/stickers/{set.id}"
+            href={isComingSoon ? undefined : `/stickers/${set.id}`}
             class="set-card"
+            class:coming-soon={isComingSoon}
+            aria-disabled={isComingSoon}
             style="--rot:{rot}deg; --accent:{set.color}"
           >
             <!-- Washi tape -->
             <div class="washi" style="background:repeating-linear-gradient(45deg, {set.color}, {set.color} 6px, {set.color}88 6px, {set.color}88 12px)"></div>
+
+            {#if isComingSoon}
+              <div class="status-flag flag-coming-soon">Coming Soon</div>
+            {:else if isRetiring}
+              <div class="status-flag flag-retiring-soon">⏳ Retiring Soon</div>
+            {/if}
 
             <!-- Image area -->
             <div class="card-img-wrap">
@@ -71,7 +81,11 @@
                     <span class="deal-text">Set deal · save ${savings % 1 === 0 ? savings : savings.toFixed(2)}</span>
                   {/if}
                 {/if}
-                <span class="see-btn">See sheets →</span>
+                {#if isComingSoon}
+                  <span class="see-btn coming-soon-btn">Coming soon</span>
+                {:else}
+                  <span class="see-btn">See sheets →</span>
+                {/if}
               </div>
             </div>
           </a>
@@ -260,6 +274,40 @@
   .set-card:hover {
     transform: rotate(0deg) translateY(-8px);
     box-shadow: 0 4px 0 rgba(0,0,0,.08), 0 24px 40px -8px rgba(42,34,56,0.22);
+  }
+
+  .set-card.coming-soon {
+    cursor: default;
+  }
+
+  .set-card.coming-soon:hover {
+    transform: rotate(var(--rot, 0deg));
+    box-shadow: 0 1px 0 rgba(0,0,0,.05), 0 6px 0 rgba(0,0,0,.04), 0 18px 28px -10px rgba(42,34,56,0.18);
+  }
+
+  .set-card.coming-soon .card-img-wrap { opacity: 0.55; }
+
+  .status-flag {
+    position: absolute;
+    top: 22px;
+    left: 14px;
+    z-index: 3;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    border: 2px solid var(--ink);
+  }
+
+  .flag-coming-soon { background: var(--blue); }
+  .flag-retiring-soon { background: var(--orange); }
+
+  .coming-soon-btn {
+    background: var(--paper-2, #efe7d0);
+    color: var(--ink);
+    opacity: 0.7;
   }
 
   .washi {

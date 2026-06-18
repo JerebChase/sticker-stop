@@ -80,7 +80,12 @@
   <!-- Title row -->
   <div class="title-row">
     <div class="title-left">
-      <div class="set-pill" style="background:{set.color}">STICKER SET</div>
+      <div class="pill-row">
+        <div class="set-pill" style="background:{set.color}">STICKER SET</div>
+        {#if set.status === 'retiring_soon'}
+          <div class="retiring-pill">⏳ Retiring Soon</div>
+        {/if}
+      </div>
       <h1 class="set-name">{set.name}</h1>
       <p class="set-tagline">{set.tagline}</p>
     </div>
@@ -223,6 +228,13 @@
 
   .title-left { display: flex; flex-direction: column; gap: 4px; }
 
+  .pill-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
   .set-pill {
     display: inline-block;
     font-family: 'Fredoka', sans-serif;
@@ -236,6 +248,21 @@
     color: var(--ink);
     width: fit-content;
     transform: rotate(-2deg);
+  }
+
+  .retiring-pill {
+    display: inline-block;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 2px solid var(--ink);
+    background: var(--orange);
+    color: var(--ink);
+    width: fit-content;
+    transform: rotate(1.5deg);
   }
 
   .set-name {

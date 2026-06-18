@@ -50,12 +50,19 @@
   function blankSet() {
     return {
       id: '', name: '', tagline: '', color: '#6ddc8a', image: '',
-      sortOrder: 0, active: true,
+      sortOrder: 0, status: 'active',
       sheets: [{ id: '', name: '', blurb: '', image: '' }],
       priceSheet: 2,
       priceSet: 2,
     };
   }
+
+  const SET_STATUS_LABELS = {
+    active:        'Active',
+    coming_soon:   'Coming Soon',
+    retiring_soon: 'Retiring Soon',
+    inactive:      'Inactive',
+  };
 
   function onDragStart(i) { dragIndex = i; }
   function onDragOver(e, i) { e.preventDefault(); dragTarget = i; }
@@ -101,6 +108,7 @@
     if (!Array.isArray(editForm.sheets)) editForm.sheets = [];
     if (editForm.priceSheet === undefined) editForm.priceSheet = 2;
     if (editForm.priceSet === undefined) editForm.priceSet = 2;
+    if (!editForm.status) editForm.status = 'active';
   }
 
   function startNew() {
@@ -1026,7 +1034,7 @@
                   <div class="set-swatch" style="background:{set.color}"></div>
                   <div class="set-info">
                     <span class="set-name">{set.name}</span>
-                    <span class="set-meta">{set.active ? 'Active' : 'Hidden'}</span>
+                    <span class="set-meta" data-status={set.status ?? 'active'}>{SET_STATUS_LABELS[set.status] ?? 'Active'}</span>
                   </div>
                   <div class="set-row-actions">
                     <button class="row-edit-btn" onclick={() => startEdit(set)}>Edit</button>
@@ -1561,9 +1569,14 @@
           {/each}
         </div>
       </label>
-      <label class="field field-check">
-        <span class="field-label">Active</span>
-        <input type="checkbox" bind:checked={f.active} />
+      <label class="field">
+        <span class="field-label">Status</span>
+        <select bind:value={f.status}>
+          <option value="active">Active</option>
+          <option value="coming_soon">Coming Soon</option>
+          <option value="retiring_soon">Retiring Soon</option>
+          <option value="inactive">Inactive</option>
+        </select>
       </label>
     </div>
 
@@ -2345,7 +2358,8 @@
     font-weight: 700;
   }
 
-  .field input {
+  .field input,
+  .field select {
     border: 2px solid var(--ink);
     border-radius: 8px;
     padding: 9px 12px;
@@ -2355,7 +2369,8 @@
     font-family: 'Nunito', sans-serif;
   }
 
-  .field input:focus { border-color: var(--blue); }
+  .field input:focus,
+  .field select:focus { border-color: var(--blue); }
 
   .save-btn {
     font-family: 'Fredoka', sans-serif;
@@ -2474,6 +2489,10 @@
     opacity: 0.55;
     font-family: 'Nunito', sans-serif;
   }
+
+  .set-meta[data-status="coming_soon"]   { opacity: 1; color: #2d8fd6; }
+  .set-meta[data-status="retiring_soon"] { opacity: 1; color: var(--orange); }
+  .set-meta[data-status="inactive"]      { opacity: 1; color: var(--pink); }
 
   .set-row-actions { display: flex; gap: 8px; }
 
