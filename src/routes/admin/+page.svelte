@@ -652,6 +652,7 @@
   let announcementSubject = $state('');
   let announcementBody = $state('');
   let announcementImageUrl = $state('');
+  let announcementVideoUrl = $state('');
   let announcementRecipients = $state([]);
   let announcementNewEmail = $state('');
   let announcementSending = $state(false);
@@ -668,6 +669,7 @@
     announcementSubject = '';
     announcementBody = '';
     announcementImageUrl = '';
+    announcementVideoUrl = '';
     announcementNewEmail = '';
     announcementSent = false;
     announcementError = '';
@@ -727,6 +729,7 @@
           subject: announcementSubject,
           body: announcementBody,
           imageUrl: announcementImageUrl || null,
+          videoUrl: announcementVideoUrl || null,
           recipients: announcementRecipients,
         }),
       });
@@ -1453,6 +1456,14 @@
               </label>
             {/if}
           </div>
+
+          <label class="field">
+            <span class="field-label">
+              Video link <span class="field-hint">(optional)</span>
+            </span>
+            <input type="url" bind:value={announcementVideoUrl} placeholder="https://youtube.com/watch?v=…" />
+            <span class="field-hint">Shown as a thumbnail with a play button that links out to the video — email clients don't play video inline.</span>
+          </label>
 
           <div class="field">
             <span class="field-label">

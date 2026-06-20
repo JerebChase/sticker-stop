@@ -1798,19 +1798,48 @@ export async function sendCustomRequestEmail(data, recipients) {
 
 // ── Announcement email ────────────────────────────────────────────────────────
 
-function buildAnnouncementHtml(subject, body, imageUrl) {
+function buildAnnouncementHtml(subject, body, imageUrl, videoUrl) {
   const paragraphs = body.split(/\n\n+/).map(p =>
     `<p style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;font-size:17px;
       color:#2a2238;line-height:1.65;margin:0 0 14px;text-align:center;">${escHtml(p).replace(/\n/g, '<br/>')}</p>`
   ).join('');
 
-  const imageInCard = imageUrl ? `
-            <tr>
-              <td style="padding:8px 0 6px;">
-                <img src="${escHtml(imageUrl)}" alt="" width="496"
+  const thumb = imageUrl ? `<img src="${escHtml(imageUrl)}" alt="" width="496"
                   style="display:block;width:100%;max-width:496px;height:auto;
                     border-radius:12px;border:2.5px solid #2a2238;
-                    box-shadow:0 4px 0 rgba(42,34,56,0.85);" />
+                    box-shadow:0 4px 0 rgba(42,34,56,0.85);" />` : '';
+
+  const playOverlay = `<div style="position:absolute;top:50%;left:50%;
+                    transform:translate(-50%,-50%);width:60px;height:60px;
+                    border-radius:50%;background:rgba(42,34,56,0.82);
+                    border:3px solid white;text-align:center;line-height:60px;">
+                    <span style="display:inline-block;margin-left:4px;width:0;height:0;
+                      border-top:11px solid transparent;border-bottom:11px solid transparent;
+                      border-left:18px solid white;vertical-align:middle;"></span>
+                  </div>`;
+
+  let mediaBlock = '';
+  if (imageUrl && videoUrl) {
+    // Email clients can't play <video> inline, so the thumbnail links out to the video instead.
+    mediaBlock = `<a href="${escHtml(videoUrl)}" style="position:relative;display:block;text-decoration:none;">
+                  ${thumb}
+                  ${playOverlay}
+                </a>`;
+  } else if (imageUrl) {
+    mediaBlock = thumb;
+  } else if (videoUrl) {
+    mediaBlock = `<a href="${escHtml(videoUrl)}" style="display:inline-block;background:#ff4d8d;color:white;
+                  border:2.5px solid #2a2238;border-radius:14px;padding:12px 26px;
+                  font-family:'Fredoka',Arial,sans-serif;font-weight:700;font-size:15px;
+                  text-decoration:none;box-shadow:0 4px 0 rgba(42,34,56,0.85);">
+                  &#9654; Watch the Video
+                </a>`;
+  }
+
+  const imageInCard = mediaBlock ? `
+            <tr>
+              <td style="padding:8px 0 6px;">
+                ${mediaBlock}
               </td>
             </tr>` : '';
 
@@ -1930,7 +1959,7 @@ function buildAnnouncementHtml(subject, body, imageUrl) {
 </html>`;
 }
 
-export async function sendAnnouncementEmail({ subject, body, imageUrl }, recipients) {
+export async function sendAnnouncementEmail({ subject, body, imageUrl, videoUrl }, recipients) {
   if (!RESEND_API_KEY || !recipients.length) return;
   const resend = new Resend(RESEND_API_KEY);
   const from = 'Sticker Stop <info@sticker-stop.com>';
@@ -1942,7 +1971,7 @@ export async function sendAnnouncementEmail({ subject, body, imageUrl }, recipie
         from,
         to,
         subject,
-        html: buildAnnouncementHtml(subject, body, imageUrl),
+        html: buildAnnouncementHtml(subject, body, imageUrl, videoUrl),
         text: body,
       });
       if (result.error) {
