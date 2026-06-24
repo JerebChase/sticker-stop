@@ -537,6 +537,57 @@
     };
   });
 
+  // Purchase history chart — pick a single sheet or full set, see qty sold per day
+  let historySelection = $state('');
+
+  let historySeries = $derived.by(() => {
+    if (!historySelection) return null;
+    const [kind, id] = historySelection.split(':');
+    const active    = orders.filter(o => o.status !== 'canceled' && o.status !== 'cancelled');
+    const setLookup = new Map(sets.map(s => [s.id, s]));
+    const dayQty    = new Map();
+
+    for (const order of active) {
+      let qty = 0;
+      for (const item of (order.items ?? [])) {
+        if (kind === 'set' && item.kind === 'set' && item.setId === id) {
+          qty += item.qty ?? 1;
+        } else if (kind === 'sheet') {
+          if (item.kind === 'sheet' && item.sheetId === id) {
+            qty += item.qty ?? 1;
+          } else if (item.kind === 'set') {
+            const setData = setLookup.get(item.setId);
+            if (setData?.sheets?.some(sh => sh.id === id)) qty += item.qty ?? 1;
+          }
+        }
+      }
+      if (qty > 0) {
+        const day = new Date(order.created_at).toISOString().slice(0, 10);
+        dayQty.set(day, (dayQty.get(day) ?? 0) + qty);
+      }
+    }
+
+    const total = [...dayQty.values()].reduce((a, b) => a + b, 0);
+    if (dayQty.size === 0) return { days: [], max: 1, total };
+
+    const sortedKeys = [...dayQty.keys()].sort();
+    const last = new Date(sortedKeys[sortedKeys.length - 1]);
+    const days = [];
+    for (const d = new Date(sortedKeys[0]); d <= last; d.setDate(d.getDate() + 1)) {
+      const key = d.toISOString().slice(0, 10);
+      days.push({
+        key,
+        label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        qty: dayQty.get(key) ?? 0,
+      });
+    }
+
+    const labelStep = days.length > 20 ? Math.ceil(days.length / 20) : 1;
+    days.forEach((d, i) => { d.showLabel = i % labelStep === 0 || i === days.length - 1; });
+
+    return { days, max: Math.max(...days.map(d => d.qty), 1), total };
+  });
+
   const TAB_LABELS = { orders: 'Orders', sets: 'Sticker Sets', analytics: 'Analytics', backgrounds: 'Backgrounds', settings: 'Settings', feedback: 'Feedback' };
   let tabMenuOpen = $state(false);
 
@@ -1237,6 +1288,46 @@
                   </div>
                 {/each}
               </div>
+            {/if}
+          </div>
+
+          <!-- Purchase History -->
+          <div class="analytics-section">
+            <div class="analytics-heading-row">
+              <h2 class="analytics-heading">Purchase History</h2>
+              <span class="analytics-sub">pick a sheet or set to see sales over time</span>
+            </div>
+
+            <select class="history-select" bind:value={historySelection}>
+              <option value="">Choose a sheet or set…</option>
+              {#each sets as set}
+                <optgroup label={set.name}>
+                  <option value="set:{set.id}">{set.name} (full set)</option>
+                  {#each set.sheets ?? [] as sheet}
+                    <option value="sheet:{sheet.id}">{set.name} — {sheet.name}</option>
+                  {/each}
+                </optgroup>
+              {/each}
+            </select>
+
+            {#if historySeries}
+              {#if historySeries.days.length === 0}
+                <div class="analytics-empty">No purchases of this yet.</div>
+              {:else}
+                <div class="history-total">{historySeries.total} sold total</div>
+                <div class="history-chart">
+                  {#each historySeries.days as d}
+                    <div class="history-col" title="{d.label}: {d.qty} sold">
+                      <span class="history-col-qty">{d.qty > 0 ? d.qty : ''}</span>
+                      <div
+                        class="history-col-bar"
+                        style="height:{Math.max((d.qty / historySeries.max) * 100, d.qty > 0 ? 4 : 1)}%; background: var({historySelection.startsWith('set:') ? '--pink' : '--blue'})"
+                      ></div>
+                      <span class="history-col-label">{d.showLabel ? d.label : ''}</span>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
             {/if}
           </div>
         {/if}
@@ -2368,6 +2459,73 @@
     font-size: 15px;
     color: var(--ink);
     opacity: 0.5;
+  }
+
+  .history-select {
+    display: block;
+    width: calc(100% - 44px);
+    margin: 0 22px 14px;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 14px;
+    background: var(--paper);
+    outline: none;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  .history-select:focus { border-color: var(--blue); }
+
+  .history-total {
+    margin: 0 22px 10px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    opacity: 0.7;
+  }
+
+  .history-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    height: 160px;
+    margin: 0 22px 18px;
+    padding-top: 18px;
+    border-bottom: 2px solid var(--ink);
+    overflow-x: auto;
+  }
+
+  .history-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    flex: 0 0 auto;
+    min-width: 20px;
+  }
+
+  .history-col-qty {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    opacity: 0.65;
+    height: 14px;
+    line-height: 14px;
+  }
+
+  .history-col-bar {
+    width: 14px;
+    border-radius: 4px 4px 0 0;
+    border: 1.5px solid var(--ink);
+  }
+
+  .history-col-label {
+    margin-top: 6px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 9px;
+    opacity: 0.55;
+    white-space: nowrap;
   }
 
   .delivery-split {
