@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import { Chart } from 'chart.js/auto';
 
   let { data } = $props();
 
@@ -586,6 +587,70 @@
     days.forEach((d, i) => { d.showLabel = i % labelStep === 0 || i === days.length - 1; });
 
     return { days, max: Math.max(...days.map(d => d.qty), 1), total };
+  });
+
+  let historyCanvasEl = $state(null);
+  let historyChart = null; // Chart.js instance — not reactive state
+
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  $effect(() => {
+    const canvas = historyCanvasEl;
+    const series = historySeries;
+    if (!canvas || !series || series.days.length === 0) return;
+
+    const accent = historySelection.startsWith('set:') ? cssVar('--pink') : cssVar('--blue');
+    const ink = cssVar('--ink');
+    const grid = cssVar('--line');
+
+    historyChart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: series.days.map(d => d.label),
+        datasets: [{
+          label: 'Sold',
+          data: series.days.map(d => d.qty),
+          backgroundColor: accent,
+          borderColor: ink,
+          borderWidth: 1.5,
+          borderRadius: 5,
+          maxBarThickness: 30,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: ink,
+            padding: 10,
+            cornerRadius: 8,
+            titleFont: { family: 'Fredoka', size: 13 },
+            bodyFont: { family: 'Fredoka', size: 13 },
+            callbacks: { label: (ctx) => `${ctx.parsed.y} sold` },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { family: 'Fredoka', size: 11 }, color: ink, maxRotation: 0, autoSkipPadding: 14 },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0, font: { family: 'Fredoka', size: 11 }, color: ink },
+            grid: { color: grid },
+          },
+        },
+      },
+    });
+
+    return () => {
+      historyChart.destroy();
+      historyChart = null;
+    };
   });
 
   const TAB_LABELS = { orders: 'Orders', sets: 'Sticker Sets', analytics: 'Analytics', backgrounds: 'Backgrounds', settings: 'Settings', feedback: 'Feedback' };
@@ -1315,17 +1380,8 @@
                 <div class="analytics-empty">No purchases of this yet.</div>
               {:else}
                 <div class="history-total">{historySeries.total} sold total</div>
-                <div class="history-chart">
-                  {#each historySeries.days as d}
-                    <div class="history-col" title="{d.label}: {d.qty} sold">
-                      <span class="history-col-qty">{d.qty > 0 ? d.qty : ''}</span>
-                      <div
-                        class="history-col-bar"
-                        style="height:{Math.max((d.qty / historySeries.max) * 100, d.qty > 0 ? 4 : 1)}%; background: var({historySelection.startsWith('set:') ? '--pink' : '--blue'})"
-                      ></div>
-                      <span class="history-col-label">{d.showLabel ? d.label : ''}</span>
-                    </div>
-                  {/each}
+                <div class="history-chart-wrap">
+                  <canvas bind:this={historyCanvasEl}></canvas>
                 </div>
               {/if}
             {/if}
@@ -2484,48 +2540,9 @@
     opacity: 0.7;
   }
 
-  .history-chart {
-    display: flex;
-    align-items: flex-end;
-    gap: 5px;
-    height: 160px;
+  .history-chart-wrap {
+    height: 220px;
     margin: 0 22px 18px;
-    padding-top: 18px;
-    border-bottom: 2px solid var(--ink);
-    overflow-x: auto;
-  }
-
-  .history-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-    height: 100%;
-    flex: 0 0 auto;
-    min-width: 20px;
-  }
-
-  .history-col-qty {
-    font-family: 'Fredoka', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    opacity: 0.65;
-    height: 14px;
-    line-height: 14px;
-  }
-
-  .history-col-bar {
-    width: 14px;
-    border-radius: 4px 4px 0 0;
-    border: 1.5px solid var(--ink);
-  }
-
-  .history-col-label {
-    margin-top: 6px;
-    font-family: 'Fredoka', sans-serif;
-    font-size: 9px;
-    opacity: 0.55;
-    white-space: nowrap;
   }
 
   .delivery-split {
