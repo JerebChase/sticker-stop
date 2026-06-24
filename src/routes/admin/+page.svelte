@@ -538,55 +538,50 @@
     };
   });
 
-  // Purchase history chart — pick a single sheet or full set, see qty sold per day
+  // Purchase history chart — pick a set, see each of its sheets' qty sold per day, stacked
   let historySelection = $state('');
 
   let historySeries = $derived.by(() => {
     if (!historySelection) return null;
-    const [kind, id] = historySelection.split(':');
-    const active    = orders.filter(o => o.status !== 'canceled' && o.status !== 'cancelled');
-    const setLookup = new Map(sets.map(s => [s.id, s]));
-    const dayQty    = new Map();
+    const setData = sets.find(s => s.id === historySelection);
+    if (!setData) return null;
+    const sheets = setData.sheets ?? [];
+
+    const active        = orders.filter(o => o.status !== 'canceled' && o.status !== 'cancelled');
+    const dayQtyBySheet  = new Map(sheets.map(sh => [sh.id, new Map()]));
+    const allDays        = new Set();
 
     for (const order of active) {
-      let qty = 0;
+      const day = new Date(order.created_at).toISOString().slice(0, 10);
       for (const item of (order.items ?? [])) {
-        if (kind === 'set' && item.kind === 'set' && item.setId === id) {
-          qty += item.qty ?? 1;
-        } else if (kind === 'sheet') {
-          if (item.kind === 'sheet' && item.sheetId === id) {
-            qty += item.qty ?? 1;
-          } else if (item.kind === 'set') {
-            const setData = setLookup.get(item.setId);
-            if (setData?.sheets?.some(sh => sh.id === id)) qty += item.qty ?? 1;
+        if (item.kind === 'sheet' && dayQtyBySheet.has(item.sheetId)) {
+          const m = dayQtyBySheet.get(item.sheetId);
+          m.set(day, (m.get(day) ?? 0) + (item.qty ?? 1));
+          allDays.add(day);
+        } else if (item.kind === 'set' && item.setId === historySelection) {
+          // a full-set purchase credits every one of the set's current sheets
+          for (const sh of sheets) {
+            const m = dayQtyBySheet.get(sh.id);
+            m.set(day, (m.get(day) ?? 0) + (item.qty ?? 1));
           }
+          allDays.add(day);
         }
       }
-      if (qty > 0) {
-        const day = new Date(order.created_at).toISOString().slice(0, 10);
-        dayQty.set(day, (dayQty.get(day) ?? 0) + qty);
-      }
     }
 
-    const total = [...dayQty.values()].reduce((a, b) => a + b, 0);
-    if (dayQty.size === 0) return { days: [], max: 1, total };
+    const total = [...dayQtyBySheet.values()]
+      .reduce((sum, m) => sum + [...m.values()].reduce((a, b) => a + b, 0), 0);
+    if (allDays.size === 0) return { days: [], sheets, dayQtyBySheet, total };
 
-    const sortedKeys = [...dayQty.keys()].sort();
-    const last = new Date(sortedKeys[sortedKeys.length - 1]);
+    const sortedDays = [...allDays].sort();
+    const last = new Date(sortedDays[sortedDays.length - 1]);
     const days = [];
-    for (const d = new Date(sortedKeys[0]); d <= last; d.setDate(d.getDate() + 1)) {
+    for (const d = new Date(sortedDays[0]); d <= last; d.setDate(d.getDate() + 1)) {
       const key = d.toISOString().slice(0, 10);
-      days.push({
-        key,
-        label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        qty: dayQty.get(key) ?? 0,
-      });
+      days.push({ key, label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) });
     }
 
-    const labelStep = days.length > 20 ? Math.ceil(days.length / 20) : 1;
-    days.forEach((d, i) => { d.showLabel = i % labelStep === 0 || i === days.length - 1; });
-
-    return { days, max: Math.max(...days.map(d => d.qty), 1), total };
+    return { days, sheets, dayQtyBySheet, total };
   });
 
   let historyCanvasEl = $state(null);
@@ -596,49 +591,56 @@
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
 
+  const HISTORY_PALETTE = ['--pink', '--blue', '--mint', '--orange', '--purple', '--yellow'];
+
   $effect(() => {
     const canvas = historyCanvasEl;
     const series = historySeries;
     if (!canvas || !series || series.days.length === 0) return;
 
-    const accent = historySelection.startsWith('set:') ? cssVar('--pink') : cssVar('--blue');
     const ink = cssVar('--ink');
     const grid = cssVar('--line');
+    const palette = HISTORY_PALETTE.map(cssVar);
+
+    const datasets = series.sheets.map((sh, i) => ({
+      label: sh.name,
+      data: series.days.map(d => series.dayQtyBySheet.get(sh.id)?.get(d.key) ?? 0),
+      backgroundColor: palette[i % palette.length],
+      borderColor: ink,
+      borderWidth: 1.5,
+      borderRadius: 4,
+      maxBarThickness: 30,
+      stack: 'sheets',
+    }));
 
     historyChart = new Chart(canvas, {
       type: 'bar',
-      data: {
-        labels: series.days.map(d => d.label),
-        datasets: [{
-          label: 'Sold',
-          data: series.days.map(d => d.qty),
-          backgroundColor: accent,
-          borderColor: ink,
-          borderWidth: 1.5,
-          borderRadius: 5,
-          maxBarThickness: 30,
-        }],
-      },
+      data: { labels: series.days.map(d => d.label), datasets },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: {
+            position: 'bottom',
+            labels: { font: { family: 'Fredoka', size: 11 }, color: ink, boxWidth: 14, padding: 12 },
+          },
           tooltip: {
             backgroundColor: ink,
             padding: 10,
             cornerRadius: 8,
             titleFont: { family: 'Fredoka', size: 13 },
             bodyFont: { family: 'Fredoka', size: 13 },
-            callbacks: { label: (ctx) => `${ctx.parsed.y} sold` },
+            callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y} sold` },
           },
         },
         scales: {
           x: {
+            stacked: true,
             grid: { display: false },
             ticks: { font: { family: 'Fredoka', size: 11 }, color: ink, maxRotation: 0, autoSkipPadding: 14 },
           },
           y: {
+            stacked: true,
             beginAtZero: true,
             ticks: { precision: 0, font: { family: 'Fredoka', size: 11 }, color: ink },
             grid: { color: grid },
@@ -1360,18 +1362,13 @@
           <div class="analytics-section">
             <div class="analytics-heading-row">
               <h2 class="analytics-heading">Purchase History</h2>
-              <span class="analytics-sub">pick a sheet or set to see sales over time</span>
+              <span class="analytics-sub">pick a set to see each sheet's sales over time</span>
             </div>
 
             <select class="history-select" bind:value={historySelection}>
-              <option value="">Choose a sheet or set…</option>
+              <option value="">Choose a set…</option>
               {#each sets as set}
-                <optgroup label={set.name}>
-                  <option value="set:{set.id}">{set.name} (full set)</option>
-                  {#each set.sheets ?? [] as sheet}
-                    <option value="sheet:{sheet.id}">{set.name} — {sheet.name}</option>
-                  {/each}
-                </optgroup>
+                <option value={set.id}>{set.name}</option>
               {/each}
             </select>
 
