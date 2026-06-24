@@ -125,12 +125,13 @@ export async function getSettings() {
   return {
     notification_emails: map.notification_emails ?? '',
     site_password:       map.site_password       ?? '',
+    since_order_id:      map.since_order_id      ?? '',
   };
 }
 
 export async function updateSettings(updates) {
   const db = sql();
-  const allowed = ['notification_emails', 'site_password'];
+  const allowed = ['notification_emails', 'site_password', 'since_order_id'];
   for (const key of allowed) {
     if (updates[key] !== undefined) {
       if (updates[key] === '') {

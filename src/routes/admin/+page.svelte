@@ -256,8 +256,21 @@
       if (res.ok) {
         const data = await res.json();
         settings = { ...settings, ...data };
+        if (data.since_order_id) sinceOrderId = data.since_order_id;
       }
     } catch { /* settings will use defaults */ }
+  }
+
+  async function updateSinceOrder(id) {
+    sinceOrderId = id;
+    await fetch('/api/admin/settings', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': password,
+      },
+      body: JSON.stringify({ since_order_id: id }),
+    });
   }
 
   async function loadFeedback() {
@@ -982,7 +995,12 @@
       <div class="since-panel">
         <label class="since-row" for="since-select">
           <span class="since-label">📈 Totals since order</span>
-          <select id="since-select" class="since-select" bind:value={sinceOrderId}>
+          <select
+            id="since-select"
+            class="since-select"
+            value={sinceOrderId}
+            onchange={(e) => updateSinceOrder(e.target.value)}
+          >
             <option value="">— Select a starting order —</option>
             {#each orders as o}
               <option value={o.id}>#{o.id} · {new Date(o.created_at).toLocaleDateString()} · {o.customer_name}</option>
