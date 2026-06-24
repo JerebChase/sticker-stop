@@ -1363,14 +1363,13 @@
             <div class="analytics-heading-row">
               <h2 class="analytics-heading">Purchase History</h2>
               <span class="analytics-sub">pick a set to see each sheet's sales over time</span>
+              <select class="history-select" bind:value={historySelection}>
+                <option value="">Choose a set…</option>
+                {#each sets as set}
+                  <option value={set.id}>{set.name}</option>
+                {/each}
+              </select>
             </div>
-
-            <select class="history-select" bind:value={historySelection}>
-              <option value="">Choose a set…</option>
-              {#each sets as set}
-                <option value={set.id}>{set.name}</option>
-              {/each}
-            </select>
 
             {#if historySeries}
               {#if historySeries.days.length === 0}
@@ -2419,6 +2418,7 @@
   .analytics-heading-row {
     display: flex;
     align-items: baseline;
+    flex-wrap: wrap;
     gap: 10px;
     padding: 18px 22px 14px;
     border-bottom: 2px solid var(--line);
@@ -2515,12 +2515,11 @@
   }
 
   .history-select {
-    display: block;
-    width: calc(100% - 44px);
-    margin: 0 22px 14px;
+    margin-left: auto;
+    align-self: center;
     border: 2px solid var(--ink);
     border-radius: 8px;
-    padding: 9px 12px;
+    padding: 7px 10px;
     font-size: 14px;
     background: var(--paper);
     outline: none;
