@@ -122,12 +122,17 @@
   }
 
   async function saveSet() {
-    // For existing sets, ensure every sheet has an ID
+    // For existing sets, ensure every sheet has an ID.
+    // Must be globally unique, not derived from array position — a position-based
+    // id can collide with a sibling sheet's already-assigned id once sheets are
+    // removed/added over time, merging two distinct sheets in analytics.
     if (editingId !== 'new') {
-      editForm.sheets = editForm.sheets.map((s, i) => ({
-        ...s,
-        id: s.id || `${editForm.id}-${i + 1}`,
-      }));
+      const seenIds = new Set();
+      editForm.sheets = editForm.sheets.map((s) => {
+        const id = (!s.id || seenIds.has(s.id)) ? crypto.randomUUID() : s.id;
+        seenIds.add(id);
+        return { ...s, id };
+      });
     }
     // New sets: sheet IDs are generated server-side
 
