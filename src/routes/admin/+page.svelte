@@ -539,15 +539,22 @@
     const inPerson  = active.filter(o => o.delivery_method === 'in_person').length;
     const deliveryTotal = shipped + pickup + inPerson || 1;
 
+    const totalSheetsSold = active.reduce((sum, o) =>
+      sum + (o.items ?? []).filter(i => i.kind === 'sheet').reduce((s, i) => s + (i.qty ?? 1), 0), 0);
+    const totalSetsSold = active.reduce((sum, o) =>
+      sum + (o.items ?? []).filter(i => i.kind === 'set').reduce((s, i) => s + (i.qty ?? 1), 0), 0);
+
     return {
-      sheets:        sheetRankings,
-      sets:          setRankings,
-      maxSheet:      sheetRankings[0]?.qty || 1,
-      maxSet:        setRankings[0]?.qty   || 1,
+      sheets:          sheetRankings,
+      sets:            setRankings,
+      maxSheet:        sheetRankings[0]?.qty || 1,
+      maxSet:          setRankings[0]?.qty   || 1,
       shipped,
       pickup,
       inPerson,
       deliveryTotal,
+      totalSheetsSold,
+      totalSetsSold,
     };
   });
 
@@ -1289,6 +1296,18 @@
         {#if orders.length === 0}
           <div class="empty-orders">No orders yet — analytics will appear once orders come in.</div>
         {:else}
+          <!-- Summary totals -->
+          <div class="analytics-totals">
+            <div class="stat-card" style="--sc:var(--blue)">
+              <span class="stat-val">{analytics.totalSheetsSold}</span>
+              <span class="stat-label">Sheets Sold</span>
+            </div>
+            <div class="stat-card" style="--sc:var(--pink)">
+              <span class="stat-val">{analytics.totalSetsSold}</span>
+              <span class="stat-label">Sets Sold</span>
+            </div>
+          </div>
+
           <!-- Delivery split -->
           <div class="analytics-section">
             <div class="analytics-heading-row">
@@ -2423,6 +2442,12 @@
     display: flex;
     flex-direction: column;
     gap: 28px;
+  }
+
+  .analytics-totals {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
   }
 
   .analytics-section {
