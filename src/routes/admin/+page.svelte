@@ -540,7 +540,14 @@
     const deliveryTotal = shipped + pickup + inPerson || 1;
 
     const totalSheetsSold = active.reduce((sum, o) =>
-      sum + (o.items ?? []).filter(i => i.kind === 'sheet').reduce((s, i) => s + (i.qty ?? 1), 0), 0);
+      sum + (o.items ?? []).reduce((s, i) => {
+        if (i.kind === 'sheet') return s + (i.qty ?? 1);
+        if (i.kind === 'set') {
+          const sheetCount = setLookup.get(i.setId)?.sheets?.length ?? 0;
+          return s + sheetCount * (i.qty ?? 1);
+        }
+        return s;
+      }, 0), 0);
     const totalSetsSold = active.reduce((sum, o) =>
       sum + (o.items ?? []).filter(i => i.kind === 'set').reduce((s, i) => s + (i.qty ?? 1), 0), 0);
 
