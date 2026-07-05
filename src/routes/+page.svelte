@@ -62,7 +62,7 @@
             <!-- Price tags — positioned relative to card so they sit on top -->
             <div class="price-tags">
               {#if set.setType === 'pyo'}
-                <div class="price-tag yellow" style="--tag-rot:8deg">${set.pyoPrice}</div>
+                <div class="price-tag yellow" style="--tag-rot:8deg">${set.pyoPrice}/sheet</div>
               {:else}
                 {#if set.sheets && set.sheets.length > 1}
                   <div class="price-tag yellow" style="--tag-rot:8deg">${set.priceSet} set</div>
@@ -76,7 +76,7 @@
               <div class="card-title-row">
                 <span class="card-name">{set.name}</span>
                 {#if set.setType === 'pyo'}
-                  <span class="chip chip-pyo" style="border-color:{set.color}">pick {set.pyoPickCount}+{set.pyoFreeCount} free</span>
+                  <span class="chip chip-pyo" style="border-color:{set.color}">buy {set.pyoPickCount} get {set.pyoFreeCount} free</span>
                 {:else}
                   <span class="chip" style="background:{set.color};border-color:{set.color}">{set.sheets?.length ?? 2} sheets</span>
                 {/if}

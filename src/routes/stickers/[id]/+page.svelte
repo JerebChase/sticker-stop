@@ -34,51 +34,47 @@
   );
 
   // ── Pick Your Own state ─────────────────────────────────────────
-  let paidPicks = $state([]); // sheet indices selected as paid
-  let freePicks = $state([]); // sheet indices selected as free
+  let sheetCounts   = $state(sheets.map(() => 0));
+  let totalPicks    = $derived(sheetCounts.reduce((s, c) => s + c, 0));
+  let pyoCycleSize  = $derived((set.pyoPickCount ?? 3) + (set.pyoFreeCount ?? 1));
+  let pyoCalcFree   = $derived(
+    Math.floor(totalPicks / pyoCycleSize) * (set.pyoFreeCount ?? 1) +
+    Math.max(0, totalPicks % pyoCycleSize - (set.pyoPickCount ?? 3))
+  );
+  let pyoCalcPaid   = $derived(totalPicks - pyoCalcFree);
+  let pyoLineTotal  = $derived(pyoCalcPaid * (set.pyoPrice ?? 0) * qty);
+  let pyoNextFreeIn = $derived.by(() => {
+    if (totalPicks === 0) return 0;
+    const pos = totalPicks % pyoCycleSize;
+    return pos === 0 ? (set.pyoPickCount ?? 3) : (pyoCycleSize - pos);
+  });
 
-  let pyoPaidFull  = $derived(paidPicks.length >= (set.pyoPickCount ?? 2));
-  let pyoFreeFull  = $derived(freePicks.length >= (set.pyoFreeCount ?? 1));
-  let pyoAllFull   = $derived(pyoPaidFull && pyoFreeFull);
-  let pyoLineTotal = $derived((set.pyoPrice ?? 0) * qty);
-
-  function togglePick(i) {
-    if (paidPicks.includes(i)) {
-      paidPicks = paidPicks.filter(p => p !== i);
-      return;
-    }
-    if (freePicks.includes(i)) {
-      freePicks = freePicks.filter(p => p !== i);
-      return;
-    }
-    if (!pyoPaidFull) {
-      paidPicks = [...paidPicks, i];
-    } else if (!pyoFreeFull) {
-      freePicks = [...freePicks, i];
-    }
-  }
+  function addPick(i)    { sheetCounts[i]++; }
+  function removePick(i) { if (sheetCounts[i] > 0) sheetCounts[i]--; }
 
   let qty = $state(1);
   let added = $state(false);
 
   function addToCart() {
     if (isPyo) {
-      if (!pyoAllFull) return;
-      const picked = paidPicks.map(i => sheets[i]);
-      const free   = freePicks.map(i => sheets[i]);
-      const all    = [...picked, ...free];
+      if (totalPicks < 1) return;
+      const selectedSheets = sheets
+        .map((s, i) => ({ id: s.id, name: s.name, image: s.image, qty: sheetCounts[i] }))
+        .filter(s => s.qty > 0);
+      const flat = selectedSheets.flatMap(s => Array(s.qty).fill(s));
       cart.add({
-        kind:         'pyo',
-        setId:        set.id,
-        sheetId:      `${set.id}-pyo-${[...paidPicks, ...freePicks].sort().join('-')}`,
-        name:         `${set.name} — Pick Your Own`,
-        pickedSheets: picked.map(s => ({ id: s.id, name: s.name, image: s.image })),
-        freeSheets:   free.map(s => ({ id: s.id, name: s.name, image: s.image })),
-        image:        all[0]?.image || '',
-        image2:       all[1]?.image || '',
-        image3:       all[2]?.image || '',
-        price:        set.pyoPrice,
-        sheetCount:   (set.pyoPickCount ?? 2) + (set.pyoFreeCount ?? 1),
+        kind:           'pyo',
+        setId:          set.id,
+        sheetId:        `${set.id}-pyo-${sheetCounts.join('-')}`,
+        name:           `${set.name} — Pick Your Own`,
+        selectedSheets,
+        paidCount:      pyoCalcPaid,
+        freeCount:      pyoCalcFree,
+        image:          flat[0]?.image || '',
+        image2:         flat[1]?.image || '',
+        image3:         flat[2]?.image || '',
+        price:          pyoCalcPaid * (set.pyoPrice ?? 0),
+        sheetCount:     totalPicks,
       }, qty);
       added = true;
       setTimeout(() => { added = false; }, 1500);
@@ -147,39 +143,27 @@
     {#if isPyo}
       <!-- ── Pick Your Own UI ── -->
       <div class="pyo-header">
-        <h2 class="choose-heading">Pick {set.pyoPickCount}, get {set.pyoFreeCount} free</h2>
-        <div class="pyo-progress">
-          <span class="pyo-progress-item" class:done={pyoPaidFull}>
-            {paidPicks.length}/{set.pyoPickCount} paid
-          </span>
-          <span class="pyo-progress-sep">·</span>
-          <span class="pyo-progress-item" class:done={pyoFreeFull}>
-            {freePicks.length}/{set.pyoFreeCount} free
-          </span>
-        </div>
+        <h2 class="choose-heading">Pick your sheets</h2>
+        <div class="pyo-deal-tag">Buy {set.pyoPickCount}, get {set.pyoFreeCount} free · ${(set.pyoPrice ?? 0).toFixed(2)}/sheet</div>
       </div>
+
+      {#if totalPicks > 0}
+        <div class="pyo-progress">
+          <span class="pyo-stat">{totalPicks} picked</span>
+          {#if pyoCalcFree > 0}
+            <span class="pyo-free-pill">{pyoCalcFree} free!</span>
+          {/if}
+          {#if pyoNextFreeIn > 0}
+            <span class="pyo-until-free">{pyoNextFreeIn} more for {pyoCalcFree > 0 ? 'another' : 'a'} free pick</span>
+          {/if}
+        </div>
+      {/if}
 
       <div class="pyo-grid">
         {#each sheets as sheet, i}
-          {@const isPaid = paidPicks.includes(i)}
-          {@const isFree = freePicks.includes(i)}
-          {@const isSelected = isPaid || isFree}
-          {@const canSelect = !isSelected && (!pyoPaidFull || !pyoFreeFull)}
-          <button
-            class="sheet-choice sticker pyo-card"
-            class:selected={isSelected}
-            class:pyo-paid={isPaid}
-            class:pyo-free={isFree}
-            class:pyo-disabled={!isSelected && !canSelect}
-            style="--accent:{set.color}"
-            onclick={() => togglePick(i)}
-          >
-            {#if isPaid}
-              <div class="pyo-badge pyo-badge-paid" style="background:{set.color}">
-                #{paidPicks.indexOf(i) + 1}
-              </div>
-            {:else if isFree}
-              <div class="pyo-badge pyo-badge-free">FREE</div>
+          <div class="pyo-card sticker" class:selected={sheetCounts[i] > 0} style="--accent:{set.color}">
+            {#if sheetCounts[i] > 0}
+              <div class="pyo-count-badge" style="background:{set.color}">{sheetCounts[i]}</div>
             {/if}
             <div class="sc-img-wrap">
               {#if sheet.image}
@@ -192,12 +176,17 @@
               <div class="sc-name">{sheet.name}</div>
               <p class="sc-blurb">{sheet.blurb}</p>
             </div>
-          </button>
+            <div class="pyo-card-controls">
+              <button class="pyo-ctrl-btn" onclick={() => removePick(i)} disabled={sheetCounts[i] <= 0}>−</button>
+              <span class="pyo-ctrl-count">{sheetCounts[i]}</span>
+              <button class="pyo-ctrl-btn pyo-ctrl-add" style="background:{set.color}" onclick={() => addPick(i)}>+</button>
+            </div>
+          </div>
         {/each}
       </div>
 
       <!-- Add to cart row -->
-      <div class="atc-panel" class:atc-panel-dim={!pyoAllFull}>
+      <div class="atc-panel" class:atc-panel-dim={totalPicks < 1}>
         <div class="atc-left">
           <div class="stepper">
             <button class="step-btn" disabled={qty <= 1} onclick={() => qty = Math.max(1, qty - 1)}>−</button>
@@ -206,17 +195,17 @@
           </div>
           <div class="atc-info">
             <div class="atc-label">
-              {#if pyoAllFull}
-                {set.pyoPickCount}+{set.pyoFreeCount} free · your picks
+              {#if totalPicks > 0}
+                {totalPicks} sheet{totalPicks !== 1 ? 's' : ''}{pyoCalcFree > 0 ? ` · ${pyoCalcFree} free` : ''}
               {:else}
-                Pick {set.pyoPickCount - paidPicks.length + (pyoPaidFull ? 0 : 0)} more{pyoPaidFull ? `, then ${set.pyoFreeCount - freePicks.length} free` : ''}
+                Pick some sheets above
               {/if}
             </div>
             <div class="atc-total">${pyoLineTotal.toFixed(2)}</div>
           </div>
         </div>
-        <button class="atc-btn" class:added disabled={!pyoAllFull} onclick={addToCart}>
-          {added ? 'Added! ✓' : pyoAllFull ? 'Add to cart' : 'Choose your sheets'}
+        <button class="atc-btn" class:added disabled={totalPicks < 1} onclick={addToCart}>
+          {added ? 'Added! ✓' : totalPicks > 0 ? 'Add to cart' : 'Pick some sheets'}
         </button>
       </div>
 
@@ -749,18 +738,41 @@
     flex-wrap: wrap;
   }
 
+  .pyo-deal-tag {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    background: var(--mint);
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 4px 12px;
+    box-shadow: 0 2px 0 rgba(42,34,56,0.7);
+  }
+
   .pyo-progress {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     font-family: 'Fredoka', sans-serif;
     font-size: 15px;
-    opacity: 0.6;
+    flex-wrap: wrap;
   }
 
-  .pyo-progress-sep { opacity: 0.4; }
+  .pyo-stat { font-weight: 700; }
 
-  .pyo-progress-item.done { opacity: 1; color: #1a7a42; font-weight: 700; }
+  .pyo-free-pill {
+    background: var(--mint);
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a7a42;
+    box-shadow: 0 2px 0 rgba(42,34,56,0.5);
+    animation: pop 0.25s;
+  }
+
+  .pyo-until-free { font-size: 13px; opacity: 0.55; }
 
   .pyo-grid {
     display: grid;
@@ -768,14 +780,26 @@
     gap: 14px;
   }
 
-  .pyo-card { position: relative; }
+  .pyo-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    padding: 14px;
+    border-radius: 18px;
+    text-align: left;
+    outline: 4px solid transparent;
+    outline-offset: -2px;
+    transition: outline 0.15s, transform 0.2s;
+    color: var(--ink);
+  }
 
-  .pyo-card.selected { transform: translateY(-4px); outline-color: var(--accent); }
-  .pyo-card.pyo-paid { outline-color: var(--accent) !important; }
-  .pyo-card.pyo-free { outline-color: var(--mint) !important; }
-  .pyo-card.pyo-disabled { opacity: 0.45; cursor: not-allowed; }
+  .pyo-card.selected {
+    outline-color: var(--accent);
+    transform: translateY(-4px);
+  }
 
-  .pyo-badge {
+  .pyo-count-badge {
     position: absolute;
     top: -12px;
     right: -12px;
@@ -786,7 +810,7 @@
     display: grid;
     place-items: center;
     font-family: 'Bagel Fat One', sans-serif;
-    font-size: 13px;
+    font-size: 15px;
     color: white;
     box-shadow: 0 3px 0 rgba(42,34,56,0.85);
     transform: rotate(8deg);
@@ -795,11 +819,43 @@
     padding: 0 6px;
   }
 
-  .pyo-badge-free {
-    background: var(--mint);
+  .pyo-card-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1.5px solid var(--line);
+  }
+
+  .pyo-ctrl-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    border: 2.5px solid var(--ink);
+    background: var(--paper);
+    font-family: 'Fredoka', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
     color: var(--ink);
-    font-size: 11px;
-    letter-spacing: 0.5px;
+    transition: background 0.1s, transform 0.08s;
+    box-shadow: 0 2px 0 rgba(42,34,56,0.7);
+    line-height: 1;
+  }
+
+  .pyo-ctrl-btn:hover:not(:disabled) { transform: scale(1.1); }
+  .pyo-ctrl-btn:disabled { opacity: 0.3; cursor: default; box-shadow: none; }
+
+  .pyo-ctrl-add { color: white; }
+
+  .pyo-ctrl-count {
+    flex: 1;
+    text-align: center;
+    font-family: 'Bagel Fat One', sans-serif;
+    font-size: 18px;
   }
 
   .atc-panel-dim { opacity: 0.7; }

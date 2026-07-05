@@ -213,10 +213,10 @@
               <div class="item-info">
                 <span class="item-name">{item.name}</span>
                 {#if item.kind === 'pyo'}
-                  <span class="item-kind">Pick your own</span>
-                  {#if item.pickedSheets?.length || item.freeSheets?.length}
+                  <span class="item-kind">Pick your own{item.freeCount > 0 ? ` · ${item.freeCount} free` : ''}</span>
+                  {#if item.selectedSheets?.length}
                     <span class="item-pyo-detail">
-                      {[...(item.pickedSheets ?? []).map(s => s.name), ...(item.freeSheets ?? []).map(s => `${s.name} (free)`)].join(' · ')}
+                      {item.selectedSheets.map(s => s.qty > 1 ? `${s.name} ×${s.qty}` : s.name).join(' · ')}
                     </span>
                   {/if}
                 {:else}

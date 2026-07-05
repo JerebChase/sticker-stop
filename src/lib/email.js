@@ -20,10 +20,11 @@ function buildAdminText(order) {
     .map(i => {
       let line = `  • ${i.name}  ×${i.qty}  $${(i.price * i.qty).toFixed(2)}`;
       if (i.kind === 'pyo') {
-        const picks = (i.pickedSheets ?? []).map(s => s.name).join(', ');
-        const free  = (i.freeSheets  ?? []).map(s => s.name).join(', ');
-        if (picks) line += `\n      Paid: ${picks}`;
-        if (free)  line += `\n      Free: ${free}`;
+        const sheetList = (i.selectedSheets ?? [])
+          .map(s => s.qty > 1 ? `${s.name} ×${s.qty}` : s.name)
+          .join(', ');
+        if (sheetList) line += `\n      Sheets: ${sheetList}`;
+        if (i.freeCount > 0) line += ` (${i.freeCount} free)`;
       }
       return line;
     })

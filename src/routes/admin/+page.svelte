@@ -1860,7 +1860,7 @@
           <input type="number" bind:value={f.pyoFreeCount} min="1" max="10" step="1" />
         </label>
         <label class="field">
-          <span class="field-label">Bundle price</span>
+          <span class="field-label">Price per sheet</span>
           <div class="price-input-wrap">
             <span class="price-prefix">$</span>
             <input type="number" bind:value={f.pyoPrice} min="0" step="0.01" />
