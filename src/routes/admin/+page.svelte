@@ -55,6 +55,10 @@
       sheets: [{ id: '', name: '', blurb: '', image: '' }],
       priceSheet: 2,
       priceSet: 2,
+      setType: 'standard',
+      pyoPickCount: 2,
+      pyoFreeCount: 1,
+      pyoPrice: 4,
     };
   }
 
@@ -107,9 +111,13 @@
     editingId = set.id;
     editForm = JSON.parse(JSON.stringify(set)); // deep clone
     if (!Array.isArray(editForm.sheets)) editForm.sheets = [];
-    if (editForm.priceSheet === undefined) editForm.priceSheet = 2;
-    if (editForm.priceSet === undefined) editForm.priceSet = 2;
-    if (!editForm.status) editForm.status = 'active';
+    if (editForm.priceSheet    === undefined) editForm.priceSheet    = 2;
+    if (editForm.priceSet      === undefined) editForm.priceSet      = 2;
+    if (!editForm.status)                     editForm.status        = 'active';
+    if (!editForm.setType)                    editForm.setType       = 'standard';
+    if (editForm.pyoPickCount  === undefined) editForm.pyoPickCount  = 2;
+    if (editForm.pyoFreeCount  === undefined) editForm.pyoFreeCount  = 1;
+    if (editForm.pyoPrice      === undefined) editForm.pyoPrice      = 4;
   }
 
   function startNew() {
@@ -1832,6 +1840,35 @@
       </label>
     </div>
 
+    <!-- Set type toggle -->
+    <div class="field">
+      <span class="field-label">Type</span>
+      <div class="type-toggle">
+        <button type="button" class:active={f.setType !== 'pyo'} onclick={() => f.setType = 'standard'}>Standard</button>
+        <button type="button" class:active={f.setType === 'pyo'} onclick={() => f.setType = 'pyo'}>Pick Your Own</button>
+      </div>
+    </div>
+
+    {#if f.setType === 'pyo'}
+      <div class="pyo-config">
+        <label class="field">
+          <span class="field-label">Paid picks</span>
+          <input type="number" bind:value={f.pyoPickCount} min="1" max="20" step="1" />
+        </label>
+        <label class="field">
+          <span class="field-label">Free picks</span>
+          <input type="number" bind:value={f.pyoFreeCount} min="1" max="10" step="1" />
+        </label>
+        <label class="field">
+          <span class="field-label">Bundle price</span>
+          <div class="price-input-wrap">
+            <span class="price-prefix">$</span>
+            <input type="number" bind:value={f.pyoPrice} min="0" step="0.01" />
+          </div>
+        </label>
+      </div>
+    {/if}
+
     <label class="field">
       <span class="field-label">Name</span>
       <input type="text" bind:value={f.name} placeholder="Cuddly Critters" />
@@ -1842,6 +1879,9 @@
     </label>
 
     <div class="sheets-section">
+      {#if f.setType === 'pyo'}
+        <p class="pyo-sheets-hint">These are the sheets customers pick from.</p>
+      {/if}
       <div class="sheets-header">
         <span class="field-label">Sheets</span>
         <button type="button" class="add-sheet-btn" onclick={addSheet}>+ Add sheet</button>
@@ -1882,24 +1922,26 @@
       {/each}
     </div>
 
-    <div class="price-row">
-      <label class="field">
-        <span class="field-label">Price per sheet</span>
-        <div class="price-input-wrap">
-          <span class="price-prefix">$</span>
-          <input type="number" bind:value={f.priceSheet} min="0" step="0.01" />
-        </div>
-      </label>
-      {#if f.sheets.length > 1}
+    {#if f.setType !== 'pyo'}
+      <div class="price-row">
         <label class="field">
-          <span class="field-label">Full set price <span class="price-hint">(default: ${(f.priceSheet * 1 + (f.sheets.length - 1)).toFixed(2)})</span></span>
+          <span class="field-label">Price per sheet</span>
           <div class="price-input-wrap">
             <span class="price-prefix">$</span>
-            <input type="number" bind:value={f.priceSet} min="0" step="0.01" />
+            <input type="number" bind:value={f.priceSheet} min="0" step="0.01" />
           </div>
         </label>
-      {/if}
-    </div>
+        {#if f.sheets.length > 1}
+          <label class="field">
+            <span class="field-label">Full set price <span class="price-hint">(default: ${(f.priceSheet * 1 + (f.sheets.length - 1)).toFixed(2)})</span></span>
+            <div class="price-input-wrap">
+              <span class="price-prefix">$</span>
+              <input type="number" bind:value={f.priceSet} min="0" step="0.01" />
+            </div>
+          </label>
+        {/if}
+      </div>
+    {/if}
   </div>
 {/snippet}
 
@@ -2951,6 +2993,41 @@
     transition: transform 0.1s;
   }
   .remove-sheet-btn:hover { transform: translateY(-1px); }
+
+  .type-toggle {
+    display: flex;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    overflow: hidden;
+    width: fit-content;
+  }
+  .type-toggle button {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border: none;
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+    opacity: 0.5;
+  }
+  .type-toggle button + button { border-left: 2px solid var(--ink); }
+  .type-toggle button.active { background: var(--ink); color: white; opacity: 1; }
+
+  .pyo-config {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 600px) { .pyo-config { grid-template-columns: 1fr 1fr; } }
+
+  .pyo-sheets-hint {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    opacity: 0.6;
+    margin-bottom: 8px;
+  }
 
   .price-row {
     display: grid;

@@ -5,14 +5,15 @@
   let set = $derived(data.set);
   let sheets = $derived(set.sheets ?? []);
 
+  let isPyo = $derived(set.setType === 'pyo');
+
+  // ── Standard set state ──────────────────────────────────────────
   // choice: 'set' | number (index into sheets[])
   let choice = $state(sheets.length > 1 ? 'set' : 0);
-  let qty = $state(1);
-  let added = $state(false);
 
-  let isSet = $derived(choice === 'set');
-  let price = $derived(isSet ? set.priceSet : set.priceSheet);
-  let lineTotal = $derived(price * qty);
+  let isSet      = $derived(!isPyo && choice === 'set');
+  let price      = $derived(isSet ? set.priceSet : set.priceSheet);
+  let lineTotal  = $derived(price * qty);
 
   let choiceLabel = $derived(
     isSet
@@ -20,21 +21,70 @@
       : sheets[choice]?.name ?? ''
   );
 
-  // Savings when buying the full set vs individual sheets
   let setDiscount = $derived(
     sheets.length > 1
       ? Math.max(0, set.priceSheet * sheets.length - set.priceSet)
       : 0
   );
 
-  // CSS grid columns: each sheet 1fr, set card 2fr (wider)
   let gridCols = $derived(
     sheets.length <= 1
       ? '1fr'
       : sheets.map(() => '1fr').join(' ') + ' 2fr'
   );
 
+  // ── Pick Your Own state ─────────────────────────────────────────
+  let paidPicks = $state([]); // sheet indices selected as paid
+  let freePicks = $state([]); // sheet indices selected as free
+
+  let pyoPaidFull  = $derived(paidPicks.length >= (set.pyoPickCount ?? 2));
+  let pyoFreeFull  = $derived(freePicks.length >= (set.pyoFreeCount ?? 1));
+  let pyoAllFull   = $derived(pyoPaidFull && pyoFreeFull);
+  let pyoLineTotal = $derived((set.pyoPrice ?? 0) * qty);
+
+  function togglePick(i) {
+    if (paidPicks.includes(i)) {
+      paidPicks = paidPicks.filter(p => p !== i);
+      return;
+    }
+    if (freePicks.includes(i)) {
+      freePicks = freePicks.filter(p => p !== i);
+      return;
+    }
+    if (!pyoPaidFull) {
+      paidPicks = [...paidPicks, i];
+    } else if (!pyoFreeFull) {
+      freePicks = [...freePicks, i];
+    }
+  }
+
+  let qty = $state(1);
+  let added = $state(false);
+
   function addToCart() {
+    if (isPyo) {
+      if (!pyoAllFull) return;
+      const picked = paidPicks.map(i => sheets[i]);
+      const free   = freePicks.map(i => sheets[i]);
+      const all    = [...picked, ...free];
+      cart.add({
+        kind:         'pyo',
+        setId:        set.id,
+        sheetId:      `${set.id}-pyo-${[...paidPicks, ...freePicks].sort().join('-')}`,
+        name:         `${set.name} — Pick Your Own`,
+        pickedSheets: picked.map(s => ({ id: s.id, name: s.name, image: s.image })),
+        freeSheets:   free.map(s => ({ id: s.id, name: s.name, image: s.image })),
+        image:        all[0]?.image || '',
+        image2:       all[1]?.image || '',
+        image3:       all[2]?.image || '',
+        price:        set.pyoPrice,
+        sheetCount:   (set.pyoPickCount ?? 2) + (set.pyoFreeCount ?? 1),
+      }, qty);
+      added = true;
+      setTimeout(() => { added = false; }, 1500);
+      return;
+    }
+
     if (isSet) {
       cart.add({
         kind:       'set',
@@ -93,107 +143,188 @@
 
   <!-- Choices -->
   <div class="choices-wrap">
-    <h2 class="choose-heading">What do you want?</h2>
 
-    <div class="options-grid" style="grid-template-columns:{gridCols}">
-      <!-- Individual sheet cards -->
-      {#each sheets as sheet, i}
-        <button
-          class="sheet-choice sticker"
-          class:selected={choice === i}
-          style="--accent:{set.color}"
-          onclick={() => choice = i}
-        >
-          {#if choice === i}
-            <div class="check-badge" style="background:{set.color}">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12l5 5L20 7"/>
-              </svg>
-            </div>
-          {/if}
-          <div class="sc-img-wrap">
-            {#if sheet.image}
-              <img src={sheet.image} alt={sheet.name} class="sc-img-direct" />
-            {:else}
-              <img
-                src={set.image}
-                alt={sheet.name}
-                class="sc-img"
-                style="left:{sheets.length === 2 ? (i === 0 ? '0' : '-100%') : '0'}"
-              />
-            {/if}
-          </div>
-          <div class="sc-body">
-            <div class="sc-name">{sheet.name}</div>
-            <p class="sc-blurb">{sheet.blurb}</p>
-            <div class="card-price-tag">
-              <span class="tag-hole"></span>
-              <span class="tag-val">${set.priceSheet}</span>
-              <span class="tag-label">per sheet</span>
-            </div>
-          </div>
-        </button>
-      {/each}
-
-      <!-- Full set card (only shown when 2+ sheets) -->
-      {#if sheets.length > 1}
-        <button
-          class="pair-choice sticker"
-          class:selected={choice === 'set'}
-          style="--accent:{set.color}"
-          onclick={() => choice = 'set'}
-        >
-          {#if choice === 'set'}
-            <div class="check-badge" style="background:{set.color}">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12l5 5L20 7"/>
-              </svg>
-            </div>
-          {/if}
-          <div class="ribbon">BEST DEAL!</div>
-          <div class="pair-img-wrap">
-            {#each sheets.filter(s => s.image) as sheet}
-              <img src={sheet.image} alt={sheet.name} class="pair-half" />
-            {/each}
-          </div>
-          <div class="pair-body">
-            <div class="pair-title">Get the full set · {sheets.length} sheets</div>
-            <p class="pair-blurb">Why pick? Stick 'em all. The full set for less than buying separately.</p>
-            <div class="card-price-tag tag-set">
-              <span class="tag-hole"></span>
-              <span class="tag-val">${set.priceSet}</span>
-              {#if setDiscount > 0}
-                <span class="tag-save">save ${setDiscount % 1 === 0 ? setDiscount : setDiscount.toFixed(2)}</span>
-              {:else}
-                <span class="tag-label">full set</span>
-              {/if}
-            </div>
-          </div>
-        </button>
-      {/if}
-    </div><!-- end options-grid -->
-
-    <!-- Add to cart row -->
-    <div class="atc-panel">
-      <div class="atc-left">
-        <div class="stepper">
-          <button class="step-btn" disabled={qty <= 1} onclick={() => qty = Math.max(1, qty - 1)}>−</button>
-          <span class="step-val">{qty}</span>
-          <button class="step-btn" disabled={qty >= 99} onclick={() => qty = Math.min(99, qty + 1)}>+</button>
-        </div>
-        <div class="atc-info">
-          <div class="atc-label">{choiceLabel}</div>
-          <div class="atc-total">${lineTotal}</div>
+    {#if isPyo}
+      <!-- ── Pick Your Own UI ── -->
+      <div class="pyo-header">
+        <h2 class="choose-heading">Pick {set.pyoPickCount}, get {set.pyoFreeCount} free</h2>
+        <div class="pyo-progress">
+          <span class="pyo-progress-item" class:done={pyoPaidFull}>
+            {paidPicks.length}/{set.pyoPickCount} paid
+          </span>
+          <span class="pyo-progress-sep">·</span>
+          <span class="pyo-progress-item" class:done={pyoFreeFull}>
+            {freePicks.length}/{set.pyoFreeCount} free
+          </span>
         </div>
       </div>
-      <button class="atc-btn" class:added onclick={addToCart}>
-        {added ? 'Added! ✓' : 'Add to cart'}
-      </button>
-    </div>
 
-    {#if setDiscount > 0}
-      <p class="psst">Psst — the full set saves you ${setDiscount.toFixed(2)}!</p>
+      <div class="pyo-grid">
+        {#each sheets as sheet, i}
+          {@const isPaid = paidPicks.includes(i)}
+          {@const isFree = freePicks.includes(i)}
+          {@const isSelected = isPaid || isFree}
+          {@const canSelect = !isSelected && (!pyoPaidFull || !pyoFreeFull)}
+          <button
+            class="sheet-choice sticker pyo-card"
+            class:selected={isSelected}
+            class:pyo-paid={isPaid}
+            class:pyo-free={isFree}
+            class:pyo-disabled={!isSelected && !canSelect}
+            style="--accent:{set.color}"
+            onclick={() => togglePick(i)}
+          >
+            {#if isPaid}
+              <div class="pyo-badge pyo-badge-paid" style="background:{set.color}">
+                #{paidPicks.indexOf(i) + 1}
+              </div>
+            {:else if isFree}
+              <div class="pyo-badge pyo-badge-free">FREE</div>
+            {/if}
+            <div class="sc-img-wrap">
+              {#if sheet.image}
+                <img src={sheet.image} alt={sheet.name} class="sc-img-direct" />
+              {:else}
+                <img src={set.image} alt={sheet.name} class="sc-img" style="left:0" />
+              {/if}
+            </div>
+            <div class="sc-body">
+              <div class="sc-name">{sheet.name}</div>
+              <p class="sc-blurb">{sheet.blurb}</p>
+            </div>
+          </button>
+        {/each}
+      </div>
+
+      <!-- Add to cart row -->
+      <div class="atc-panel" class:atc-panel-dim={!pyoAllFull}>
+        <div class="atc-left">
+          <div class="stepper">
+            <button class="step-btn" disabled={qty <= 1} onclick={() => qty = Math.max(1, qty - 1)}>−</button>
+            <span class="step-val">{qty}</span>
+            <button class="step-btn" disabled={qty >= 99} onclick={() => qty = Math.min(99, qty + 1)}>+</button>
+          </div>
+          <div class="atc-info">
+            <div class="atc-label">
+              {#if pyoAllFull}
+                {set.pyoPickCount}+{set.pyoFreeCount} free · your picks
+              {:else}
+                Pick {set.pyoPickCount - paidPicks.length + (pyoPaidFull ? 0 : 0)} more{pyoPaidFull ? `, then ${set.pyoFreeCount - freePicks.length} free` : ''}
+              {/if}
+            </div>
+            <div class="atc-total">${pyoLineTotal.toFixed(2)}</div>
+          </div>
+        </div>
+        <button class="atc-btn" class:added disabled={!pyoAllFull} onclick={addToCart}>
+          {added ? 'Added! ✓' : pyoAllFull ? 'Add to cart' : 'Choose your sheets'}
+        </button>
+      </div>
+
+    {:else}
+      <!-- ── Standard set UI ── -->
+      <h2 class="choose-heading">What do you want?</h2>
+
+      <div class="options-grid" style="grid-template-columns:{gridCols}">
+        <!-- Individual sheet cards -->
+        {#each sheets as sheet, i}
+          <button
+            class="sheet-choice sticker"
+            class:selected={choice === i}
+            style="--accent:{set.color}"
+            onclick={() => choice = i}
+          >
+            {#if choice === i}
+              <div class="check-badge" style="background:{set.color}">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12l5 5L20 7"/>
+                </svg>
+              </div>
+            {/if}
+            <div class="sc-img-wrap">
+              {#if sheet.image}
+                <img src={sheet.image} alt={sheet.name} class="sc-img-direct" />
+              {:else}
+                <img
+                  src={set.image}
+                  alt={sheet.name}
+                  class="sc-img"
+                  style="left:{sheets.length === 2 ? (i === 0 ? '0' : '-100%') : '0'}"
+                />
+              {/if}
+            </div>
+            <div class="sc-body">
+              <div class="sc-name">{sheet.name}</div>
+              <p class="sc-blurb">{sheet.blurb}</p>
+              <div class="card-price-tag">
+                <span class="tag-hole"></span>
+                <span class="tag-val">${set.priceSheet}</span>
+                <span class="tag-label">per sheet</span>
+              </div>
+            </div>
+          </button>
+        {/each}
+
+        <!-- Full set card (only shown when 2+ sheets) -->
+        {#if sheets.length > 1}
+          <button
+            class="pair-choice sticker"
+            class:selected={choice === 'set'}
+            style="--accent:{set.color}"
+            onclick={() => choice = 'set'}
+          >
+            {#if choice === 'set'}
+              <div class="check-badge" style="background:{set.color}">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12l5 5L20 7"/>
+                </svg>
+              </div>
+            {/if}
+            <div class="ribbon">BEST DEAL!</div>
+            <div class="pair-img-wrap">
+              {#each sheets.filter(s => s.image) as sheet}
+                <img src={sheet.image} alt={sheet.name} class="pair-half" />
+              {/each}
+            </div>
+            <div class="pair-body">
+              <div class="pair-title">Get the full set · {sheets.length} sheets</div>
+              <p class="pair-blurb">Why pick? Stick 'em all. The full set for less than buying separately.</p>
+              <div class="card-price-tag tag-set">
+                <span class="tag-hole"></span>
+                <span class="tag-val">${set.priceSet}</span>
+                {#if setDiscount > 0}
+                  <span class="tag-save">save ${setDiscount % 1 === 0 ? setDiscount : setDiscount.toFixed(2)}</span>
+                {:else}
+                  <span class="tag-label">full set</span>
+                {/if}
+              </div>
+            </div>
+          </button>
+        {/if}
+      </div><!-- end options-grid -->
+
+      <!-- Add to cart row -->
+      <div class="atc-panel">
+        <div class="atc-left">
+          <div class="stepper">
+            <button class="step-btn" disabled={qty <= 1} onclick={() => qty = Math.max(1, qty - 1)}>−</button>
+            <span class="step-val">{qty}</span>
+            <button class="step-btn" disabled={qty >= 99} onclick={() => qty = Math.min(99, qty + 1)}>+</button>
+          </div>
+          <div class="atc-info">
+            <div class="atc-label">{choiceLabel}</div>
+            <div class="atc-total">${lineTotal}</div>
+          </div>
+        </div>
+        <button class="atc-btn" class:added onclick={addToCart}>
+          {added ? 'Added! ✓' : 'Add to cart'}
+        </button>
+      </div>
+
+      {#if setDiscount > 0}
+        <p class="psst">Psst — the full set saves you ${setDiscount.toFixed(2)}!</p>
+      {/if}
     {/if}
+
   </div>
 </div>
 
@@ -608,5 +739,75 @@
     border-radius: 18px;
     border: 3px solid var(--ink);
     box-shadow: 0 1px 0 rgba(0,0,0,.05), 0 6px 0 rgba(0,0,0,.04), 0 18px 28px -10px rgba(42,34,56,0.18);
+  }
+
+  /* ── Pick Your Own ── */
+  .pyo-header {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .pyo-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 15px;
+    opacity: 0.6;
+  }
+
+  .pyo-progress-sep { opacity: 0.4; }
+
+  .pyo-progress-item.done { opacity: 1; color: #1a7a42; font-weight: 700; }
+
+  .pyo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+  }
+
+  .pyo-card { position: relative; }
+
+  .pyo-card.selected { transform: translateY(-4px); outline-color: var(--accent); }
+  .pyo-card.pyo-paid { outline-color: var(--accent) !important; }
+  .pyo-card.pyo-free { outline-color: var(--mint) !important; }
+  .pyo-card.pyo-disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .pyo-badge {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    min-width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    border: 3px solid var(--ink);
+    display: grid;
+    place-items: center;
+    font-family: 'Bagel Fat One', sans-serif;
+    font-size: 13px;
+    color: white;
+    box-shadow: 0 3px 0 rgba(42,34,56,0.85);
+    transform: rotate(8deg);
+    animation: pop 0.25s;
+    z-index: 2;
+    padding: 0 6px;
+  }
+
+  .pyo-badge-free {
+    background: var(--mint);
+    color: var(--ink);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  .atc-panel-dim { opacity: 0.7; }
+  .atc-btn:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: 0 6px 0 rgba(42,34,56,0.85); }
+
+  @keyframes pop {
+    0%   { transform: rotate(8deg) scale(0.4); }
+    70%  { transform: rotate(8deg) scale(1.2); }
+    100% { transform: rotate(8deg) scale(1); }
   }
 </style>

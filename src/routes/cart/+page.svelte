@@ -212,7 +212,16 @@
               </div>
               <div class="item-info">
                 <span class="item-name">{item.name}</span>
-                <span class="item-kind">{item.kind === 'set' || item.kind === 'pair' ? 'Full set' : 'Single sheet'}</span>
+                {#if item.kind === 'pyo'}
+                  <span class="item-kind">Pick your own</span>
+                  {#if item.pickedSheets?.length || item.freeSheets?.length}
+                    <span class="item-pyo-detail">
+                      {[...(item.pickedSheets ?? []).map(s => s.name), ...(item.freeSheets ?? []).map(s => `${s.name} (free)`)].join(' · ')}
+                    </span>
+                  {/if}
+                {:else}
+                  <span class="item-kind">{item.kind === 'set' || item.kind === 'pair' ? 'Full set' : 'Single sheet'}</span>
+                {/if}
                 <div class="item-controls">
                   <div class="item-stepper">
                     <button
@@ -456,7 +465,15 @@
     font-size: 13px;
     opacity: 0.6;
     display: block;
+    margin-bottom: 4px;
+  }
+
+  .item-pyo-detail {
+    font-size: 12px;
+    opacity: 0.6;
+    display: block;
     margin-bottom: 8px;
+    line-height: 1.4;
   }
 
   .item-controls { display: flex; align-items: center; gap: 10px; }

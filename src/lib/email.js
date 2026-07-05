@@ -17,7 +17,16 @@ function escHtml(str) {
 
 function buildAdminText(order) {
   const itemList = order.items
-    .map(i => `  • ${i.name}  ×${i.qty}  $${(i.price * i.qty).toFixed(2)}`)
+    .map(i => {
+      let line = `  • ${i.name}  ×${i.qty}  $${(i.price * i.qty).toFixed(2)}`;
+      if (i.kind === 'pyo') {
+        const picks = (i.pickedSheets ?? []).map(s => s.name).join(', ');
+        const free  = (i.freeSheets  ?? []).map(s => s.name).join(', ');
+        if (picks) line += `\n      Paid: ${picks}`;
+        if (free)  line += `\n      Free: ${free}`;
+      }
+      return line;
+    })
     .join('\n');
   const isPickup = order.delivery_method === 'pickup';
   return `
@@ -272,9 +281,11 @@ function buildAdminHtml(order, origin) {
 function buildItemRow(item, origin) {
   const imageUrl = absoluteUrl(item.image, origin);
   const lineTotal = (item.price * item.qty).toFixed(2);
-  const subLabel = (item.kind === 'set' || item.kind === 'pair')
-    ? `Full set &middot; $${item.price.toFixed(2)}`
-    : `Single sheet &middot; $${item.price.toFixed(2)}`;
+  const subLabel = item.kind === 'pyo'
+    ? `Pick your own &middot; $${item.price.toFixed(2)}`
+    : (item.kind === 'set' || item.kind === 'pair')
+      ? `Full set &middot; $${item.price.toFixed(2)}`
+      : `Single sheet &middot; $${item.price.toFixed(2)}`;
 
   let thumbContent = '';
   if (imageUrl) {

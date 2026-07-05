@@ -64,6 +64,11 @@ export async function ensureSchema() {
   await db`UPDATE sticker_sets SET status = 'inactive' WHERE active = false AND status = 'active'`;
   // Add apple_pay column (migration)
   await db`ALTER TABLE orders ADD COLUMN IF NOT EXISTS apple_pay BOOLEAN DEFAULT false`;
+  // Add pick-your-own columns (migration)
+  await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS set_type TEXT DEFAULT 'standard'`;
+  await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS pyo_pick_count INTEGER DEFAULT 2`;
+  await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS pyo_free_count INTEGER DEFAULT 1`;
+  await db`ALTER TABLE sticker_sets ADD COLUMN IF NOT EXISTS pyo_price NUMERIC(10,2) DEFAULT 4.00`;
 
   await db`
     CREATE TABLE IF NOT EXISTS background_images (
@@ -192,15 +197,19 @@ function rowToSet(row) {
   }
   const defaultSetPrice = calcDefaultSetPrice(sheets.length);
   return {
-    id:         row.id,
-    name:       row.name,
-    tagline:    row.tagline  ?? '',
-    color:      row.color    ?? '#6ddc8a',
-    image:      row.image    ?? '',
-    sortOrder:  row.sort_order,
-    status:     row.status ?? (row.active ? 'active' : 'inactive'),
-    priceSheet: Number(row.price_sheet ?? 2),
-    priceSet:   Number(row.price_set   ?? defaultSetPrice),
+    id:           row.id,
+    name:         row.name,
+    tagline:      row.tagline  ?? '',
+    color:        row.color    ?? '#6ddc8a',
+    image:        row.image    ?? '',
+    sortOrder:    row.sort_order,
+    status:       row.status ?? (row.active ? 'active' : 'inactive'),
+    priceSheet:   Number(row.price_sheet    ?? 2),
+    priceSet:     Number(row.price_set      ?? defaultSetPrice),
+    setType:      row.set_type              ?? 'standard',
+    pyoPickCount: Number(row.pyo_pick_count ?? 2),
+    pyoFreeCount: Number(row.pyo_free_count ?? 1),
+    pyoPrice:     Number(row.pyo_price      ?? 4),
     sheets,
   };
 }
@@ -246,13 +255,15 @@ export async function upsertStickerSet(set) {
        sheet_a_id, sheet_a_name, sheet_a_blurb, sheet_a_image,
        sheet_b_id, sheet_b_name, sheet_b_blurb, sheet_b_image,
        sheets, price_sheet, price_set,
-       sort_order, status, active)
+       sort_order, status, active,
+       set_type, pyo_pick_count, pyo_free_count, pyo_price)
     VALUES
       (${set.id}, ${set.name}, ${set.tagline ?? ''}, ${set.color ?? '#6ddc8a'}, ${set.image ?? ''},
        ${s0.id ?? ''}, ${s0.name ?? ''}, ${s0.blurb ?? ''}, ${s0.image ?? ''},
        ${s1.id ?? ''}, ${s1.name ?? ''}, ${s1.blurb ?? ''}, ${s1.image ?? ''},
        ${JSON.stringify(sheets)}, ${set.priceSheet ?? 2}, ${set.priceSet ?? defaultSetPrice},
-       ${set.sortOrder ?? 0}, ${status}, ${active})
+       ${set.sortOrder ?? 0}, ${status}, ${active},
+       ${set.setType ?? 'standard'}, ${set.pyoPickCount ?? 2}, ${set.pyoFreeCount ?? 1}, ${set.pyoPrice ?? 4})
     ON CONFLICT (id) DO UPDATE SET
       name           = EXCLUDED.name,
       tagline        = EXCLUDED.tagline,
@@ -271,7 +282,11 @@ export async function upsertStickerSet(set) {
       price_set      = EXCLUDED.price_set,
       sort_order     = EXCLUDED.sort_order,
       status         = EXCLUDED.status,
-      active         = EXCLUDED.active
+      active         = EXCLUDED.active,
+      set_type       = EXCLUDED.set_type,
+      pyo_pick_count = EXCLUDED.pyo_pick_count,
+      pyo_free_count = EXCLUDED.pyo_free_count,
+      pyo_price      = EXCLUDED.pyo_price
   `;
 }
 

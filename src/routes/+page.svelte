@@ -61,21 +61,31 @@
 
             <!-- Price tags — positioned relative to card so they sit on top -->
             <div class="price-tags">
-              {#if set.sheets && set.sheets.length > 1}
-                <div class="price-tag yellow" style="--tag-rot:8deg">${set.priceSet} set</div>
+              {#if set.setType === 'pyo'}
+                <div class="price-tag yellow" style="--tag-rot:8deg">${set.pyoPrice}</div>
+              {:else}
+                {#if set.sheets && set.sheets.length > 1}
+                  <div class="price-tag yellow" style="--tag-rot:8deg">${set.priceSet} set</div>
+                {/if}
+                <div class="price-tag white" style="--tag-rot:-4deg">${set.priceSheet} sheet</div>
               {/if}
-              <div class="price-tag white" style="--tag-rot:-4deg">${set.priceSheet} sheet</div>
             </div>
 
             <!-- Card body -->
             <div class="card-body">
               <div class="card-title-row">
                 <span class="card-name">{set.name}</span>
-                <span class="chip" style="background:{set.color};border-color:{set.color}">{set.sheets?.length ?? 2} sheets</span>
+                {#if set.setType === 'pyo'}
+                  <span class="chip chip-pyo" style="border-color:{set.color}">pick {set.pyoPickCount}+{set.pyoFreeCount} free</span>
+                {:else}
+                  <span class="chip" style="background:{set.color};border-color:{set.color}">{set.sheets?.length ?? 2} sheets</span>
+                {/if}
               </div>
               <p class="card-tagline">{set.tagline}</p>
               <div class="card-footer">
-                {#if set.sheets && set.sheets.length > 1}
+                {#if set.setType === 'pyo'}
+                  <span class="deal-text">Pick {set.pyoPickCount}, get {set.pyoFreeCount} free!</span>
+                {:else if set.sheets && set.sheets.length > 1}
                   {@const savings = set.priceSheet * set.sheets.length - set.priceSet}
                   {#if savings > 0}
                     <span class="deal-text">Set deal · save ${savings % 1 === 0 ? savings : savings.toFixed(2)}</span>
@@ -414,6 +424,8 @@
     color: var(--ink);
     white-space: nowrap;
   }
+
+  .chip-pyo { background: white; font-size: 11px; }
 
   .card-tagline {
     font-size: 14px;
