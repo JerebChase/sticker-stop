@@ -159,7 +159,7 @@
         </div>
       {/if}
 
-      <div class="pyo-grid">
+      <div class="pyo-grid" style="grid-template-columns: repeat({Math.min(4, sheets.length)}, 1fr)">
         {#each sheets as sheet, i}
           <div class="pyo-card sticker" class:selected={sheetCounts[i] > 0} style="--accent:{set.color}">
             {#if sheetCounts[i] > 0}
@@ -776,8 +776,11 @@
 
   .pyo-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 14px;
+  }
+
+  @media (max-width: 600px) {
+    .pyo-grid { grid-template-columns: repeat(2, 1fr) !important; }
   }
 
   .pyo-card {
@@ -823,7 +826,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-top: 10px;
+    margin-top: auto;
     padding-top: 10px;
     border-top: 1.5px solid var(--line);
   }
