@@ -264,7 +264,7 @@
       if (res.ok) {
         const data = await res.json();
         settings = { ...settings, ...data };
-        if (data.since_order_id) sinceOrderId = data.since_order_id;
+        if (data.since_order_id) sinceOrderId = String(data.since_order_id);
       }
     } catch { /* settings will use defaults */ }
   }
@@ -1020,12 +1020,12 @@
           <select
             id="since-select"
             class="since-select"
-            value={sinceOrderId}
+            bind:value={sinceOrderId}
             onchange={(e) => updateSinceOrder(e.target.value)}
           >
             <option value="">— Select a starting order —</option>
             {#each orders as o}
-              <option value={o.id}>#{o.id} · {new Date(o.created_at).toLocaleDateString()} · {o.customer_name}</option>
+              <option value={String(o.id)}>#{o.id} · {new Date(o.created_at).toLocaleDateString()} · {o.customer_name}</option>
             {/each}
           </select>
         </label>
