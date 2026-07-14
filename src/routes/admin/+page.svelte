@@ -1094,6 +1094,11 @@
                   <td class="order-items">
                     {#each o.items as item}
                       <div class="item-line">{item.qty}× {item.name}</div>
+                      {#if item.kind === 'pyo' && item.selectedSheets?.length}
+                        <div class="item-pyo-detail">
+                          {item.selectedSheets.map(s => s.qty > 1 ? `${s.name} ×${s.qty}` : s.name).join(' · ')}
+                        </div>
+                      {/if}
                     {/each}
                   </td>
                   <td class="order-total">${parseFloat(o.total).toFixed(2)}</td>
@@ -2319,6 +2324,8 @@
   .person-badge { background: var(--orange); }
 
   .item-line { font-size: 13px; opacity: 0.8; }
+
+  .item-pyo-detail { font-size: 11.5px; opacity: 0.65; padding-left: 12px; }
 
   .order-total { font-family: 'Bagel Fat One', sans-serif; font-size: 16px; white-space: nowrap; }
 

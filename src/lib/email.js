@@ -288,6 +288,12 @@ function buildItemRow(item, origin) {
       ? `Full set &middot; $${item.price.toFixed(2)}`
       : `Single sheet &middot; $${item.price.toFixed(2)}`;
 
+  const sheetList = item.kind === 'pyo'
+    ? (item.selectedSheets ?? [])
+        .map(s => (s.qty > 1 ? `${s.name} &times;${s.qty}` : s.name))
+        .join(' &middot; ')
+    : '';
+
   let thumbContent = '';
   if (imageUrl) {
     if (item.image2 && (item.kind === 'set' || item.kind === 'pair')) {
@@ -367,6 +373,8 @@ function buildItemRow(item, origin) {
               font-size:16px;line-height:1.2;color:#2a2238;">${item.name}</div>
             <div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;
               font-size:13px;color:#2a2238;opacity:0.7;margin-top:2px;">${subLabel}</div>
+            ${sheetList ? `<div style="font-family:'Fredoka',Arial,sans-serif;font-weight:500;
+              font-size:12.5px;color:#2a2238;opacity:0.6;margin-top:3px;">${sheetList}</div>` : ''}
           </td>
           <td valign="middle" align="right" style="white-space:nowrap;padding-left:10px;">
             <div style="font-family:'Bagel Fat One','Arial Black',Impact,sans-serif;font-size:22px;
