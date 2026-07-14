@@ -409,6 +409,62 @@
       .filter(i => i.qty > 0);
   }
 
+  function removeNewOrderItem(sheetId) {
+    newOrderItems = newOrderItems.filter(i => i.sheetId !== sheetId);
+  }
+
+  function pyoItemFor(setId) {
+    return newOrderItems.find(i => i.kind === 'pyo' && i.setId === setId);
+  }
+
+  function pyoSheetQty(setId, sheetId) {
+    return pyoItemFor(setId)?.selectedSheets.find(s => s.id === sheetId)?.qty ?? 0;
+  }
+
+  function calcPyoTotals(set, selectedSheets) {
+    const totalPicks = selectedSheets.reduce((s, x) => s + x.qty, 0);
+    const pickCount   = set.pyoPickCount ?? 3;
+    const freeCount   = set.pyoFreeCount ?? 1;
+    const cycleSize   = pickCount + freeCount;
+    const free = Math.floor(totalPicks / cycleSize) * freeCount +
+      Math.max(0, (totalPicks % cycleSize) - pickCount);
+    const paid = totalPicks - free;
+    return { sheetCount: totalPicks, paidCount: paid, freeCount: free, price: paid * (set.pyoPrice ?? 0) };
+  }
+
+  function changePyoSheetQty(set, sheet, delta) {
+    const sheetIdKey = `${set.id}-pyo`;
+    const existing = pyoItemFor(set.id);
+    const selectedSheets = (existing?.selectedSheets ?? []).map(s => ({ ...s }));
+    const idx = selectedSheets.findIndex(s => s.id === sheet.id);
+    if (idx >= 0) {
+      selectedSheets[idx].qty += delta;
+      if (selectedSheets[idx].qty <= 0) selectedSheets.splice(idx, 1);
+    } else if (delta > 0) {
+      selectedSheets.push({ id: sheet.id, name: sheet.name, image: sheet.image, qty: delta });
+    }
+
+    if (selectedSheets.length === 0) {
+      newOrderItems = newOrderItems.filter(i => i.sheetId !== sheetIdKey);
+      return;
+    }
+
+    const totals = calcPyoTotals(set, selectedSheets);
+    if (existing) {
+      newOrderItems = newOrderItems.map(i => i.sheetId === sheetIdKey ? { ...i, selectedSheets, ...totals } : i);
+    } else {
+      newOrderItems = [...newOrderItems, {
+        kind:    'pyo',
+        setId:   set.id,
+        sheetId: sheetIdKey,
+        name:    `${set.name} — Pick Your Own`,
+        qty:     1,
+        selectedSheets,
+        ...totals,
+      }];
+    }
+  }
+
   async function submitNewOrder() {
     newOrderError = '';
     if (!newOrderName.trim()) { newOrderError = 'Customer name is required.'; return; }
@@ -421,7 +477,10 @@
         body: JSON.stringify({
           customer_name:  newOrderName.trim(),
           customer_email: newOrderEmail.trim(),
-          items:          newOrderItems.map(({ kind, setId, sheetId, name, price, qty }) => ({ kind, setId, sheetId, name, price, qty })),
+          items:          newOrderItems.map(({ kind, setId, sheetId, name, price, qty, selectedSheets, paidCount, freeCount, sheetCount }) => ({
+            kind, setId, sheetId, name, price, qty,
+            ...(kind === 'pyo' ? { selectedSheets, paidCount, freeCount, sheetCount } : {}),
+          })),
           paid:           newOrderPaid,
           apple_pay:      newOrderApplePay,
         }),
@@ -1742,16 +1801,45 @@
                   <span class="picker-swatch" style="background:{set.color}"></span>
                   <span class="picker-set-name">{set.name}</span>
                 </div>
-                <div class="picker-options">
-                  <button type="button" class="picker-chip" onclick={() => addNewOrderItem(set)}>
-                    Full set <span class="picker-chip-price">${set.priceSet.toFixed(2)}</span>
-                  </button>
-                  {#each set.sheets as sheet}
-                    <button type="button" class="picker-chip" onclick={() => addNewOrderItem(set, sheet)}>
-                      {sheet.name} <span class="picker-chip-price">${set.priceSheet.toFixed(2)}</span>
+                {#if set.setType === 'pyo'}
+                  <div class="picker-pyo-tag">
+                    Buy {set.pyoPickCount}, get {set.pyoFreeCount} free · ${(set.pyoPrice ?? 0).toFixed(2)}/sheet
+                  </div>
+                  <div class="picker-pyo-sheets">
+                    {#each set.sheets as sheet}
+                      <div class="picker-pyo-sheet">
+                        <span class="picker-pyo-sheet-name">{sheet.name}</span>
+                        <div class="picker-pyo-stepper">
+                          <button
+                            type="button"
+                            disabled={pyoSheetQty(set.id, sheet.id) <= 0}
+                            onclick={() => changePyoSheetQty(set, sheet, -1)}
+                          >−</button>
+                          <span>{pyoSheetQty(set.id, sheet.id)}</span>
+                          <button type="button" onclick={() => changePyoSheetQty(set, sheet, 1)}>+</button>
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+                  {#if pyoItemFor(set.id)}
+                    <div class="picker-pyo-summary">
+                      {pyoItemFor(set.id).sheetCount} picked
+                      {#if pyoItemFor(set.id).freeCount > 0}&nbsp;· {pyoItemFor(set.id).freeCount} free{/if}
+                      &nbsp;· ${pyoItemFor(set.id).price.toFixed(2)}
+                    </div>
+                  {/if}
+                {:else}
+                  <div class="picker-options">
+                    <button type="button" class="picker-chip" onclick={() => addNewOrderItem(set)}>
+                      Full set <span class="picker-chip-price">${set.priceSet.toFixed(2)}</span>
                     </button>
-                  {/each}
-                </div>
+                    {#each set.sheets as sheet}
+                      <button type="button" class="picker-chip" onclick={() => addNewOrderItem(set, sheet)}>
+                        {sheet.name} <span class="picker-chip-price">${set.priceSheet.toFixed(2)}</span>
+                      </button>
+                    {/each}
+                  </div>
+                {/if}
               </div>
             {/each}
           </div>
@@ -1763,12 +1851,23 @@
             <div class="new-order-cart">
               {#each newOrderItems as item (item.sheetId)}
                 <div class="cart-line">
-                  <span class="cart-line-name">{item.name}</span>
-                  <div class="cart-line-qty">
-                    <button type="button" onclick={() => changeNewOrderQty(item.sheetId, -1)}>−</button>
-                    <span>{item.qty}</span>
-                    <button type="button" onclick={() => changeNewOrderQty(item.sheetId, 1)}>+</button>
+                  <div class="cart-line-name">
+                    {item.name}
+                    {#if item.kind === 'pyo' && item.selectedSheets?.length}
+                      <div class="cart-line-pyo-detail">
+                        {item.selectedSheets.map(s => s.qty > 1 ? `${s.name} ×${s.qty}` : s.name).join(' · ')}
+                      </div>
+                    {/if}
                   </div>
+                  {#if item.kind === 'pyo'}
+                    <button type="button" class="cart-line-remove" onclick={() => removeNewOrderItem(item.sheetId)}>Remove</button>
+                  {:else}
+                    <div class="cart-line-qty">
+                      <button type="button" onclick={() => changeNewOrderQty(item.sheetId, -1)}>−</button>
+                      <span>{item.qty}</span>
+                      <button type="button" onclick={() => changeNewOrderQty(item.sheetId, 1)}>+</button>
+                    </div>
+                  {/if}
                   <span class="cart-line-price">${(item.price * item.qty).toFixed(2)}</span>
                 </div>
               {/each}
@@ -3483,6 +3582,71 @@
     font-size: 11px;
   }
 
+  .picker-pyo-tag {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    opacity: 0.65;
+    margin-bottom: 8px;
+  }
+
+  .picker-pyo-sheets {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .picker-pyo-sheet {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .picker-pyo-sheet-name {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  .picker-pyo-stepper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .picker-pyo-stepper button {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .picker-pyo-stepper button:hover:not(:disabled) { background: var(--yellow); }
+  .picker-pyo-stepper button:disabled { opacity: 0.35; cursor: default; }
+
+  .picker-pyo-stepper span { min-width: 14px; text-align: center; }
+
+  .picker-pyo-summary {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1.5px dashed var(--line);
+  }
+
   /* ── New order cart ── */
   .new-order-cart {
     display: flex;
@@ -3510,6 +3674,28 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  .cart-line-pyo-detail {
+    font-size: 11.5px;
+    font-weight: 500;
+    opacity: 0.65;
+    white-space: normal;
+    margin-top: 2px;
+  }
+
+  .cart-line-remove {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .cart-line-remove:hover { background: var(--pink); color: white; }
 
   .cart-line-qty {
     display: flex;
