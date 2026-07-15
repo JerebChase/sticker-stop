@@ -415,7 +415,6 @@
   /* grid-template-columns is set dynamically via inline style */
   .options-grid {
     display: grid;
-    grid-template-rows: auto auto;
     column-gap: 14px;
     row-gap: 0;
   }
@@ -424,17 +423,8 @@
   @media (max-width: 720px) {
     .options-grid {
       grid-template-columns: 1fr !important;
-      grid-template-rows: auto;
       row-gap: 14px;
     }
-    .sheet-choice,
-    .pair-choice {
-      grid-row: auto !important;
-      display: flex !important;
-      flex-direction: column;
-    }
-    .sc-img-wrap  { aspect-ratio: 1197 / 1768; }
-    .pair-img-wrap { aspect-ratio: 1197 / 884; }
   }
 
   .sheet-choice {
@@ -450,9 +440,8 @@
     transition: outline 0.15s, transform 0.2s;
     width: 100%;
     overflow: visible;
-    grid-row: span 2;
-    display: grid;
-    grid-template-rows: subgrid;
+    display: flex;
+    flex-direction: column;
     gap: 0;
     color: var(--ink);
   }
@@ -484,6 +473,7 @@
     border-radius: 12px;
     overflow: hidden;
     background: var(--paper-2);
+    aspect-ratio: 1197 / 1768;
   }
 
   .sc-img {
@@ -528,9 +518,8 @@
     transition: outline 0.15s, transform 0.2s;
     width: 100%;
     overflow: visible;
-    grid-row: span 2;
-    display: grid;
-    grid-template-rows: subgrid;
+    display: flex;
+    flex-direction: column;
     gap: 0;
     color: var(--ink);
   }
