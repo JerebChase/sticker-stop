@@ -35,14 +35,15 @@
 
   // ── Pick Your Own state ─────────────────────────────────────────
   let sheetCounts   = $state(sheets.map(() => 0));
-  let totalPicks    = $derived(sheetCounts.reduce((s, c) => s + c, 0));
+  let rawPicks      = $derived(sheetCounts.reduce((s, c) => s + c, 0));
+  let totalPicks    = $derived(rawPicks * qty);
   let pyoCycleSize  = $derived((set.pyoPickCount ?? 3) + (set.pyoFreeCount ?? 1));
   let pyoCalcFree   = $derived(
     Math.floor(totalPicks / pyoCycleSize) * (set.pyoFreeCount ?? 1) +
     Math.max(0, totalPicks % pyoCycleSize - (set.pyoPickCount ?? 3))
   );
   let pyoCalcPaid   = $derived(totalPicks - pyoCalcFree);
-  let pyoLineTotal  = $derived(pyoCalcPaid * (set.pyoPrice ?? 0) * qty);
+  let pyoLineTotal  = $derived(pyoCalcPaid * (set.pyoPrice ?? 0));
   let pyoNextFreeIn = $derived.by(() => {
     if (totalPicks === 0) return 0;
     const pos = totalPicks % pyoCycleSize;
@@ -57,25 +58,19 @@
 
   function addToCart() {
     if (isPyo) {
-      if (totalPicks < 1) return;
+      if (rawPicks < 1) return;
       const selectedSheets = sheets
         .map((s, i) => ({ id: s.id, name: s.name, image: s.image, qty: sheetCounts[i] }))
         .filter(s => s.qty > 0);
-      const flat = selectedSheets.flatMap(s => Array(s.qty).fill(s));
-      cart.add({
-        kind:           'pyo',
-        setId:          set.id,
-        sheetId:        `${set.id}-pyo-${sheetCounts.join('-')}`,
-        name:           `${set.name} — Pick Your Own`,
+      cart.addPyo({
+        setId:         set.id,
+        name:          `${set.name} — Pick Your Own`,
+        pyoPickCount:  set.pyoPickCount ?? 3,
+        pyoFreeCount:  set.pyoFreeCount ?? 1,
+        pyoPrice:      set.pyoPrice ?? 0,
         selectedSheets,
-        paidCount:      pyoCalcPaid,
-        freeCount:      pyoCalcFree,
-        image:          flat[0]?.image || '',
-        image2:         flat[1]?.image || '',
-        image3:         flat[2]?.image || '',
-        price:          pyoCalcPaid * (set.pyoPrice ?? 0),
-        sheetCount:     totalPicks,
-      }, qty);
+        qty,
+      });
       added = true;
       setTimeout(() => { added = false; }, 1500);
       return;

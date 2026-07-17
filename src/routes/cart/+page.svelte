@@ -223,19 +223,21 @@
                   <span class="item-kind">{item.kind === 'set' || item.kind === 'pair' ? 'Full set' : 'Single sheet'}</span>
                 {/if}
                 <div class="item-controls">
-                  <div class="item-stepper">
-                    <button
-                      class="step-btn"
-                      disabled={item.qty <= 1}
-                      onclick={() => cart.setQty(item.sheetId, item.qty - 1)}
-                    >−</button>
-                    <span class="step-val">{item.qty}</span>
-                    <button
-                      class="step-btn"
-                      disabled={item.qty >= 99}
-                      onclick={() => cart.setQty(item.sheetId, item.qty + 1)}
-                    >+</button>
-                  </div>
+                  {#if item.kind !== 'pyo'}
+                    <div class="item-stepper">
+                      <button
+                        class="step-btn"
+                        disabled={item.qty <= 1}
+                        onclick={() => cart.setQty(item.sheetId, item.qty - 1)}
+                      >−</button>
+                      <span class="step-val">{item.qty}</span>
+                      <button
+                        class="step-btn"
+                        disabled={item.qty >= 99}
+                        onclick={() => cart.setQty(item.sheetId, item.qty + 1)}
+                      >+</button>
+                    </div>
+                  {/if}
                   <button class="remove-btn" onclick={() => cart.remove(item.sheetId)}>remove</button>
                 </div>
               </div>
