@@ -82,20 +82,29 @@
             <p class="empty-label">More coming soon — check back later!</p>
           </div>
         {:else}
-          <!-- Image grid -->
-          <div class="image-grid">
-            {#each cat.images as img}
-              <a href={img.file} download={img.name} target="_blank" rel="noopener noreferrer" class="image-card" title="Download {img.name}">
-                <div class="image-preview-wrap">
-                  <img src={img.preview || img.file} alt={img.name} class="image-preview" loading="lazy" />
+          <!-- Subgroups: unlabeled set-level images first, then labeled per-sheet images -->
+          <div class="subgroups">
+            {#each cat.subgroups as sub}
+              <div class="subgroup">
+                {#if sub.label}
+                  <h3 class="subgroup-label">{sub.label}</h3>
+                {/if}
+                <div class="image-grid">
+                  {#each sub.images as img}
+                    <a href={img.file} download={img.name} target="_blank" rel="noopener noreferrer" class="image-card" title="Download {img.name}">
+                      <div class="image-preview-wrap">
+                        <img src={img.preview || img.file} alt={img.name} class="image-preview" loading="lazy" />
+                      </div>
+                      <div class="image-info">
+                        <span class="image-name">{img.name}</span>
+                        <svg class="download-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M12 5v14M5 12l7 7 7-7"/>
+                        </svg>
+                      </div>
+                    </a>
+                  {/each}
                 </div>
-                <div class="image-info">
-                  <span class="image-name">{img.name}</span>
-                  <svg class="download-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 5v14M5 12l7 7 7-7"/>
-                  </svg>
-                </div>
-              </a>
+              </div>
             {/each}
           </div>
         {/if}
@@ -254,6 +263,24 @@
     color: var(--ink);
     opacity: 0.5;
     margin: 0;
+  }
+
+  /* ── Subgroups (per-sheet backgrounds within a set) ── */
+  .subgroups {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .subgroup-label {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--ink);
+    opacity: 0.55;
+    margin: 0 0 10px;
   }
 
   /* ── Empty section ── */
