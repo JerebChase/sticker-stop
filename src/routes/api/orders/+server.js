@@ -6,11 +6,14 @@ export async function POST({ request, url }) {
   const body = await request.json();
   const { customerName, customerEmail, customerAddress, deliveryMethod, items, subtotal, shipping, total } = body;
 
-  const method = deliveryMethod === 'pickup' ? 'pickup' : 'mail';
+  const hasBook = Array.isArray(items) && items.some(i => i.kind === 'book');
+  // Sticker books are pickup only — mail isn't an option once one's in the order.
+  const method = (deliveryMethod === 'pickup' || hasBook) ? 'pickup' : 'mail';
   if (!customerName || !customerEmail || (!customerAddress && method !== 'pickup') || !items?.length || total == null) {
     return json({ error: 'Missing required fields.' }, { status: 400 });
   }
 
+  const shippingCost = method === 'pickup' ? 0 : (shipping ?? 0);
   const order = {
     customer_name:    customerName.trim(),
     customer_email:   customerEmail ? customerEmail.trim() : '',
@@ -19,8 +22,8 @@ export async function POST({ request, url }) {
     delivery_method: method,
     items,
     subtotal: subtotal ?? total,
-    shipping: shipping ?? 0,
-    total,
+    shipping: shippingCost,
+    total: method === 'pickup' ? (subtotal ?? total) : total,
   };
 
   let row;

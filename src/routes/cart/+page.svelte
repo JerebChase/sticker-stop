@@ -11,6 +11,7 @@
   let success = $state(null);
 
   let items = $derived($cart);
+  let hasBook = $derived(items.some(i => i.kind === 'book'));
   let subtotal = $derived(items.reduce((s, i) => s + i.price * i.qty, 0));
   let totalSheets = $derived(items.reduce((s, i) => {
     const count = i.sheetCount ?? (i.image3 ? 3 : i.image2 ? 2 : 1);
@@ -29,6 +30,11 @@
     email.trim() &&
     (deliveryMethod === 'pickup' || address.trim())
   );
+
+  // Sticker books ship in person only — force pickup whenever one's in the cart.
+  $effect(() => {
+    if (hasBook && deliveryMethod === 'mail') deliveryMethod = 'pickup';
+  });
 
   let confettiPieces = $derived(
     success
@@ -260,12 +266,13 @@
                 <button
                   class="delivery-btn"
                   class:active={deliveryMethod === 'mail'}
-                  onclick={() => deliveryMethod = 'mail'}
+                  onclick={() => { if (!hasBook) deliveryMethod = 'mail'; }}
+                  disabled={hasBook}
                   type="button"
                 >
                   <span class="delivery-icon">📬</span>
                   <span class="delivery-name">Ship it to me</span>
-                  <span class="delivery-sub">from $1 · +bonus sticker!</span>
+                  <span class="delivery-sub">{hasBook ? 'Not available with books' : 'from $1 · +bonus sticker!'}</span>
                 </button>
                 <button
                   class="delivery-btn"
@@ -278,7 +285,9 @@
                   <span class="delivery-sub">No shipping fee</span>
                 </button>
               </div>
-              {#if deliveryMethod === 'mail'}
+              {#if hasBook}
+                <div class="bonus-notice book-notice">📚 Sticker books are pickup only — no shipping available for this order.</div>
+              {:else if deliveryMethod === 'mail'}
                 <div class="bonus-notice">✨ A free bonus sticker ships with every mail order!</div>
               {/if}
             </div>
@@ -583,6 +592,12 @@
     box-shadow: 0 3px 0 var(--blue);
   }
 
+  .delivery-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+  .delivery-btn:disabled:hover { border-color: var(--line); }
+
   .delivery-icon { font-size: 28px; line-height: 1; }
 
   .delivery-name {
@@ -610,6 +625,8 @@
     text-align: center;
     color: var(--ink);
   }
+
+  .bonus-notice.book-notice { background: var(--yellow); }
 
   /* ── Form fields ── */
   .form-fields { display: flex; flex-direction: column; gap: 14px; }
