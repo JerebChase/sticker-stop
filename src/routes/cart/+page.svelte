@@ -219,6 +219,8 @@
                       {item.selectedSheets.map(s => s.qty > 1 ? `${s.name} ×${s.qty}` : s.name).join(' · ')}
                     </span>
                   {/if}
+                {:else if item.kind === 'book'}
+                  <span class="item-kind">Sticker book</span>
                 {:else}
                   <span class="item-kind">{item.kind === 'set' || item.kind === 'pair' ? 'Full set' : 'Single sheet'}</span>
                 {/if}

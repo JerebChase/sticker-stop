@@ -42,6 +42,7 @@
       </a>
       <nav class="nav-desktop">
         <a href="/" class="nav-btn" class:active={currentPath === '/'}>All Stickers</a>
+        <a href="/books" class="nav-btn" class:active={currentPath.startsWith('/books')}>📚 Books</a>
         <a href="/backgrounds" class="nav-btn" class:active={currentPath === '/backgrounds'}>
           Backgrounds
           <span class="free-tag">FREE ✨</span>
@@ -81,6 +82,7 @@
     {#if menuOpen}
       <div class="mobile-menu">
         <a href="/" class="mobile-nav-btn" class:active={currentPath === '/'}>All Stickers</a>
+        <a href="/books" class="mobile-nav-btn" class:active={currentPath.startsWith('/books')}>📚 Books</a>
         <a href="/backgrounds" class="mobile-nav-btn" class:active={currentPath === '/backgrounds'}>
           Backgrounds
           <span class="free-tag">FREE ✨</span>

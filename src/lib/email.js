@@ -284,9 +284,11 @@ function buildItemRow(item, origin) {
   const lineTotal = (item.price * item.qty).toFixed(2);
   const subLabel = item.kind === 'pyo'
     ? `Pick your own &middot; $${item.price.toFixed(2)}`
-    : (item.kind === 'set' || item.kind === 'pair')
-      ? `Full set &middot; $${item.price.toFixed(2)}`
-      : `Single sheet &middot; $${item.price.toFixed(2)}`;
+    : item.kind === 'book'
+      ? `Sticker book &middot; $${item.price.toFixed(2)}`
+      : (item.kind === 'set' || item.kind === 'pair')
+        ? `Full set &middot; $${item.price.toFixed(2)}`
+        : `Single sheet &middot; $${item.price.toFixed(2)}`;
 
   const sheetList = item.kind === 'pyo'
     ? (item.selectedSheets ?? [])
