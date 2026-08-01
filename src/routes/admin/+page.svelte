@@ -209,6 +209,161 @@
     await loadSets();
   }
 
+  // Sticker Books
+  let books = $state([]);
+  let booksLoading = $state(false);
+  let booksError = $state('');
+  let editingBookId = $state(null); // id of book being edited, or 'new'
+  let editBookForm = $state(null);
+  let uploadingBookImageIndex = $state(null);
+  let bookDragIndex = $state(null);
+  let bookDragTarget = $state(null);
+  let bookImgDragIndex = $state(null);
+  let bookImgDragTarget = $state(null);
+
+  const BOOK_STATUS_LABELS = {
+    active:        'Active',
+    coming_soon:   'Coming Soon',
+    retiring_soon: 'Retiring Soon',
+    inactive:      'Inactive',
+  };
+
+  function blankBook() {
+    return {
+      id: '', title: '', tagline: '', description: '',
+      images: [], price: 10, sortOrder: 0, status: 'active',
+    };
+  }
+
+  function onBookDragStart(i) { bookDragIndex = i; }
+  function onBookDragOver(e, i) { e.preventDefault(); bookDragTarget = i; }
+  function onBookDragLeave() { bookDragTarget = null; }
+  function onBookDragEnd() { bookDragIndex = null; bookDragTarget = null; }
+
+  function onBookDrop(i) {
+    if (bookDragIndex === null || bookDragIndex === i) { bookDragIndex = null; bookDragTarget = null; return; }
+    const next = [...books];
+    const [moved] = next.splice(bookDragIndex, 1);
+    next.splice(i, 0, moved);
+    books = next;
+    bookDragIndex = null;
+    bookDragTarget = null;
+    saveBookOrder();
+  }
+
+  async function saveBookOrder() {
+    await fetch('/api/admin/sticker-books', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+      body: JSON.stringify(books.map((b, i) => ({ id: b.id, sortOrder: i }))),
+    });
+  }
+
+  async function loadBooks() {
+    booksLoading = true;
+    booksError = '';
+    try {
+      const res = await fetch('/api/admin/sticker-books', {
+        headers: { 'x-admin-password': password },
+      });
+      const data = await res.json();
+      if (!res.ok) booksError = data.error ?? 'Failed to load.';
+      else books = data;
+    } catch { booksError = 'Could not reach server.'; }
+    finally { booksLoading = false; }
+  }
+
+  function startEditBook(book) {
+    editingBookId = book.id;
+    editBookForm = JSON.parse(JSON.stringify(book));
+    if (!Array.isArray(editBookForm.images)) editBookForm.images = [];
+    if (editBookForm.price  === undefined) editBookForm.price  = 10;
+    if (!editBookForm.status)               editBookForm.status = 'active';
+  }
+
+  function startNewBook() {
+    editingBookId = 'new';
+    editBookForm = blankBook();
+  }
+
+  function cancelEditBook() {
+    editingBookId = null;
+    editBookForm = null;
+  }
+
+  async function saveBook() {
+    const isNew = editingBookId === 'new';
+    if (isNew) editBookForm.sortOrder = books.length;
+    const url = isNew ? '/api/admin/sticker-books' : `/api/admin/sticker-books/${editingBookId}`;
+    const method = isNew ? 'POST' : 'PUT';
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+      body: JSON.stringify(editBookForm),
+    });
+    if (res.ok) {
+      await loadBooks();
+      cancelEditBook();
+    } else {
+      const d = await res.json();
+      alert(d.error ?? 'Save failed.');
+    }
+  }
+
+  async function deleteBook(id) {
+    if (!confirm(`Delete "${id}"? This cannot be undone.`)) return;
+    await fetch(`/api/admin/sticker-books/${id}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-password': password },
+    });
+    await loadBooks();
+  }
+
+  function addBookImage() {
+    editBookForm.images = [...editBookForm.images, { id: crypto.randomUUID(), url: '' }];
+  }
+
+  function removeBookImage(i) {
+    editBookForm.images = editBookForm.images.filter((_, idx) => idx !== i);
+  }
+
+  function onBookImgDragStart(i) { bookImgDragIndex = i; }
+  function onBookImgDragOver(e, i) { e.preventDefault(); bookImgDragTarget = i; }
+  function onBookImgDragLeave() { bookImgDragTarget = null; }
+  function onBookImgDragEnd() { bookImgDragIndex = null; bookImgDragTarget = null; }
+
+  function onBookImgDrop(i) {
+    if (bookImgDragIndex === null || bookImgDragIndex === i) { bookImgDragIndex = null; bookImgDragTarget = null; return; }
+    const next = [...editBookForm.images];
+    const [moved] = next.splice(bookImgDragIndex, 1);
+    next.splice(i, 0, moved);
+    editBookForm.images = next;
+    bookImgDragIndex = null;
+    bookImgDragTarget = null;
+  }
+
+  async function handleBookImageUpload(event, i) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    uploadingBookImageIndex = i;
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('setId', `books/${editBookForm.id || 'new'}`);
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        headers: { 'x-admin-password': password },
+        body: fd,
+      });
+      const data = await res.json();
+      if (res.ok) editBookForm.images[i].url = data.url;
+      else alert(data.error ?? 'Upload failed.');
+    } finally {
+      uploadingBookImageIndex = null;
+      event.target.value = '';
+    }
+  }
+
   async function login() {
     authError = false;
     const res = await fetch('/api/admin/auth', {
@@ -222,6 +377,7 @@
       loadOrders();
       loadSettings();
       loadSets();
+      loadBooks();
       loadFeedback();
     } else {
       authError = true;
@@ -403,6 +559,23 @@
     }
   }
 
+  function addNewOrderBook(book) {
+    const sheetId = `book-${book.id}`;
+    const existing = newOrderItems.find(i => i.sheetId === sheetId);
+    if (existing) {
+      newOrderItems = newOrderItems.map(i => i.sheetId === sheetId ? { ...i, qty: i.qty + 1 } : i);
+    } else {
+      newOrderItems = [...newOrderItems, {
+        kind:    'book',
+        bookId:  book.id,
+        sheetId,
+        name:    book.title,
+        price:   book.price,
+        qty:     1,
+      }];
+    }
+  }
+
   function changeNewOrderQty(sheetId, delta) {
     newOrderItems = newOrderItems
       .map(i => i.sheetId === sheetId ? { ...i, qty: i.qty + delta } : i)
@@ -477,8 +650,8 @@
         body: JSON.stringify({
           customer_name:  newOrderName.trim(),
           customer_email: newOrderEmail.trim(),
-          items:          newOrderItems.map(({ kind, setId, sheetId, name, price, qty, selectedSheets, paidCount, freeCount, sheetCount }) => ({
-            kind, setId, sheetId, name, price, qty,
+          items:          newOrderItems.map(({ kind, setId, bookId, sheetId, name, price, qty, selectedSheets, paidCount, freeCount, sheetCount }) => ({
+            kind, setId, bookId, sheetId, name, price, qty,
             ...(kind === 'pyo' ? { selectedSheets, paidCount, freeCount, sheetCount } : {}),
           })),
           paid:           newOrderPaid,
@@ -518,16 +691,32 @@
     settingsLoading = false;
   }
 
+  // Books send 80% to the shop fund / 20% to earnings; everything else (stickers)
+  // splits 50/50, matching how it's always worked.
+  function splitRatio(kind) {
+    return kind === 'book' ? { shop: 0.8, earn: 0.2 } : { shop: 0.5, earn: 0.5 };
+  }
+
   function calcTotals(list) {
-    const shopFund = list.reduce((s, o) => {
-      const subtotal = parseFloat(o.subtotal || o.total || 0);
-      const shipping = parseFloat(o.shipping || 0);
-      return s + shipping + subtotal / 2;
-    }, 0);
-    const earnings = list.reduce((s, o) => {
-      const subtotal = parseFloat(o.subtotal || o.total || 0);
-      return s + subtotal / 2;
-    }, 0);
+    let shopFund = 0;
+    let earnings = 0;
+    for (const o of list) {
+      shopFund += parseFloat(o.shipping || 0);
+      const items = o.items ?? [];
+      if (items.length > 0) {
+        for (const item of items) {
+          const lineTotal = parseFloat(item.price || 0) * (item.qty ?? 1);
+          const { shop, earn } = splitRatio(item.kind);
+          shopFund += lineTotal * shop;
+          earnings += lineTotal * earn;
+        }
+      } else {
+        // Orders saved before item-level data existed — fall back to 50/50 on the subtotal.
+        const subtotal = parseFloat(o.subtotal || o.total || 0);
+        shopFund += subtotal / 2;
+        earnings += subtotal / 2;
+      }
+    }
     return { shopFund: shopFund.toFixed(2), earnings: earnings.toFixed(2) };
   }
 
@@ -749,7 +938,7 @@
     };
   });
 
-  const TAB_LABELS = { orders: 'Orders', sets: 'Sticker Sets', analytics: 'Analytics', backgrounds: 'Backgrounds', settings: 'Settings', feedback: 'Feedback' };
+  const TAB_LABELS = { orders: 'Orders', sets: 'Sticker Sets', books: 'Sticker Books', analytics: 'Analytics', backgrounds: 'Backgrounds', settings: 'Settings', feedback: 'Feedback' };
   let tabMenuOpen = $state(false);
 
   function switchTab(t) {
@@ -969,6 +1158,7 @@
       loadOrders();
       loadSettings();
       loadSets();
+      loadBooks();
       loadFeedback();
       loadBgImages();
     }
@@ -1013,6 +1203,7 @@
     <div class="tabs tabs-desktop">
       <button class="tab" class:active={tab === 'orders'}   onclick={() => tab = 'orders'}>Orders</button>
       <button class="tab" class:active={tab === 'sets'}      onclick={() => tab = 'sets'}>Sticker Sets</button>
+      <button class="tab" class:active={tab === 'books'}     onclick={() => tab = 'books'}>Sticker Books</button>
       <button class="tab" class:active={tab === 'analytics'}    onclick={() => tab = 'analytics'}>Analytics</button>
       <button class="tab" class:active={tab === 'backgrounds'}  onclick={() => { tab = 'backgrounds'; loadBgImages(); }}>Backgrounds</button>
       <button class="tab" class:active={tab === 'settings'}     onclick={() => tab = 'settings'}>Settings</button>
@@ -1325,6 +1516,92 @@
 
           {#if sets.length === 0 && editingId !== 'new'}
             <div class="empty-orders">No sticker sets yet — add one above.</div>
+          {/if}
+        {/if}
+      </div>
+
+    {:else if tab === 'books'}
+      <!-- Sticker Books -->
+      <div class="sets-panel">
+        <div class="sets-toolbar">
+          <h2 class="sets-heading">Sticker Books</h2>
+          {#if editingBookId !== 'new'}
+            <button class="add-set-btn" onclick={startNewBook}>+ Add book</button>
+          {/if}
+        </div>
+
+        {#if booksLoading}
+          <p class="loading-msg">Loading books…</p>
+        {:else if booksError}
+          <p class="loading-msg" style="color:var(--pink)">⚠️ {booksError}</p>
+        {:else}
+
+          <!-- Add new book form -->
+          {#if editingBookId === 'new'}
+            <div class="set-edit-card">
+              <h3 class="edit-card-title">New sticker book</h3>
+              {@render bookForm(editBookForm)}
+              <div class="edit-actions">
+                <button class="save-btn" onclick={saveBook}>Save book</button>
+                <button class="cancel-btn" onclick={cancelEditBook}>Cancel</button>
+              </div>
+            </div>
+          {/if}
+
+          <!-- Existing books list -->
+          {#each books as book, i}
+            <div
+              class="set-row"
+              class:drag-over={bookDragTarget === i && bookDragIndex !== i}
+              class:editing={editingBookId === book.id}
+              draggable={editingBookId === null}
+              ondragstart={() => onBookDragStart(i)}
+              ondragover={(e) => onBookDragOver(e, i)}
+              ondragleave={onBookDragLeave}
+              ondrop={() => onBookDrop(i)}
+              ondragend={onBookDragEnd}
+            >
+              {#if editingBookId === book.id}
+                <div class="set-edit-card">
+                  <h3 class="edit-card-title">Editing: {book.title}</h3>
+                  {@render bookForm(editBookForm)}
+                  <div class="edit-actions">
+                    <button class="save-btn" onclick={saveBook}>Save changes</button>
+                    <button class="cancel-btn" onclick={cancelEditBook}>Cancel</button>
+                    <button class="delete-btn" onclick={() => deleteBook(book.id)}>Delete</button>
+                  </div>
+                </div>
+              {:else}
+                <div class="set-summary">
+                  <div class="drag-handle" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <circle cx="5" cy="4" r="1.5" fill="currentColor"/>
+                      <circle cx="11" cy="4" r="1.5" fill="currentColor"/>
+                      <circle cx="5" cy="8" r="1.5" fill="currentColor"/>
+                      <circle cx="11" cy="8" r="1.5" fill="currentColor"/>
+                      <circle cx="5" cy="12" r="1.5" fill="currentColor"/>
+                      <circle cx="11" cy="12" r="1.5" fill="currentColor"/>
+                    </svg>
+                  </div>
+                  {#if book.images?.[0]?.url}
+                    <img src={book.images[0].url} alt={book.title} class="book-row-thumb" />
+                  {:else}
+                    <div class="set-swatch" style="background:var(--blue)"></div>
+                  {/if}
+                  <div class="set-info">
+                    <span class="set-name">{book.title} — ${Number(book.price).toFixed(2)}</span>
+                    <span class="set-meta" data-status={book.status ?? 'active'}>{BOOK_STATUS_LABELS[book.status] ?? 'Active'}</span>
+                  </div>
+                  <div class="set-row-actions">
+                    <button class="row-edit-btn" onclick={() => startEditBook(book)}>Edit</button>
+                  </div>
+                </div>
+              {/if}
+            </div>
+          {/each}
+
+          {#if books.length === 0 && editingBookId !== 'new'}
+            <div class="empty-orders">No sticker books yet — add one above.</div>
           {/if}
         {/if}
       </div>
@@ -1842,6 +2119,21 @@
                 {/if}
               </div>
             {/each}
+            {#if books.length > 0}
+              <div class="picker-set">
+                <div class="picker-set-header">
+                  <span class="picker-swatch" style="background:var(--blue)"></span>
+                  <span class="picker-set-name">Sticker Books</span>
+                </div>
+                <div class="picker-options">
+                  {#each books as book}
+                    <button type="button" class="picker-chip" onclick={() => addNewOrderBook(book)}>
+                      {book.title} <span class="picker-chip-price">${Number(book.price).toFixed(2)}</span>
+                    </button>
+                  {/each}
+                </div>
+              </div>
+            {/if}
           </div>
         </div>
 
@@ -2046,6 +2338,85 @@
         {/if}
       </div>
     {/if}
+  </div>
+{/snippet}
+
+{#snippet bookForm(f)}
+  <div class="set-form">
+    <div class="set-form-row">
+      <label class="field">
+        <span class="field-label">Price</span>
+        <div class="price-input-wrap">
+          <span class="price-prefix">$</span>
+          <input type="number" bind:value={f.price} min="0" step="0.01" />
+        </div>
+      </label>
+      <label class="field">
+        <span class="field-label">Status</span>
+        <select bind:value={f.status}>
+          <option value="active">Active</option>
+          <option value="coming_soon">Coming Soon</option>
+          <option value="retiring_soon">Retiring Soon</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </label>
+    </div>
+
+    <label class="field">
+      <span class="field-label">Title</span>
+      <input type="text" bind:value={f.title} placeholder="Critter Adventures Sticker Book" />
+    </label>
+    <label class="field">
+      <span class="field-label">Tagline</span>
+      <input type="text" bind:value={f.tagline} placeholder="A whole book of forest friends to fill up." />
+    </label>
+    <label class="field">
+      <span class="field-label">Description <span class="field-hint">(optional)</span></span>
+      <textarea bind:value={f.description} rows="3" placeholder="What's inside this book…"></textarea>
+    </label>
+
+    <div class="sheets-section">
+      <div class="sheets-header">
+        <span class="field-label">Carousel images</span>
+        <button type="button" class="add-sheet-btn" onclick={addBookImage}>+ Add image</button>
+      </div>
+
+      {#each f.images as img, i}
+        <div
+          class="sheet-card"
+          class:drag-over={bookImgDragTarget === i && bookImgDragIndex !== i}
+          draggable="true"
+          ondragstart={() => onBookImgDragStart(i)}
+          ondragover={(e) => onBookImgDragOver(e, i)}
+          ondragleave={onBookImgDragLeave}
+          ondrop={() => onBookImgDrop(i)}
+          ondragend={onBookImgDragEnd}
+        >
+          <div class="sheet-card-header">
+            <h4 class="sheet-col-title">Image {i + 1}</h4>
+            <button type="button" class="remove-sheet-btn" onclick={() => removeBookImage(i)}>Remove</button>
+          </div>
+          <div class="field">
+            <div class="img-upload-wrap">
+              {#if img.url}
+                <img src={img.url} alt="Book image {i + 1} preview" class="img-preview" />
+              {/if}
+              <div class="img-controls">
+                <label class="upload-btn" class:uploading={uploadingBookImageIndex === i}>
+                  {#if uploadingBookImageIndex === i}Uploading…{:else if img.url}Change{:else}Upload{/if}
+                  <input type="file" accept="image/*" style="display:none" disabled={uploadingBookImageIndex !== null}
+                    onchange={(e) => handleBookImageUpload(e, i)} />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      {/each}
+
+      {#if f.images.length === 0}
+        <p class="pyo-sheets-hint">Add at least one image for the carousel.</p>
+      {/if}
+    </div>
   </div>
 {/snippet}
 
@@ -2949,6 +3320,15 @@
     flex-shrink: 0;
   }
 
+  .book-row-thumb {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 2px solid var(--ink);
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+
   .set-info {
     flex: 1;
     display: flex;
@@ -3057,6 +3437,15 @@
     border-radius: 12px;
     padding: 14px;
     background: var(--paper-2);
+  }
+
+  .sheet-card[draggable="true"] { cursor: grab; }
+  .sheet-card[draggable="true"]:active { cursor: grabbing; }
+
+  .sheet-card.drag-over {
+    outline: 2.5px solid var(--blue);
+    outline-offset: -2px;
+    background: #e8f7ff;
   }
 
   .sheet-card-header {

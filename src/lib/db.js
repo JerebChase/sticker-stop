@@ -88,6 +88,20 @@ export async function ensureSchema() {
   await db`DROP TABLE IF EXISTS background_categories`;
 
   await db`
+    CREATE TABLE IF NOT EXISTS sticker_books (
+      id          TEXT PRIMARY KEY,
+      title       TEXT NOT NULL,
+      tagline     TEXT    DEFAULT '',
+      description TEXT    DEFAULT '',
+      images      JSONB   DEFAULT '[]',
+      price       NUMERIC(10,2) DEFAULT 10.00,
+      sort_order  INTEGER DEFAULT 0,
+      status      TEXT    DEFAULT 'active',
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+
+  await db`
     CREATE TABLE IF NOT EXISTS feedback (
       id         SERIAL PRIMARY KEY,
       mood       TEXT DEFAULT '',
@@ -293,6 +307,70 @@ export async function upsertStickerSet(set) {
 export async function deleteStickerSet(id) {
   const db = sql();
   await db`DELETE FROM sticker_sets WHERE id = ${id}`;
+}
+
+// ── Sticker Books ─────────────────────────────────────────────
+
+function rowToBook(row) {
+  return {
+    id:          row.id,
+    title:       row.title,
+    tagline:     row.tagline     ?? '',
+    description: row.description ?? '',
+    images:      Array.isArray(row.images) ? row.images : [],
+    price:       Number(row.price ?? 10),
+    sortOrder:   row.sort_order,
+    status:      row.status ?? 'active',
+  };
+}
+
+export async function listStickerBooks() {
+  const db = sql();
+  const rows = await db`
+    SELECT * FROM sticker_books WHERE status != 'inactive' ORDER BY sort_order ASC, created_at ASC
+  `;
+  return rows.map(rowToBook);
+}
+
+export async function listAllStickerBooks() {
+  const db = sql();
+  const rows = await db`SELECT * FROM sticker_books ORDER BY sort_order ASC, created_at ASC`;
+  return rows.map(rowToBook);
+}
+
+export async function getStickerBook(id) {
+  const db = sql();
+  const rows = await db`SELECT * FROM sticker_books WHERE id = ${id} AND status IN ('active', 'retiring_soon')`;
+  return rows.length ? rowToBook(rows[0]) : null;
+}
+
+export async function upsertStickerBook(book) {
+  const db = sql();
+  await db`
+    INSERT INTO sticker_books (id, title, tagline, description, images, price, sort_order, status)
+    VALUES
+      (${book.id}, ${book.title}, ${book.tagline ?? ''}, ${book.description ?? ''},
+       ${JSON.stringify(book.images ?? [])}, ${book.price ?? 10},
+       ${book.sortOrder ?? 0}, ${book.status ?? 'active'})
+    ON CONFLICT (id) DO UPDATE SET
+      title       = EXCLUDED.title,
+      tagline     = EXCLUDED.tagline,
+      description = EXCLUDED.description,
+      images      = EXCLUDED.images,
+      price       = EXCLUDED.price,
+      sort_order  = EXCLUDED.sort_order,
+      status      = EXCLUDED.status
+  `;
+}
+
+export async function deleteStickerBook(id) {
+  const db = sql();
+  await db`DELETE FROM sticker_books WHERE id = ${id}`;
+}
+
+export async function updateStickerBookOrder(id, sortOrder) {
+  const db = sql();
+  await db`UPDATE sticker_books SET sort_order = ${sortOrder} WHERE id = ${id}`;
 }
 
 // ── Orders ────────────────────────────────────────────────────

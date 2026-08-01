@@ -114,6 +114,18 @@
     {/if}
   </section>
 
+  <!-- Sticker books promo -->
+  <section class="books-promo max-w">
+    <a href="/books" class="books-promo-card">
+      <span class="books-promo-emoji">📚</span>
+      <span class="books-promo-text">
+        <span class="books-promo-title">New! Sticker Books</span>
+        <span class="books-promo-sub">A whole book of sticker pages, just $10</span>
+      </span>
+      <span class="books-promo-btn">Take a look →</span>
+    </a>
+  </section>
+
   <!-- How it works -->
   <section class="hiw-section max-w">
     <div class="hiw-panel">
@@ -456,6 +468,62 @@
     color: var(--paper);
     padding: 6px 14px;
     border-radius: 999px;
+  }
+
+  /* ── Sticker books promo ── */
+  .books-promo { padding-bottom: 48px; }
+
+  .books-promo-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: var(--blue);
+    border: 2.5px solid var(--ink);
+    border-radius: 22px;
+    box-shadow: 0 6px 0 var(--ink);
+    padding: 22px 26px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: transform 0.15s, box-shadow 0.15s;
+    flex-wrap: wrap;
+  }
+
+  .books-promo-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 9px 0 var(--ink);
+  }
+
+  .books-promo-emoji { font-size: 40px; line-height: 1; }
+
+  .books-promo-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .books-promo-title {
+    font-family: 'Bagel Fat One', sans-serif;
+    font-size: 24px;
+    letter-spacing: -0.5px;
+  }
+
+  .books-promo-sub {
+    font-family: 'Caveat', cursive;
+    font-size: 18px;
+    opacity: 0.8;
+  }
+
+  .books-promo-btn {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 8px 16px;
+    border-radius: 999px;
+    white-space: nowrap;
   }
 
   /* ── How it works ── */
